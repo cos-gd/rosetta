@@ -422,6 +422,13 @@ claude plugin marketplace add griddynamics/rosetta
 claude plugin install core@rosetta
 ```
 
+Updating after installation:
+
+```sh
+claude plugin marketplace update rosetta
+claude plugin update core@rosetta
+```
+
 #### VS Code / GitHub Copilot
 
 Install `core-copilot` via VS Code Copilot Plugins (not VS Code extensions).
