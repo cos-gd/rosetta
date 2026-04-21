@@ -382,13 +382,13 @@ def sync_generated_plugins(repo_root: Path) -> int:
             destination=repo_root / "plugins" / "core-claude",
             preserved_folder=".claude-plugin",
             normalize_models=True,
-            generated_indexes=("rules",),
+            generated_indexes=("rules", "workflows"),
         ),
         PluginSyncSpec(
             name="core-cursor",
             destination=repo_root / "plugins" / "core-cursor",
             preserved_folder=".cursor-plugin",
-            generated_indexes=("rules",),
+            generated_indexes=("rules", "workflows"),
         ),
         PluginSyncSpec(
             name="core-copilot",
