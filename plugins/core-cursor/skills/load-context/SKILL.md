@@ -4,5 +4,6 @@ description: Rosetta skill to load the most current context, extremely useful, f
 baseSchema: docs/schemas/skill.md
 ---
 
-MUST use Rosetta to load current context using `get_context_instructions` tool (if available) and FULLY COMPLETE all prep steps, load files, select and start execution of matching workflow.
-If it fails YOU MUST ASK USER (as this is highly critical and unexpected)! If context output was truncated and a file path was provided, you MUST immediately read the full file before proceeding even if large! Preview is NOT ENOUGH!
+1. MUST use Rosetta to load current context using `get_context_instructions` tool (if available) and FULLY COMPLETE all prep steps, load files, select and start execution of matching workflow.
+If it fails YOU MUST ASK USER (as this is highly critical and unexpected)!
+2. MUST fully read entire file if output was truncated and a file path was provided! Preview is NOT ENOUGH!
