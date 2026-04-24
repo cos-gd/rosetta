@@ -87,6 +87,7 @@ For detailed change history, use git history and PRs instead of expanding this f
 ### Documentation and Public Surface
 
 - Installation, deployment, quickstart, troubleshooting, and README content were aligned with the current transport/auth model.
+- Usage guides describe workflow phases, expected subagents/artifacts, HITL gates, and user responsibilities for both OSS and PRO workflow families.
 - Internal/private environment details were replaced with public-safe placeholders where appropriate.
 - Public Docker Hub references remain intentionally visible because they are part of the OSS distribution surface.
 

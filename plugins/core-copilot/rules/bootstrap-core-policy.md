@@ -18,6 +18,7 @@ baseSchema: docs/schemas/rule.md
 5. MUST FULLY execute `Prep Step 3: Execution Planning`. No Exceptions.
 6. Apply `Process Enforcement Rules`.
 7. MUST Always Use `Subagents Orchestration Rules`.
+8. Prep steps must be executed by all agents/subagents themselves.
 
 # Prep Step 2:
 
