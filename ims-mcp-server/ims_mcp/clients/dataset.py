@@ -41,8 +41,10 @@ class DatasetLookup:
 
     def get_id(self, name: str) -> str | None:
         self._ensure_fresh()
-        return self._name_to_id.get(name)
+        result: str | None = self._name_to_id.get(name)
+        return result
 
     def get_name(self, dataset_id: str) -> str | None:
         self._ensure_fresh()
-        return self._id_to_name.get(dataset_id)
+        result: str | None = self._id_to_name.get(dataset_id)
+        return result

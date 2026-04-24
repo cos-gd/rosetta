@@ -175,7 +175,7 @@ _TOOL_CACHE: TTLCache[tuple, str] = TTLCache(maxsize=256, ttl=DOC_CACHE_TTL_SECO
 _CONFIG_FINGERPRINT = (_CONFIG.server_url, _CONFIG.instruction_dataset)
 
 
-def _tool_cache_key(tool_name: str, **params: object) -> tuple:
+def _tool_cache_key(tool_name: str, **params: object) -> tuple[Any, ...]:
     """Build a stable, hashable cache key from tool name and all inputs."""
     sorted_params = tuple(sorted(
         (k, tuple(v) if isinstance(v, list) else v)
@@ -398,7 +398,7 @@ async def _read_resource(path: str, ctx: Context | None = None) -> str:
         return "Error: ROSETTA_API_KEY is required"
 
     cache_key = _tool_cache_key("resource_read", path=path)
-    cached = _TOOL_CACHE.get(cache_key)
+    cached: str | None = _TOOL_CACHE.get(cache_key)
     if cached is not None:
         return cached
 
@@ -436,7 +436,7 @@ async def get_context_instructions(
         return "Error: ROSETTA_API_KEY is required"
 
     cache_key = _tool_cache_key(TOOL_GET_CONTEXT_INSTRUCTIONS)
-    cached = _TOOL_CACHE.get(cache_key)
+    cached: str | None = _TOOL_CACHE.get(cache_key)
     if cached is not None:
         return cached
 
@@ -473,7 +473,7 @@ async def query_instructions(
         return tags_err
 
     cache_key = _tool_cache_key(TOOL_QUERY_INSTRUCTIONS, query=query, tags=normalized_tags)
-    cached = _TOOL_CACHE.get(cache_key)
+    cached: str | None = _TOOL_CACHE.get(cache_key)
     if cached is not None:
         return cached
 
@@ -511,7 +511,7 @@ async def list_instructions(
         return "Error: ROSETTA_API_KEY is required"
 
     cache_key = _tool_cache_key(TOOL_LIST_INSTRUCTIONS, full_path_from_root=full_path_from_root, format=format)
-    cached = _TOOL_CACHE.get(cache_key)
+    cached: str | None = _TOOL_CACHE.get(cache_key)
     if cached is not None:
         return cached
 

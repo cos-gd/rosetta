@@ -24,7 +24,7 @@ import functools
 import logging
 import threading
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any, TypeVar
 
@@ -69,7 +69,7 @@ def _log_prefix(tag: str, trace_id: str | None) -> str:
 # ── Layer 1: Outer execution timing ──────────────────────────────
 
 @asynccontextmanager
-async def traced_execution(operation: str, trace_id: str | None = None):
+async def traced_execution(operation: str, trace_id: str | None = None) -> AsyncIterator[None]:
     """Async context manager that times an operation and sets ``current_trace_id``.
 
     - Logs INFO at start and end (with elapsed time).

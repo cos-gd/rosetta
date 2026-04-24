@@ -25,7 +25,7 @@ class InstructionDocCache:
 
     def get_all_docs(self, dataset: DatasetLike, dataset_name: str) -> list[DocumentLike]:
         """Return cached full doc list, refreshing if stale."""
-        cached = self._cache.get(dataset_name)
+        cached: list[DocumentLike] | None = self._cache.get(dataset_name)
         if cached is not None:
             return cached
         docs = self._document_client.list_docs(
