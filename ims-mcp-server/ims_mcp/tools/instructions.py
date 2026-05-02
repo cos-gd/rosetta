@@ -10,6 +10,7 @@ from ims_mcp.clients.document import DocumentClient
 from ims_mcp.constants import (
     COMPATIBILITY_MODE_UPGRADE_NOTICE,
     QUERY_LIST_THRESHOLD,
+    QUERY_TOO_MANY_THRESHOLD,
     TAG_BOOTSTRAP,
     TAG_WORKFLOW,
     WORKFLOWS_PATH_PREFIX,
@@ -79,7 +80,12 @@ def _frontmatter_description(doc: DocumentLike) -> str:
             return ""
     if not isinstance(meta, dict) and hasattr(meta, "__dict__"):
         meta = as_json_object({k: v for k, v in vars(meta).items() if k != "rag"})
-    fm = meta.get("frontmatter") if isinstance(meta, dict) else getattr(meta, "frontmatter", None)
+    # Prefer "fm" (written since the key rename; legacy "frontmatter" kept for
+    # backward compat with docs written before the rename).
+    if isinstance(meta, dict):
+        fm = meta.get("fm") if meta.get("fm") is not None else meta.get("frontmatter")
+    else:
+        fm = getattr(meta, "fm", None) or getattr(meta, "frontmatter", None)
     if fm is None:
         return ""
     # Unwrap RAGFlow SDK Base objects
@@ -225,6 +231,11 @@ async def query_instructions(
     docs = _filter_docs_by_any_tag(_unique_docs(docs), normalized_tags)
     if not docs:
         return "No instructions found"
+
+    # Defensive ceiling: a server-side metadata_condition filter bypass on
+    # RAGFlow 0.25.x can dump every doc in the dataset; refuse to bundle.
+    if len(docs) > QUERY_TOO_MANY_THRESHOLD:
+        return "Error: No documents found or too many documents found"
 
     # When too many results, output listing instead of full content.
     if not _skip_list_threshold and len(docs) > QUERY_LIST_THRESHOLD:

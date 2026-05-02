@@ -6,7 +6,13 @@ import json
 from typing import cast
 
 from ims_mcp.clients.document import DocumentClient
-from ims_mcp.constants import COMPATIBILITY_MODE_ERROR, POLICY_ALL, PROJECT_DATASET_PREFIX, XML_DATASET
+from ims_mcp.constants import (
+    COMPATIBILITY_MODE_ERROR,
+    POLICY_ALL,
+    PROJECT_DATASET_PREFIX,
+    QUERY_TOO_MANY_THRESHOLD,
+    XML_DATASET,
+)
 from ims_mcp.context import CallContext
 from ims_mcp.services.bundler import Bundler
 from ims_mcp.services.invite import auto_invite
@@ -171,6 +177,10 @@ async def query_project_context(
     docs = _filter_docs_by_all_tags(_unique_docs(docs), normalized_tags)
     if not docs:
         return "No project context found"
+    # Defensive ceiling: a server-side metadata_condition filter bypass on
+    # RAGFlow 0.25.x can dump every doc in the dataset; refuse to bundle.
+    if len(docs) > QUERY_TOO_MANY_THRESHOLD:
+        return "Error: No documents found or too many documents found"
     return bundler.bundle(docs, normalized_repo)
 
 

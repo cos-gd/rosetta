@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
-from ims_mcp.tools.instructions import list_instructions, _resource_path
+from ims_mcp.tools.instructions import list_instructions, _resource_path, _frontmatter_description
 
 
 class MockDocument:
@@ -334,3 +334,44 @@ class TestResourcePathHelper:
         """Test handling of missing resource_path key."""
         doc = Mock(id="1", meta_fields={})
         assert _resource_path(doc) == ""
+
+
+class TestFrontmatterDescriptionHelper:
+    """Test _frontmatter_description dual-key reader (fm and legacy frontmatter)."""
+
+    def test_reads_fm_key_json_string(self):
+        """New shape: 'fm' key with JSON-encoded string."""
+        import json
+        doc = Mock(meta_fields={"fm": json.dumps({"description": "My description"})})
+        assert _frontmatter_description(doc) == "My description"
+
+    def test_reads_legacy_frontmatter_dict(self):
+        """Legacy shape: 'frontmatter' key with dict value."""
+        doc = Mock(meta_fields={"frontmatter": {"description": "Legacy dict desc"}})
+        assert _frontmatter_description(doc) == "Legacy dict desc"
+
+    def test_reads_legacy_frontmatter_string(self):
+        """Legacy shape: 'frontmatter' key with JSON string value."""
+        import json
+        doc = Mock(meta_fields={"frontmatter": json.dumps({"description": "Legacy str desc"})})
+        assert _frontmatter_description(doc) == "Legacy str desc"
+
+    def test_fm_takes_precedence_over_legacy_frontmatter(self):
+        """When both 'fm' and 'frontmatter' present, 'fm' wins."""
+        import json
+        doc = Mock(meta_fields={
+            "fm": json.dumps({"description": "FM description"}),
+            "frontmatter": {"description": "Legacy description"},
+        })
+        assert _frontmatter_description(doc) == "FM description"
+
+    def test_returns_empty_when_no_frontmatter_keys(self):
+        """No frontmatter data at all."""
+        doc = Mock(meta_fields={"tags": ["a"], "ims_doc_id": "x"})
+        assert _frontmatter_description(doc) == ""
+
+    def test_returns_empty_when_description_missing(self):
+        """'fm' key present but no 'description' field in the dict."""
+        import json
+        doc = Mock(meta_fields={"fm": json.dumps({"title": "Title only"})})
+        assert _frontmatter_description(doc) == ""
