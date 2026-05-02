@@ -657,10 +657,10 @@ async def main() -> None:
         # 7a. Verify query_instructions listing path (>QUERY_LIST_THRESHOLD,
         #     <=QUERY_TOO_MANY_THRESHOLD) → header + listing.
         print("\n=== Query Instructions Listing Threshold Verification (>5 and <=25) ===")
-        # 'workflows' yields 14 docs on dev aia-r2 — comfortably inside the
-        # listing band. If the dataset shape changes, pick another tag whose
-        # cardinality lands in (QUERY_LIST_THRESHOLD, QUERY_TOO_MANY_THRESHOLD].
-        listing_tags = ["workflows"]
+        # 'workflow' (singular) lands in the listing band on aia-r2 with both
+        # core and grid overlays published (~12 docs). 'workflows' (plural)
+        # exceeds the ceiling once grid is included.
+        listing_tags = ["workflow"]
         try:
             result = await client.call_tool("query_instructions", {"tags": listing_tags})
             limit_text = extract_text(result)
