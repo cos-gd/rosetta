@@ -46,7 +46,6 @@ jobs:
           pip install uv
 
       - name: Publish instructions to Rosetta Server
-        continue-on-error: ${{ !inputs.deploy_to_prod }}
         env:
           RAGFLOW_BASE_URL: ${{ inputs.deploy_to_prod && secrets.PROD_RAGFLOW_BASE_URL || secrets.RAGFLOW_BASE_URL || 'https://ims-dev.evergreen.gcp.griddynamics.net/' }}
           RAGFLOW_API_KEY: ${{ inputs.deploy_to_prod && secrets.PROD_RAGFLOW_API_KEY || secrets.RAGFLOW_API_KEY }}
