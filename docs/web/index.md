@@ -155,11 +155,11 @@ permalink: /
               <pre class="qs-code">{
   "mcpServers": {
     "Rosetta": {
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }</pre>
-              <button class="qs-copy" data-copy='{"mcpServers":{"Rosetta":{"url":"[rosetta MCP production server URL]"}}}'>Copy</button>
+              <button class="qs-copy" data-copy='{"mcpServers":{"Rosetta":{"url":"https://mcp.rosetta.griddynamics.net/mcp"}}}'>Copy</button>
             </div>
           </div>
 
@@ -168,8 +168,8 @@ permalink: /
             <p class="qs-content-hint">Run this command in your terminal:</p>
             <div class="qs-code-wrap">
               <pre class="qs-code"><span class="qs-prompt">$</span> claude mcp add --transport http Rosetta \
-    [rosetta MCP production server URL]</pre>
-              <button class="qs-copy" data-copy="claude mcp add --transport http Rosetta [rosetta MCP production server URL]">Copy</button>
+    https://mcp.rosetta.griddynamics.net/mcp</pre>
+              <button class="qs-copy" data-copy="claude mcp add --transport http Rosetta https://mcp.rosetta.griddynamics.net/mcp">Copy</button>
             </div>
           </div>
 
@@ -178,9 +178,9 @@ permalink: /
             <p class="qs-content-hint">Run these commands in your terminal:</p>
             <div class="qs-code-wrap">
               <pre class="qs-code"><span class="qs-prompt">$</span> codex mcp add Rosetta \
-    --url [rosetta MCP production server URL]
+    --url https://mcp.rosetta.griddynamics.net/mcp
 <span class="qs-prompt">$</span> codex mcp login Rosetta</pre>
-              <button class="qs-copy" data-copy="codex mcp add Rosetta --url [rosetta MCP production server URL]">Copy</button>
+              <button class="qs-copy" data-copy="codex mcp add Rosetta --url https://mcp.rosetta.griddynamics.net/mcp">Copy</button>
             </div>
           </div>
 
@@ -192,11 +192,11 @@ permalink: /
   "servers": {
     "Rosetta": {
       "type": "http",
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }</pre>
-              <button class="qs-copy" data-copy='{"servers":{"Rosetta":{"type":"http","url":"[rosetta MCP production server URL]"}}}'>Copy</button>
+              <button class="qs-copy" data-copy='{"servers":{"Rosetta":{"type":"http","url":"https://mcp.rosetta.griddynamics.net/mcp"}}}'>Copy</button>
             </div>
           </div>
 
@@ -208,11 +208,11 @@ permalink: /
   "servers": {
     "Rosetta": {
       "type": "http",
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }</pre>
-              <button class="qs-copy" data-copy='{"servers":{"Rosetta":{"type":"http","url":"[rosetta MCP production server URL]"}}}'>Copy</button>
+              <button class="qs-copy" data-copy='{"servers":{"Rosetta":{"type":"http","url":"https://mcp.rosetta.griddynamics.net/mcp"}}}'>Copy</button>
             </div>
           </div>
 
@@ -223,11 +223,11 @@ permalink: /
               <pre class="qs-code">{
   "mcpServers": {
     "Rosetta": {
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }</pre>
-              <button class="qs-copy" data-copy='{"mcpServers":{"Rosetta":{"url":"[rosetta MCP production server URL]"}}}'>Copy</button>
+              <button class="qs-copy" data-copy='{"mcpServers":{"Rosetta":{"url":"https://mcp.rosetta.griddynamics.net/mcp"}}}'>Copy</button>
             </div>
           </div>
 
@@ -238,11 +238,11 @@ permalink: /
               <pre class="qs-code">{
   "mcpServers": {
     "Rosetta": {
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }</pre>
-              <button class="qs-copy" data-copy='{"mcpServers":{"Rosetta":{"url":"[rosetta MCP production server URL]"}}}'>Copy</button>
+              <button class="qs-copy" data-copy='{"mcpServers":{"Rosetta":{"url":"https://mcp.rosetta.griddynamics.net/mcp"}}}'>Copy</button>
             </div>
           </div>
 
@@ -254,12 +254,12 @@ permalink: /
   "mcp": {
     "Rosetta": {
       "type": "http",
-      "url": "[rosetta MCP production server URL]",
+      "url": "https://mcp.rosetta.griddynamics.net/mcp",
       "enabled": true
     }
   }
 }</pre>
-              <button class="qs-copy" data-copy='{"mcp":{"Rosetta":{"type":"http","url":"[rosetta MCP production server URL]","enabled":true}}}'>Copy</button>
+              <button class="qs-copy" data-copy='{"mcp":{"Rosetta":{"type":"http","url":"https://mcp.rosetta.griddynamics.net/mcp","enabled":true}}}'>Copy</button>
             </div>
           </div>
 

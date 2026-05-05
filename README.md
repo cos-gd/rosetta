@@ -51,7 +51,7 @@ Rosetta is engineered to prevent the unintentional transmission of sensitive dat
 {
   "mcpServers": {
     "Rosetta": {
-      "url": "<rosetta MCP production server URL>"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }
@@ -60,13 +60,13 @@ Rosetta is engineered to prevent the unintentional transmission of sensitive dat
 **Claude Code:**
 
 ```sh
-claude mcp add --transport http Rosetta <rosetta MCP production server URL>
+claude mcp add --transport http Rosetta https://mcp.rosetta.griddynamics.net/mcp
 ```
 
 **Codex:**
 
 ```sh
-codex mcp add Rosetta --url <rosetta MCP production server URL>
+codex mcp add Rosetta --url https://mcp.rosetta.griddynamics.net/mcp
 codex mcp login Rosetta
 ```
 

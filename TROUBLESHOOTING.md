@@ -14,7 +14,7 @@
 
 **MCP server shows as disconnected**
 - Open your IDE's MCP settings and verify the Rosetta server entry exists
-- Check that the endpoint URL is exactly `<rosetta MCP production server URL>`
+- Check that the endpoint URL is exactly `https://mcp.rosetta.griddynamics.net/mcp`
 - Restart the IDE. Some IDEs need a full restart after config changes
 
 **Agent suddenly stops following Rosetta rules**

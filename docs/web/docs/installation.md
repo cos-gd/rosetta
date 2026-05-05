@@ -45,7 +45,7 @@ Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
 {
   "mcpServers": {
     "Rosetta": {
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }
@@ -57,7 +57,7 @@ Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
 <summary><b>Claude Code</b></summary>
 
 ```sh
-claude mcp add --transport http Rosetta [rosetta MCP production server URL]
+claude mcp add --transport http Rosetta https://mcp.rosetta.griddynamics.net/mcp
 ```
 
 Authenticate inside a claude session with `/mcp`, select Rosetta, Authenticate, and complete the OAuth flow.
@@ -68,7 +68,7 @@ Authenticate inside a claude session with `/mcp`, select Rosetta, Authenticate, 
 <summary><b>Codex</b></summary>
 
 ```sh
-codex mcp add Rosetta --url [rosetta MCP production server URL]
+codex mcp add Rosetta --url https://mcp.rosetta.griddynamics.net/mcp
 codex mcp login Rosetta
 ```
 
@@ -83,7 +83,7 @@ Add to `.vscode/mcp.json` or `~/.mcp.json`:
 {
   "servers": {
     "Rosetta": {
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }
@@ -100,7 +100,7 @@ Add to `.vscode/mcp.json` or `~/.mcp.json`:
 {
   "servers": {
     "Rosetta": {
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }
@@ -119,7 +119,7 @@ Restart IDE after changes.
 {
   "mcpServers": {
     "Rosetta": {
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }
@@ -136,7 +136,7 @@ Add to your Windsurf MCP config:
 {
   "mcpServers": {
     "Rosetta": {
-      "url": "[rosetta MCP production server URL]"
+      "url": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }
@@ -153,7 +153,7 @@ Add to your Antigravity MCP config:
 {
   "mcpServers": {
     "Rosetta": {
-      "serverUrl": "[rosetta MCP production server URL]"
+      "serverUrl": "https://mcp.rosetta.griddynamics.net/mcp"
     }
   }
 }
@@ -171,7 +171,7 @@ Add to `opencode.json`:
   "mcp": {
     "Rosetta": {
       "type": "http",
-      "url": "[rosetta MCP production server URL]",
+      "url": "https://mcp.rosetta.griddynamics.net/mcp",
       "enabled": true
     }
   }
