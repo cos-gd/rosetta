@@ -3,6 +3,11 @@
 ```
 # install marketplace once
 claude plugin marketplace add ../../GAIN/rosetta/.claude-plugin/marketplace.json
+claude plugin marketplace add ../../GAIN/cto-ims-kb/.claude-plugin/marketplace.json
+
+# install plugins
+claude plugin install core@rosetta
+claude plugin install grid@rosetta-pro
 
 # update as many times as you make changes
 claude plugin marketplace update rosetta && claude plugin uninstall core@rosetta && claude plugin install core@rosetta
