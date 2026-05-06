@@ -21,6 +21,10 @@ wheels/
 *.egg
 .pytest_cache/
 
+# Node.js
+node_modules/
+dist/
+
 # Virtual Environment
 venv/
 ENV/
