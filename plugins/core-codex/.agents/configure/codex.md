@@ -277,7 +277,7 @@ enabled = false
 
 ```toml
 [features]
-codex_hooks = true
+hooks = true
 ```
 
 ### Supported Events
@@ -408,7 +408,7 @@ personality = "pragmatic"                 # none|friendly|pragmatic
 [features]
 shell_tool = true
 multi_agent = true
-codex_hooks = true
+hooks = true
 ```
 
 ### Profiles

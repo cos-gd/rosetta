@@ -453,7 +453,7 @@ Install `core-copilot` via VS Code Copilot Plugins (not VS Code extensions).
 Download `core-codex-*.zip` from the [latest release](https://github.com/griddynamics/rosetta/releases/latest), extract on top of the repository, and enable hooks:
 
 ```sh
-codex features enable codex_hooks
+codex features enable hooks
 ```
 
 ### Offline Installation (No MCP)
