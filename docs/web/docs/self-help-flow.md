@@ -104,7 +104,7 @@ flowchart TD
     class C,E,H,I,K artifact;
     class G gate;
 
-    linkStyle default stroke:#475569,stroke-width:2px,color:#0F172A;
+    linkStyle default stroke:#475569,stroke-width:2px;
 ```
 
 ## Mermaid Sequence Diagram

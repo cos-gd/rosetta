@@ -84,6 +84,69 @@
     </nav>
   </div>
 </footer>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.min.js"></script>
+<script>
+(function() {
+  var consoleRef = typeof console !== 'undefined' ? console : null;
+  var logger = consoleRef ? (consoleRef.error || consoleRef.log) : function() {};
+  var content = document.querySelector('.docs-content');
+  if (!content) return;
+
+  function trimBlankLines(source) {
+    return source.replace(/^(?:\s*\n)+/, '').replace(/(?:\n\s*)+$/, '');
+  }
+
+  function convertMermaidBlocks() {
+    var blocks = content.querySelectorAll(
+      'pre > code.language-mermaid, pre > code[class~="language-mermaid"]'
+    );
+
+    return Array.prototype.reduce.call(blocks, function(processed, code) {
+      var pre = code.parentElement;
+      if (!pre || pre.closest('.docs-mermaid') || pre.dataset.mermaidProcessed === 'true') {
+        return processed;
+      }
+
+      var source = trimBlankLines(code.textContent);
+      var wrapper = document.createElement('div');
+      var target = document.createElement('pre');
+
+      wrapper.className = 'docs-mermaid';
+      wrapper.dataset.mermaidProcessed = 'true';
+      target.className = 'mermaid';
+      target.textContent = source;
+
+      wrapper.appendChild(target);
+      pre.dataset.mermaidProcessed = 'true';
+      pre.replaceWith(wrapper);
+      processed.push(target);
+      return processed;
+    }, []);
+  }
+
+  if (!window.mermaid) {
+    logger.call(consoleRef, 'Mermaid runtime is unavailable on docs pages.');
+    return;
+  }
+
+  try {
+    window.mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'loose',
+      theme: 'base'
+    });
+
+    var diagrams = convertMermaidBlocks();
+    if (!diagrams.length) return;
+
+    Promise.resolve(window.mermaid.run({ nodes: diagrams })).catch(function(error) {
+      logger.call(consoleRef, error);
+    });
+  } catch (error) {
+    logger.call(consoleRef, error);
+  }
+})();
+</script>
 <script>
 (function(){
   var calloutMap = {

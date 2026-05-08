@@ -4499,6 +4499,29 @@ body.docs-layout main {
   border: none;
 }
 
+.docs-content .docs-mermaid {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.docs-content pre.mermaid {
+  margin: 0;
+  min-width: max-content;
+  background: transparent;
+  border: none;
+  padding: 0;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.docs-content .docs-mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
 .docs-content :not(pre) > code {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -4678,6 +4701,10 @@ body.docs-layout main {
 
 [data-theme="light"] .docs-content pre {
   background: #f3f5f8;
+}
+
+[data-theme="light"] .docs-content pre.mermaid {
+  background: transparent;
 }
 
 [data-theme="light"] .docs-content :not(pre) > code {

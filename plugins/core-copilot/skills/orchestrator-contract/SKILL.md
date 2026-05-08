@@ -20,7 +20,7 @@ Dispatch:
 4. Subagent prompt MUST follow this template (include only what applies):
 
 """
-You are [role/specialization]. [lightweight|full] subagent.
+You are [role/specialization]. [Lightweight|Full] subagent.
 Plan: [plan.json path or "ad-hoc"]. Phase: [phase id]. Task: [task id].
 
 ## Tasks (SMART)

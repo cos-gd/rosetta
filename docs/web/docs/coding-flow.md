@@ -134,7 +134,7 @@ small: build and tests confirmed"]
   class A,B,C,E,F,I,J work;
   class D,H hitl;
   class G,K verify;
-  linkStyle default stroke:#334155,stroke-width:2px,color:#111827;
+  linkStyle default stroke:#334155,stroke-width:2px;
 ```
 
 ## Mermaid Sequence Diagram

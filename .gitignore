@@ -72,6 +72,8 @@ rosetta-cli/test-remote-*.sh
 
 # Jekyll / GitHub Pages
 docs/web/_site/
+docs/web/.bundle/
+docs/web/vendor/
 _site/
 .jekyll-cache/
 .jekyll-metadata

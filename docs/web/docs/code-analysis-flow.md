@@ -133,7 +133,7 @@ flowchart TD
     class A,B,C,E,J,M,O,P work;
     class D,F,H,N decision;
     class G,I,K,L output;
-    linkStyle default stroke:#475569,stroke-width:1.5px,color:#111827;
+    linkStyle default stroke:#475569,stroke-width:1.5px;
 ```
 
 ## Mermaid Sequence Diagram
