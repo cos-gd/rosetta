@@ -90,8 +90,14 @@
   var consoleRef = typeof console !== 'undefined' ? console : null;
   var logger = consoleRef ? (consoleRef.error || consoleRef.log) : function() {};
   var content = document.querySelector('.docs-content');
-  var pageTheme = document.documentElement.getAttribute('data-theme') || 'dark';
   if (!content) return;
+  var lastTheme = null;
+  var renderToken = 0;
+  var fontCss = [
+    '.label text, .label foreignObject div, .label foreignObject span,',
+    '.nodeLabel, .cluster-label text, .edgeLabel text, .messageText,',
+    'text, tspan { font-size: 24px !important; line-height: 1.25 !important; }'
+  ].join(' ');
 
   var DARK_COLOR_MAP = {
     '#ffffff': '#0f172a',
@@ -152,6 +158,10 @@
     return source.replace(/^(?:\s*\n)+/, '').replace(/(?:\n\s*)+$/, '');
   }
 
+  function getPageTheme() {
+    return document.documentElement.getAttribute('data-theme') || 'dark';
+  }
+
   function parseInitDirective(source) {
     var match = source.match(/^%%\{init:\s*([\s\S]*?)\}%%\s*/);
     if (!match) return null;
@@ -173,7 +183,7 @@
     }, source);
   }
 
-  function normalizeMermaidSource(source) {
+  function normalizeMermaidSource(source, theme) {
     var normalized = source;
     var initDirective = parseInitDirective(normalized);
     var config = initDirective && initDirective.config ? initDirective.config : {};
@@ -182,8 +192,9 @@
     config.theme = 'base';
     themeVariables.fontSize = '24px';
     themeVariables.fontFamily = "'Fira Sans', sans-serif";
+    config.themeCSS = config.themeCSS ? config.themeCSS + '\n' + fontCss : fontCss;
 
-    if (pageTheme === 'dark') {
+    if (theme === 'dark') {
       themeVariables.background = '#0f172a';
       themeVariables.textColor = '#e5e7eb';
       themeVariables.lineColor = '#8a97ab';
@@ -211,6 +222,32 @@
       themeVariables.activationBorderColor = '#7aa2f7';
 
       normalized = replaceColorLiterals(normalized);
+    } else {
+      themeVariables.background = '#ffffff';
+      themeVariables.textColor = '#111827';
+      themeVariables.lineColor = '#475569';
+      themeVariables.primaryColor = '#dbeafe';
+      themeVariables.primaryBorderColor = '#1d4ed8';
+      themeVariables.primaryTextColor = '#111827';
+      themeVariables.secondaryColor = '#dcfce7';
+      themeVariables.secondaryBorderColor = '#16a34a';
+      themeVariables.secondaryTextColor = '#14532d';
+      themeVariables.tertiaryColor = '#fef3c7';
+      themeVariables.tertiaryBorderColor = '#d97706';
+      themeVariables.tertiaryTextColor = '#78350f';
+      themeVariables.actorBkg = '#dbeafe';
+      themeVariables.actorBorder = '#1d4ed8';
+      themeVariables.actorTextColor = '#111827';
+      themeVariables.signalColor = '#475569';
+      themeVariables.signalTextColor = '#111827';
+      themeVariables.labelBoxBkgColor = '#dcfce7';
+      themeVariables.labelBoxBorderColor = '#16a34a';
+      themeVariables.labelTextColor = '#14532d';
+      themeVariables.noteBkgColor = '#fef3c7';
+      themeVariables.noteBorderColor = '#d97706';
+      themeVariables.noteTextColor = '#78350f';
+      themeVariables.activationBkgColor = '#dbeafe';
+      themeVariables.activationBorderColor = '#1d4ed8';
     }
 
     config.themeVariables = themeVariables;
@@ -224,45 +261,55 @@
     return normalized;
   }
 
-  function tuneRenderedDiagrams() {
-    content.querySelectorAll('.docs-mermaid svg').forEach(function(svg) {
-      svg.querySelectorAll('style').forEach(function(styleNode) {
-        styleNode.textContent = styleNode.textContent.replace(/font-size:\s*16px/gi, 'font-size:24px');
-      });
-
-      svg.querySelectorAll('text, foreignObject div, foreignObject span').forEach(function(node) {
-        node.style.fontSize = '24px';
-        node.style.lineHeight = '1.25';
-      });
-    });
-  }
-
-  function convertMermaidBlocks() {
+  function ensureMermaidWrappers() {
     var blocks = content.querySelectorAll(
       'pre > code.language-mermaid, pre > code[class~="language-mermaid"]'
     );
 
-    return Array.prototype.reduce.call(blocks, function(processed, code) {
+    Array.prototype.forEach.call(blocks, function(code) {
       var pre = code.parentElement;
       if (!pre || pre.closest('.docs-mermaid') || pre.dataset.mermaidProcessed === 'true') {
-        return processed;
+        return;
       }
 
-      var source = normalizeMermaidSource(trimBlankLines(code.textContent));
+      var source = trimBlankLines(code.textContent);
       var wrapper = document.createElement('div');
-      var target = document.createElement('pre');
 
       wrapper.className = 'docs-mermaid';
       wrapper.dataset.mermaidProcessed = 'true';
-      target.className = 'mermaid';
-      target.textContent = source;
-
-      wrapper.appendChild(target);
+      wrapper.dataset.mermaidSource = source;
       pre.dataset.mermaidProcessed = 'true';
       pre.replaceWith(wrapper);
-      processed.push(target);
-      return processed;
-    }, []);
+    });
+  }
+
+  function renderMermaidBlocks() {
+    var theme = getPageTheme();
+    var currentToken = ++renderToken;
+    var wrappers = content.querySelectorAll('.docs-mermaid[data-mermaid-source]');
+    var targets = [];
+
+    Array.prototype.forEach.call(wrappers, function(wrapper) {
+      var target = document.createElement('pre');
+      target.className = 'mermaid';
+      target.textContent = normalizeMermaidSource(wrapper.dataset.mermaidSource, theme);
+      wrapper.replaceChildren(target);
+      wrapper.dataset.mermaidRenderedTheme = theme;
+      targets.push(target);
+    });
+
+    if (!targets.length) return Promise.resolve();
+
+    window.mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'loose',
+      theme: 'base'
+    });
+
+    return Promise.resolve(window.mermaid.run({ nodes: targets })).then(function() {
+      if (currentToken !== renderToken) return;
+      lastTheme = theme;
+    });
   }
 
   if (!window.mermaid) {
@@ -271,22 +318,22 @@
   }
 
   try {
-    window.mermaid.initialize({
-      startOnLoad: false,
-      securityLevel: 'loose',
-      theme: 'base'
-    });
-
-    var diagrams = convertMermaidBlocks();
-    if (!diagrams.length) return;
-
-    Promise.resolve(window.mermaid.run({ nodes: diagrams }))
-      .then(function() {
-        tuneRenderedDiagrams();
-      })
+    ensureMermaidWrappers();
+    renderMermaidBlocks()
       .catch(function(error) {
         logger.call(consoleRef, error);
       });
+
+    new MutationObserver(function() {
+      var theme = getPageTheme();
+      if (theme === lastTheme) return;
+      renderMermaidBlocks().catch(function(error) {
+        logger.call(consoleRef, error);
+      });
+    }).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
   } catch (error) {
     logger.call(consoleRef, error);
   }
