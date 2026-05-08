@@ -12,11 +12,11 @@ OSS
 
 ## TL;DR
 
-Use this workflow to create, update, improve, review, refactor, or validate requirements.
-It is for cases where scope, behavior, or non-functional expectations need explicit approval and traceability.
+Use this workflow for end-to-end requirements work: creating, updating, improving, reviewing, refactoring, or validating requirements.
+It is for cases where scope, expected behavior, or non-functional requirements need to be defined or clarified.
 The workflow moves through discovery, optional research, intent capture, outline, draft, validation, and finalization.
 It produces a Discovery Summary, optional Research Notes, Intent Capture, Requirement Outline, Draft Requirement Units, Validation Report, Final Requirements Set, Validation Pack, Traceability Matrix, Change Log, and `requirements-authoring-flow-state.md`.
-The main review gates are intent approval, outline approval, explicit approval for each `<req>` unit, and review of validation findings before final delivery.
+The main review gates are intent approval, outline approval, explicit approval for each requirement unit, review of validation findings, and final approval before delivery.
 If the request is implementation work, use the coding workflow instead.
 
 ## When To Use This Workflow
@@ -72,7 +72,7 @@ For this workflow, the always-active Rosetta behavior changes the experience in 
 | Research | Supporting docs, standards, prior decisions, measurable thresholds when local context is not enough | Gather references, patterns, quality criteria, terminology constraints | Research Notes, state update | No approval gate; may be skipped with reason |
 | Intent capture | Goals, scope boundaries, non-goals, priorities, answers to targeted questions | Restate intent, list assumptions, surface blockers | Intent Capture, state update | Explicit approval required |
 | Outline | Structure constraints, naming rules, ID expectations if you have them | Propose MECE areas, file mapping, area abbreviations, ID strategy, traceability plan | Requirement Outline, state update | Explicit approval required |
-| Draft | Unit-by-unit decisions and corrections | Draft atomic `<req>` units in small batches, use EARS for FRs, keep unresolved units as `Draft` | Draft Requirement Units, state update | Explicit decision for each `<req>` |
+| Draft | Unit-by-unit decisions and corrections | Draft atomic `<req>` units in small batches, use EARS for FRs, keep unresolved units as `Draft` | Draft Requirement Units, state update | Explicit decision for each requirement unit |
 | Validate | Review comments and any deferred items | Run rubric, conflict checks, gap checks, source to goal to req to test traceability | Validation Report, state update | Review findings with user before finalization |
 | Finalization | Final approval decisions | Deliver approved set, update index and links, update change log, complete state | Final Requirements Set, Validation Pack, Traceability Matrix, Change Log, final state update | Final review of delivered set |
 
@@ -105,7 +105,7 @@ flowchart TD
     G --> H{"Outline approved?"}
     H -->|No| G
     H -->|Yes| I["Draft small req batches"]
-    I --> J{"Each <req> decided?"}
+    I --> J{"Each req unit decided?"}
     J -->|No| I
     J -->|Yes| K["Validate"]
     K --> L{"Findings accepted or deferred?"}
@@ -162,9 +162,9 @@ sequenceDiagram
     A->>U: Request outline approval
     U-->>A: Approve or request corrections
     loop Small draft batches
-        A->>E: Draft `<req>` units
+        A->>E: Draft req units
         E-->>A: Draft Requirement Units
-        A->>U: Request explicit decision for each `<req>`
+        A->>U: Request explicit decision for each req unit
         U-->>A: Approve, reject, or defer units
     end
     A->>R: Run rubric, conflict checks, gap checks, traceability checks
@@ -264,13 +264,16 @@ Goal: package only the approved requirement set and its supporting review eviden
 
 Check the artifacts in order.
 
+- `Discovery Summary`: confirm the scope, existing constraints, and affected requirement areas are grounded before drafting starts.
+- `Research Notes`: review them only when the research phase was used, and confirm they support the wording instead of replacing user decisions.
 - `Intent Capture`: confirm the goal, scope boundaries, non-goals, assumptions, and open questions match your intent.
 - `Requirement Outline`: confirm areas do not overlap, missing areas are not hiding in later phases, and the ID strategy is stable enough to survive edits.
 - `Draft Requirement Units`: check each `<req>` for one behavior only, correct actor and trigger, implementation-free wording, stable status, explicit priority, verification method, and Given/When/Then acceptance.
 - `Validation Report`: check that false results have notes, conflict checks are concrete, gap checks are concrete, and traceability really reaches source, goal, requirement, and test.
 - `Final Requirements Set`: confirm it contains only units you approved.
 - `Traceability Matrix`: confirm every important goal and source is linked forward to requirements and later tests.
-- `Change Log`: confirm it clearly separates what was kept, removed, added, clarified, and deferred through assumptions or HITL notes.
+- `Change Log`: confirm it reflects the final approved requirement changes.
+- `requirements-authoring-flow-state.md`: confirm phase status, produced artifacts, and open questions stayed current through the workflow.
 
 Main failure modes to catch before approval:
 

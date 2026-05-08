@@ -12,14 +12,15 @@ OSS. This workflow lives in the core Rosetta instruction set.
 
 ## TL;DR
 
-Use Coding Flow for implementation work when you already know what should change and want Rosetta to force specs, a plan, review gates, validation, and tests.
+Use Coding Flow for implementation work when coding is the main job, including feature work, changes, and bug fixes.
+Rosetta structures that work through specs, a plan, review gates, validation, and tests.
 It is the workflow Rosetta uses for adding, changing, or fixing code when coding is the main job.
 It produces a plan package first, then code, review findings, validation findings, tests, and final validation evidence.
 You must explicitly approve the plan before implementation starts.
 You must explicitly approve the implementation before tests continue.
 The workflow applies at all request sizes. What changes by size is phase scaling, not whether the workflow should be used.
-Medium and large tasks add reviewer and validator phases before those user checkpoints.
-For small tasks, the source says the plan-review and implementation-review checkpoints may be combined. This page treats that as one explicit user approval path that still must happen before tests continue.
+Medium and large tasks add separate discovery, review, and validator work where the source marks those phases as `MEDIUM,LARGE`.
+For small tasks, the source says the plan-review and implementation-review checkpoints may be combined. This page keeps that conservative: approval is still explicit and tests still do not continue without it, but the source does not define a more detailed small-task checkpoint shape than that.
 
 ## When To Use This Workflow
 
@@ -72,19 +73,19 @@ Rosetta provides instructions. Coding agents act on them. Rosetta itself does no
 
 ## Workflow At A Glance
 
-| Phase | What you provide | What agents do | Artifacts | Review gate |
-|---|---|---|---|---|
-| 1. Discovery | Request, project context, existing constraints | Gather affected areas, dependencies, constraints, requirements | `discovery-notes.md` for medium and large tasks; inline discovery for small tasks; state update | None |
-| 2. Tech plan | Request, discovery notes when present, architecture context | Write specs and execution plan | `<FEATURE>-SPECS.md`, `<FEATURE>-PLAN.md` for medium and large tasks; small tasks may get this in chat; state update | None |
-| 3. Review plan | Specs, plan, request, discovery notes | Inspect plan and spec quality against intent | Review findings and recommendations; state update | Reviewer for medium and large tasks |
-| 4. User review plan | Specs, plan, review findings | Present the plan package and collect approval or revision feedback | Approved plan or revised draft | User approval required |
-| 5. Implementation | Approved specs and plan | Implement approved scope, make build pass, update affected docs briefly | Code changes, passing build, brief doc updates, state update | None |
-| 6. Review code | Diff, specs, plan | Inspect implementation and required doc updates | Review findings and recommendations; state update | Reviewer |
-| 7. Implementation validation | Diff, specs, plan, review findings | Verify spec coverage, gaps, and factual consistency | Validation findings; state update | Validator for medium and large tasks |
-| 8. User review implementation | Implementation summary, review findings, validation findings | Present implementation package and collect approval or revision feedback | Approved implementation or revision request | User approval required |
-| 9. Tests | Approved implementation, specs | Write and run isolated, idempotent tests | Passing tests with coverage evidence; state update | None |
-| 10. Review tests | Tests, specs, implementation | Inspect scenario coverage, edge cases, and mocking correctness | Review findings and recommendations; state update | Reviewer for medium and large tasks |
-| 11. Final validation | Full delivery set | Perform final by-dependency verification and cleanup checks | Final validation report; state update | Validator for medium and large tasks |
+| Phase | Size scaling from source | What you provide | What agents do | Artifacts | Review gate |
+|---|---|---|---|---|---|
+| 1. Discovery | `MEDIUM,LARGE`; small stays inline with the orchestrating agent | Request, project context, existing constraints | Gather affected areas, dependencies, constraints, requirements | `discovery-notes.md` for medium and large tasks; inline discovery for small tasks; state update | None |
+| 2. Tech plan | `ALL`; small may keep output in chat instead of files | Request, discovery notes when present, architecture context | Write specs and execution plan | `<FEATURE>-SPECS.md`, `<FEATURE>-PLAN.md` for medium and large tasks; small tasks may get this in chat; state update | None |
+| 3. Review plan | `MEDIUM,LARGE` | Specs, plan, request, discovery notes | Inspect plan and spec quality against intent | Review findings and recommendations; state update | Reviewer for medium and large tasks |
+| 4. User review plan | `ALL`; small may later combine this checkpoint with phase 8 | Specs, plan, review findings | Present the plan package and collect approval or revision feedback | Approved plan or revised draft | User approval required |
+| 5. Implementation | `ALL` | Approved specs and plan | Implement approved scope, make build pass, update affected docs briefly | Code changes, passing build, brief doc updates, state update | None |
+| 6. Review code | `ALL` | Diff, specs, plan | Inspect implementation and required doc updates | Review findings and recommendations; state update | Reviewer |
+| 7. Implementation validation | `MEDIUM,LARGE`; small uses a lighter inline check | Diff, specs, plan, review findings | Verify spec coverage, gaps, and factual consistency | Validation findings; state update | Validator for medium and large tasks |
+| 8. User review implementation | `ALL`; small may combine this checkpoint with phase 4 | Implementation summary, review findings, validation findings | Present implementation package and collect approval or revision feedback | Approved implementation or revision request | User approval required |
+| 9. Tests | `ALL` | Approved implementation, specs | Write and run isolated, idempotent tests | Passing tests with coverage evidence; state update | None |
+| 10. Review tests | `MEDIUM,LARGE` | Tests, specs, implementation | Inspect scenario coverage, edge cases, and mocking correctness | Review findings and recommendations; state update | Reviewer for medium and large tasks |
+| 11. Final validation | `MEDIUM,LARGE`; small confirms build and tests passed | Full delivery set | Perform final by-dependency verification and cleanup checks | Final validation report; state update | Validator for medium and large tasks |
 
 ## Mermaid Flowchart
 
@@ -108,18 +109,27 @@ flowchart TD
   classDef hitl fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
   classDef verify fill:#dcfce7,stroke:#15803d,color:#052e16,stroke-width:2px;
 
-  A[1 Discovery<br/>inline for small, subagent for M/L] --> B[2 Tech plan]
-  B --> C[3 Review plan<br/>M/L]
+  A["1 Discovery
+small: inline
+medium/large: subagent"] --> B["2 Tech plan
+all sizes"]
+  B --> C["3 Review plan
+medium/large"]
   C --> D[4 User review plan]
   D -->|Approved| E[5 Implementation]
   D -->|Revise| B
   E --> F[6 Review code]
-  F --> G[7 Implementation validation<br/>M/L]
+  F --> G["7 Implementation validation
+medium/large
+small: inline check"]
   G --> H[8 User review implementation]
   H -->|Approved| I[9 Tests]
   H -->|Revise| E
-  I --> J[10 Review tests<br/>M/L]
-  J --> K[11 Final validation<br/>M/L]
+  I --> J["10 Review tests
+medium/large"]
+  J --> K["11 Final validation
+medium/large
+small: build and tests confirmed"]
 
   class A,B,C,E,F,I,J work;
   class D,H hitl;
@@ -167,7 +177,7 @@ sequenceDiagram
   O->>S: Run discovery when task size requires it
   S-->>A: discovery-notes.md
   O->>S: Create specs and plan
-  S-->>A: <FEATURE>-SPECS.md and <FEATURE>-PLAN.md
+  S-->>A: Specs and plan artifacts
   O->>S: Review plan for medium and large tasks
   S-->>A: Review findings
   O-->>U: Present plan package for approval
@@ -178,7 +188,7 @@ sequenceDiagram
   S-->>A: Review findings and validation findings
   O-->>U: Present implementation package for approval
   U-->>O: Approve or request revision
-  Note over O,U: Small tasks may combine the two user checkpoints into one explicit approval path, but tests still require explicit approval before they continue
+  Note over O,U: For small tasks, the source allows phases 4 and 8 to be combined. This page keeps that conservative: approval stays explicit, and tests do not continue without it.
   O->>S: Write tests and run final checks
   S-->>A: Passing tests and final validation report
   O-->>U: Deliver final status with evidence
@@ -254,7 +264,7 @@ Approved plan or a revised draft after feedback.
 **Review and approval expectations**  
 This is the first mandatory HITL gate on all task sizes. The workflow requires approval text such as `Yes, I reviewed the plan` or `Approve, the plan and specs were reviewed`.
 
-For small tasks, the source also says this checkpoint may be combined with phase 8. Treat that as one explicit approval path, not as permission to skip approval. Tests still do not proceed without explicit approval.
+For small tasks, the source also says this checkpoint may be combined with phase 8. Treat that as one explicit approval path, not as permission to skip approval. The source does not define a more detailed combined-checkpoint sequence, so this page does not invent one. Tests still do not proceed without explicit approval.
 
 ### 5. Implementation
 
@@ -322,7 +332,7 @@ The coding agent presents the implementation, review findings, and validation fi
 Approved implementation or a revision request.
 
 **Review and approval expectations**  
-This is the second mandatory HITL gate on all task sizes. The workflow requires approval text such as `Yes, I approve the implementation`. Small tasks may combine this with phase 4, but approval before testing is still mandatory.
+This is the second mandatory HITL gate on all task sizes. The workflow requires approval text such as `Yes, I approve the implementation`. Small tasks may combine this with phase 4, but approval before testing is still mandatory, and this page keeps that wording conservative because the source does not define the exact combined checkpoint flow.
 
 ### 9. Tests
 

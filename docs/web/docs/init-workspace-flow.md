@@ -18,7 +18,7 @@ The coding agent detects mode, optionally creates shells, analyzes the repositor
 
 The main artifacts are `agents/init-workspace-flow-state.md`, discovery docs, pattern docs, and the core workspace docs used by later workflows.
 
-The real review gate is Phase 7, where you answer reflective questions and correct gaps. Phase 8 then verifies completeness and tells you to start a new chat before normal work.
+Phase 7 is the main question-and-correction checkpoint, where you answer reflective questions and correct gaps. Phase 8 then verifies completeness and tells you to start a new chat before normal work.
 
 ## When To Use This Workflow
 
@@ -42,7 +42,7 @@ The real review gate is Phase 7, where you answer reflective questions and corre
 - Be ready to answer questions about business purpose, architecture boundaries, module ownership, and conventions.
 - If this is an upgrade, identify any human-curated docs or rules that must be preserved.
 - If this is a composite workspace, know which repositories belong to the workspace and which docs must stay repo-local.
-- Do not expect local rules generation from this workflow in the current source set. The top-level workflow includes a Rules phase in source, but marks it disabled.
+- Do not expect local rules generation from this workflow. The active top-level workflow keeps Phase 4 disabled and continues directly to Patterns.
 
 For shared setup and installation details, use the [Usage Guide](/rosetta/docs/usage-guide/) and [Overview](/rosetta/docs/overview/).
 
@@ -73,7 +73,7 @@ In practice, that changes the user experience in four ways:
 | 1. Context | Repository access and current session context | Detect install, upgrade, or plugin mode, detect composite status, inventory existing Rosetta files | `agents/init-workspace-flow-state.md` updated with mode, flags, and inventory | No |
 | 2. Shells | Nothing extra unless upgrade context matters | Generate or preserve shells, bootstrap rule, and load-context shell, or skip in plugin mode | Shell configs, bootstrap rule, load-context shell, state update | No |
 | 3. Discovery | Codebase access | Analyze tech stack, structure, dependencies, file count, and composite layout | `docs/TECHSTACK.md`, `docs/CODEMAP.md`, `docs/DEPENDENCIES.md`, state update | No |
-| 4. Rules | Nothing. This phase is disabled in the active workflow. | Record skipped status and continue | Explicit skipped status in state | No. Present in source, skipped in active workflow |
+| 4. Rules | Nothing. This phase is disabled in the active workflow. | Record disabled or skipped status and continue | Explicit disabled or skipped status in state | No. Disabled in the active workflow |
 | 5. Patterns | Source code and module structure | Extract recurring coding and architecture patterns, often with module-scoped subagents | `docs/PATTERNS/INDEX.md`, pattern files, `docs/PATTERNS/CHANGES.md`, state update | No |
 | 6. Documentation | Source code plus outputs from Phases 3 and 5 | Build the core workspace docs and agent memory files | `docs/CONTEXT.md`, `docs/ARCHITECTURE.md`, `agents/IMPLEMENTATION.md`, `docs/ASSUMPTIONS.md`, `agents/MEMORY.md`, state update | No |
 | 7. Questions | Answers to reflective questions | Review docs for gaps, ask targeted questions, update affected files through subagents | Updated docs, resolved or deferred gaps in state | Yes |
@@ -84,17 +84,17 @@ In practice, that changes the user experience in four ways:
 ```mermaid
 %%{init: {'theme':'base','themeVariables':{'primaryColor':'#DCEEFF','primaryTextColor':'#0B1F33','primaryBorderColor':'#1D4ED8','secondaryColor':'#E9F7EF','tertiaryColor':'#FFF4D6','lineColor':'#2563EB','textColor':'#0B1F33','fontFamily':'ui-sans-serif'}}}%%
 flowchart TD
-    A["Start init request"] --> B["P1 Context<br/>Detect mode and inventory files"]
+    A["Start init request"] --> B["P1 Context: Detect mode and inventory files"]
     B --> C{"Plugin mode?"}
     C -- "Yes" --> D["P2 Shells skipped"]
     C -- "No" --> E["P2 Create or preserve shells"]
-    D --> F["P3 Discovery<br/>Create TECHSTACK, CODEMAP, DEPENDENCIES"]
+    D --> F["P3 Discovery: Create TECHSTACK, CODEMAP, DEPENDENCIES"]
     E --> F
-    F --> H["P4 Rules skipped<br/>Phase disabled in active workflow"]
+    F --> H["P4 Rules skipped: Phase disabled in active workflow"]
     H --> J["P5 Extract patterns"]
     J --> K["P6 Create core workspace docs"]
-    K --> L["P7 Ask reflective questions<br/>Update affected files"]
-    L --> M["P8 Verify completeness<br/>Mark COMPLETE"]
+    K --> L["P7 Ask reflective questions: Update affected files"]
+    L --> M["P8 Verify completeness: Mark COMPLETE"]
     M --> N["User reviews results"]
     N --> O["Start a new chat"]
 
@@ -192,19 +192,19 @@ sequenceDiagram
 
 ### Phase 4. Rules
 
-**Goal:** carry the disabled phase forward transparently instead of pretending local rules were generated.
+**Goal:** carry the disabled phase forward transparently instead of implying local rules generation is available here.
 
 **Required user input:** none.
 
 **Agent actions:**
-- Carry the phase as skipped because the top-level workflow marks it disabled
+- Carry the phase as disabled and continue to Patterns without generating local rules
 - Preserve state continuity and continue to Patterns
 
-**Produced artifacts:** explicit skipped status in state
+**Produced artifacts:** explicit disabled or skipped status in state
 
-**Review expectation:** confirm the workflow did not generate unexpected local rules files.
+**Review expectation:** confirm the workflow did not generate unexpected local rules files and that Phase 4 was reported as disabled.
 
-**Watch for:** requests to initialize rules should not make this page promise active rules generation when the current workflow source disables it.
+**Watch for:** requests to initialize rules should not make this page promise active rules generation when the active workflow source disables that phase.
 
 ### Phase 5. Patterns
 

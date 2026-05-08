@@ -12,7 +12,7 @@ permalink: /docs/testgen-flow/
 
 Use `testgen-flow` when a Jira ticket, epic, or story needs grounded requirements and structured QA scenarios before implementation or automation starts. The workflow runs sequentially: load project config, collect Jira and Confluence evidence, analyze contradictions and gaps, stop for human answers, generate a requirements document, generate TestRail-ready test cases, and optionally export them to TestRail.
 
-Expect one phase at a time, a state file updated after each phase, and explicit confirmation before moving forward. The hard gate is Phase 3: the workflow does not continue to requirements generation until the user answers the generated clarification questions.
+Expect one phase at a time, a state file updated after each phase, and explicit confirmation before moving forward. For first-time use in a repo, Phase 0 creates `testgen-project-config.md`, asks the user to confirm or correct the default retrieval scheme, and saves that answer for future runs. The hard gate is Phase 3: the workflow does not continue to requirements generation until the user answers the generated clarification questions and then explicitly approves continuation.
 
 ## When To Use This Workflow
 
@@ -36,13 +36,13 @@ Prepare the minimum inputs that materially affect output quality:
 - A Jira ticket key or Jira ticket URL.
 - Confluence page URLs if you already know the relevant pages. This lets the workflow skip weak auto-search results.
 - Access to the Jira and Confluence retrieval path used in your project.
-- If you want Phase 6, access to TestRail and the ability to provide or create the target section and share its `section_id`.
+- If you want Phase 6, access to TestRail and the ability to provide or create the target section and share its `section_id`. Project and suite details may also be needed when your setup cannot detect them from the current ticket and user profile.
 - Time to review every phase result, especially `questions.md`, `requirements.md`, and `test-scenarios.md`.
 
 Workflow-specific preparation that improves results:
 
 - Maintain a project-level `testgen-project-config.md` in the agent-specific directory so the workflow knows your expected retrieval process and any mandatory reference sources.
-- If that config does not exist yet, expect Phase 0 to ask whether the default Jira-plus-Confluence retrieval scheme is correct and to store your answer for future runs.
+- If that config does not exist yet, expect Phase 0 to create it, ask a first-time setup question about whether the default Jira-plus-Confluence retrieval scheme is correct, and store your YES or NO answer plus any retrieval details for future runs.
 - Point the agent to critical supporting material such as domain glossaries, compliance rules, API contracts, DDL, and configuration files when Jira and Confluence alone are incomplete.
 - If your project relies on custom source systems beyond default Jira and Confluence retrieval, define that explicitly in the project config instead of expecting the agent to infer it.
 
@@ -85,31 +85,30 @@ Rosetta itself provides instructions and routing. The coding agent performs the 
 
 | Phase | What you provide | What agents do | What you get | Review gate |
 |---|---|---|---|---|
-| 0. Project Config Loading | Jira ticket key or URL, project retrieval expectations if no config exists | Parse ticket, create ticket workspace, load or create project config, record initial state | `testgen-state.md`, `initial-data.md`, project-level `testgen-project-config.md` if missing | Confirm setup before Phase 1 |
+| 0. Project Config Loading | Jira ticket key or URL, project retrieval expectations if no config exists | Parse ticket, create ticket workspace, load or create project config, ask the first-time retrieval setup question when the config is missing, record initial state | `testgen-state.md`, `initial-data.md`, project-level `testgen-project-config.md` if missing | Confirm setup before Phase 1 |
 | 1. Data Collection | Jira input, optional Confluence URLs, extra page IDs if search fails | Retrieve Jira fields, comments, Confluence pages, and child pages; capture raw evidence | `raw-data.md` | Confirm collected sources before Phase 2 |
 | 2. Gap and Contradiction Analysis | No new input unless source retrieval was incomplete | Identify contradictions, gaps, ambiguities, cross-source conflicts, and risk | `analysis.md` | Confirm findings before Phase 3 |
-| 3. Question Generation and User Input | Answers to clarification questions | Generate prioritized questions, wait, validate answers, structure them | `questions.md`, `answers.md` | Hard HITL gate. Must answer before Phase 4 |
+| 3. Question Generation and User Input | Answers to clarification questions and explicit approval to continue | Generate prioritized questions, wait, validate answers, structure them | `questions.md`, `answers.md` | Hard HITL gate. Must answer, then explicitly approve Phase 4 |
 | 4. Requirements Document Generation | Validated answers and any final clarifications | Synthesize evidence into user stories, FRs, NFRs, constraints, dependencies, assumptions, and traceability | `requirements.md` | Review requirements before Phase 5 |
 | 5. Test Case Generation | Approved or reviewed requirements direction | Generate prioritized TestRail-ready test cases, merge redundant scenarios, update traceability | `test-scenarios.md`, updated traceability in `requirements.md` | Review scenarios before Phase 6 or before closing |
-| 6. Test Case Export | TestRail access plus target `section_id`; project and suite details only when your setup overrides defaults | Verify connection, map cases, export to TestRail, record export IDs | Updated `test-scenarios.md`, updated `testgen-state.md` | Confirm export destination and review export results |
+| 6. Test Case Export | TestRail access plus target `section_id`; project and suite details when your setup cannot detect them from the current ticket and user profile | Verify connection, map cases, export to TestRail, record export IDs | Updated `test-scenarios.md`, updated `testgen-state.md` | Confirm export destination and review export results |
 
 ## Mermaid Flowchart
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables': {'background':'#0f172a','primaryColor':'#dbeafe','primaryTextColor':'#0f172a','primaryBorderColor':'#1d4ed8','lineColor':'#93c5fd','secondaryColor':'#dcfce7','secondaryTextColor':'#052e16','secondaryBorderColor':'#16a34a','tertiaryColor':'#fef3c7','tertiaryTextColor':'#78350f','tertiaryBorderColor':'#d97706'}}}%%
 flowchart TD
-    A["Start: Jira ticket or URL"] --> B["Phase 0: Load or create project config"]
-    B --> C["Phase 1: Collect Jira + Confluence evidence"]
-    C --> D["Phase 2: Analyze contradictions, gaps, ambiguities"]
-    D --> E["Phase 3: Generate questions"]
-    E --> F{"User answered and answers validated?"}
-    F -- "No" --> E
-    F -- "Yes" --> G["Phase 4: Generate requirements.md"]
-    G --> H["Phase 5: Generate test-scenarios.md"]
-    H --> I{"Export to TestRail?"}
-    I -- "No" --> J["Finish with local artifacts"]
-    I -- "Yes" --> K["Phase 6: Export to TestRail"]
-    K --> L["Finish with TestRail IDs and export summary"]
+    A[Start with Jira ticket or URL] --> B[Phase 0 load or create project config]
+    B --> C[Phase 1 collect Jira and Confluence evidence]
+    C --> D[Phase 2 analyze contradictions gaps and ambiguities]
+    D --> E[Phase 3 generate questions]
+    E --> F{Answers validated and user explicitly approved?}
+    F -- No --> E
+    F -- Yes --> G[Phase 4 generate requirements.md]
+    G --> H[Phase 5 generate test-scenarios.md]
+    H --> I{Export to TestRail?}
+    I -- No --> J[Finish with local artifacts]
+    I -- Yes --> K[Phase 6 export to TestRail]
+    K --> L[Finish with TestRail IDs and export summary]
 
     classDef start fill:#dbeafe,stroke:#1d4ed8,color:#0f172a;
     classDef phase fill:#dcfce7,stroke:#16a34a,color:#052e16;
@@ -125,7 +124,6 @@ flowchart TD
 ## Mermaid Sequence Diagram
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables': {'background':'#0f172a','actorBkg':'#dbeafe','actorBorder':'#1d4ed8','actorTextColor':'#0f172a','activationBorderColor':'#16a34a','activationBkgColor':'#dcfce7','signalColor':'#93c5fd','signalTextColor':'#e5e7eb','labelBoxBkgColor':'#fef3c7','labelBoxBorderColor':'#d97706','labelTextColor':'#78350f','loopTextColor':'#e5e7eb','noteBkgColor':'#111827','noteBorderColor':'#475569','noteTextColor':'#e5e7eb'}}}%%
 sequenceDiagram
     participant U as User
     participant R as Rosetta instructions
@@ -139,9 +137,10 @@ sequenceDiagram
     A->>X: Retrieve Jira issue and Confluence pages
     A->>F: Write raw-data.md and analysis.md
     A->>F: Generate questions.md
-    A-->>U: Stop for answers and approval to continue
+    A-->>U: Stop for answers and explicit approval to continue
     U->>A: Fill questions.md or provide clarifications
     A->>F: Validate answers and write answers.md
+    A-->>U: Wait for user to reply yes or approved
     A->>F: Generate requirements.md
     A-->>U: Request review before test generation
     U->>A: Approve or correct requirements direction
@@ -168,7 +167,7 @@ What the agent does:
 - Parses the Jira input.
 - Creates `agents/testgen/{TICKET-KEY}/`.
 - Finds or creates the project-level `testgen-project-config.md`.
-- Asks how retrieval should work if that config is missing or empty.
+- If the config is missing, asks whether the default Jira-plus-Confluence retrieval scheme is accurate, waits for a YES or NO answer, and records any project-specific retrieval details the user provides.
 - Writes `initial-data.md` and initializes `testgen-state.md`.
 
 What you get:
@@ -179,6 +178,7 @@ What you get:
 What to watch for:
 - The project config should capture how your team retrieves required information, not just the default Jira-plus-Confluence path.
 - If the project depends on extra sources, this is the phase to say so.
+- On a first run, make sure the created config captures the user's answer instead of leaving the default retrieval scheme implicit.
 
 ### Phase 1: Data Collection
 
@@ -235,7 +235,7 @@ Goal:
 
 What you provide:
 - Answers to the generated questions.
-- Explicit approval to continue after answers are validated.
+- Explicit approval to continue after answers are validated. The approval must be an explicit `yes` or `approved`.
 
 What the agent does:
 - Turns contradictions, gaps, and ambiguities into prioritized questions.
@@ -244,6 +244,7 @@ What the agent does:
 - Waits for the user to fill or answer them.
 - Validates that critical questions are answered.
 - Writes structured responses to `answers.md`.
+- Waits for an explicit continuation approval after validation instead of treating comments or suggestions as approval.
 
 What you get:
 - A documented clarification package with answered questions and any remaining unknowns.
@@ -252,6 +253,7 @@ What to watch for:
 - This is the hard HITL gate. The workflow is not supposed to continue without human answers.
 - Critical questions must not be left blank.
 - If the user marks items `UNKNOWN`, the workflow should carry them forward as assumptions, not silently resolve them.
+- Follow-up questions, suggestions, or review comments are not approval by themselves.
 
 ### Phase 4: Requirements Document Generation
 
@@ -306,7 +308,8 @@ Goal:
 - Export approved test cases into TestRail and record the mapping back to the generated artifacts.
 
 What you provide:
-- Target TestRail `section_id`, plus project or suite details only when your setup overrides defaults.
+- Target TestRail `section_id`, because the workflow requires the user to supply or create the destination section.
+- Project or suite details when your setup cannot detect them from the current ticket and user profile.
 - Manual section creation if the environment does not support section creation through the available path.
 
 What the agent does:
@@ -322,6 +325,7 @@ What you get:
 
 What to watch for:
 - Confirm the destination section is correct before export.
+- Do not assume the workflow can create the TestRail section for you; supplying `section_id` is part of the prerequisite.
 - Review failed exports individually instead of assuming the entire export succeeded.
 - Re-running export can create duplicates; that behavior should be understood before repeating the phase.
 
@@ -330,9 +334,10 @@ What to watch for:
 Review duties by stage:
 
 - After Phase 0, verify the project config reflects your real retrieval process and supporting sources.
+- After a first-run Phase 0, verify the new `testgen-project-config.md` was actually created and that it captures your YES or NO retrieval answer plus any extra sources.
 - After Phase 1, verify the right Jira ticket, Confluence pages, and child pages were captured.
 - After Phase 2, check that contradictions, gaps, and ambiguities are evidence-based and not invented.
-- After Phase 3, answer every critical question and mark unresolved items explicitly instead of leaving blanks.
+- After Phase 3, answer every critical question, mark unresolved items explicitly instead of leaving blanks, and then reply with explicit approval such as `yes` or `approved` when you want Phase 4 to start.
 - After Phase 4, review `requirements.md` for scope, user roles, acceptance criteria, NFR thresholds, constraints, assumptions, and traceability.
 - After Phase 5, review `test-scenarios.md` for requirement coverage, priority, missing negative cases, and over-merged parameterized scenarios.
 - After Phase 6, review the export summary and spot-check TestRail cases for field mapping errors.

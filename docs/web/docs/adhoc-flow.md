@@ -15,7 +15,7 @@ OSS
 Use Ad-hoc Flow when no fixed Rosetta workflow matches the task cleanly.
 The coding agent builds a custom plan from Rosetta building blocks, tracks it through plan-manager, and executes that plan step by step.
 Use it for small mixed tasks, unusual requests, or work that needs a custom sequence of discovery, planning, execution, review, and validation.
-The constant artifact is the tracked plan. Other artifacts depend on the chosen building blocks.
+The constant artifact is the tracked plan managed through `plan-manager`. Other artifacts depend on the chosen building blocks.
 For medium and large requests, plan review and explicit user approval happen before execution.
 The final gate is a review against the original intent, not only against the latest edited plan.
 
@@ -75,9 +75,11 @@ For Ad-hoc Flow, that changes the user experience in a few visible ways:
 
 ## Workflow At A Glance
 
+Prep, context loading, and workflow routing happen before the phase model below. Once Ad-hoc Flow is selected, the workflow phases start with Build plan.
+
 | Phase | What you provide | What agents do | What artifacts appear | Review gate |
 |---|---|---|---|---|
-| Build plan | Desired outcome, boundaries, expected checks | Sequence building blocks into a tracked execution plan and upsert it as needed | Tracked execution plan managed by plan-manager | No user gate defined here for small work |
+| Build plan | Desired outcome, boundaries, expected checks | Sequence building blocks into a tracked execution plan and upsert it as needed | Tracked plan artifact managed by `plan-manager` | No user gate defined here for small work |
 | Review plan | Feedback and approval decision | Review completeness, sequencing, dependencies, and prompt clarity | Reviewed plan summary and plan fixes | Required for medium and large requests |
 | Execute plan | Answers to questions, approvals, newly discovered facts | Pull next step, execute or delegate, update status, adapt the plan | Task-specific artifacts defined by the chosen building blocks | Any HITL gate included in the plan |
 | Review and summarize | Final comments if needed | Validate against original intent and summarize completion | Final summary, optional memory update after failures | Final user review of results |
@@ -103,8 +105,8 @@ For Ad-hoc Flow, that changes the user experience in a few visible ways:
 }}}%%
 flowchart TD
     A[User request] --> B[Rosetta prep and context load]
-    B --> C[Choose Ad-hoc building blocks]
-    C --> D[Create or update tracked plan]
+    B --> C[Ad-hoc Flow selected]
+    C --> D[Build plan from selected building blocks]
     D --> E{Request size}
     E -->|Small| G[Execute next planned step]
     E -->|Medium or large| F[Review plan]
@@ -157,7 +159,7 @@ sequenceDiagram
 
     U->>O: Describe mixed or unusual task
     R->>O: Enforce prep, context load, and workflow routing
-    O->>P: Create tracked plan from building blocks
+    O->>P: Build tracked plan from selected building blocks
     alt Medium or large request
         O->>S: Review plan completeness and sequencing
         S-->>O: Findings and corrections
@@ -177,6 +179,8 @@ sequenceDiagram
 
 ## Phases
 
+Prep and workflow selection happen before the phase model below. Within Ad-hoc Flow itself, the first workflow phase is Build plan.
+
 ### Build plan
 
 **Goal**
@@ -192,12 +196,12 @@ Create a custom execution plan instead of forcing the task into a fixed phase te
 
 - Use the chosen building blocks to define phases and steps
 - Use `plan-manager` as the main planner
-- Create or update a tracked `plan.json`
+- Create or update the tracked plan artifact
 - Use reasoning for larger or more complex work when needed
 
 **Produced artifacts**
 
-- A tracked execution plan managed by plan-manager
+- A tracked execution plan managed by `plan-manager`
 - Plan phases and steps with dependencies, assigned roles, and expected prompts
 
 **Review and approval expectations**
@@ -225,7 +229,7 @@ Catch sequencing errors, missing work, weak prompts, and dependency problems bef
 **Produced artifacts**
 
 - Reviewed plan summary
-- Updated `plan.json` if the review finds gaps
+- Updated tracked plan if the review finds gaps
 
 **Review and approval expectations**
 
@@ -255,7 +259,7 @@ Run the approved custom plan step by step until all planned work is complete.
 **Produced artifacts**
 
 - Whatever the selected building blocks define, such as discovery notes, requirements notes, technical specs, implementation changes, review findings, or validation evidence
-- Updated `plan.json` showing current step and phase status
+- Updated tracked plan showing current step and phase status
 
 **Review and approval expectations**
 
@@ -293,7 +297,8 @@ Check final completion against the original request, not only against the latest
 
 Review Ad-hoc Flow in the same order the workflow uses it.
 
-1. Review `plan.json` first.
+1. Review the tracked plan first.
+   For plans managed through `plan-manager`, this tracked artifact is a local `plan.json` file.
    Check that the selected building blocks fit the actual task.
    Check that phases and steps have clear boundaries, dependencies, and expected artifacts.
    Check that approval gates appear before risky or scope-shaping work.
@@ -311,7 +316,7 @@ Failure modes to challenge immediately:
 
 - A plan that names generic steps but not concrete artifacts
 - Missing review or validation work for risky steps
-- Status marked complete in `plan.json` without matching evidence
+- Status marked complete in the tracked plan without matching evidence
 - Scope expansion caused only by agent initiative
 - Parallel delegated work that collides on the same files or responsibilities
 
@@ -328,8 +333,12 @@ Failure modes to challenge immediately:
 
 Always:
 
-- A tracked plan file named `plan.json`
+- A tracked plan artifact managed through `plan-manager`
 - A final summary checked against the original intent
+
+When the workflow uses `plan-manager`:
+
+- The tracked plan artifact is a local `plan.json` plan file
 
 When the selected building blocks require them:
 

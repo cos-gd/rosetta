@@ -22,7 +22,7 @@ If you want action, you must explicitly tell the coding agent to start the selec
 ## When To Use This Workflow
 
 - You want a grounded answer to `what can Rosetta do here?`
-- You need help choosing between workflows, skills, or subagents.
+- You need help choosing between workflows, skills, or agents.
 - You want a 101 explanation of how to use a specific Rosetta capability.
 - You want to start with guidance and then switch into a real execution workflow in the same session.
 
@@ -51,8 +51,8 @@ Example prompts:
 
 - You ask in plain language. The coding agent reads your request, loads Rosetta instructions, and uses this workflow to answer.
 - Rosetta provides instructions only. It does not see your request, your code, or your project data. The coding agent sees those and acts on Rosetta guidance.
-- The answer is grounded in live Rosetta capability listings and acquired instruction files, not only the model's built-in memory.
-- Rosetta's progressive loading keeps this workflow narrow. The agent lists capabilities first, then loads only the matching workflow, skill, or agent definitions.
+- The answer is grounded in Rosetta capability listings and the matching instruction files, not only the model's built-in memory.
+- Rosetta keeps this workflow narrow. The agent lists capabilities first, then loads only the matching workflow, skill, or agent definitions.
 - Help can turn into action without restarting the session. If you explicitly ask to proceed, the coding agent adopts the selected workflow and `self-help-flow` stops.
 
 ## Workflow At A Glance
@@ -85,15 +85,15 @@ Example prompts:
   }
 }}%%
 flowchart TD
-    A["User asks a capability question"] --> B["Phase 1<br/>List capabilities"]
+    A["User asks a capability question"] --> B["Phase 1: List capabilities"]
     B --> C["Capability Catalog"]
-    C --> D["Phase 2<br/>Match and acquire"]
+    C --> D["Phase 2: Match and acquire"]
     D --> E["Matched capabilities"]
-    E --> F["Phase 3<br/>Guide"]
+    E --> F["Phase 3: Guide"]
     F --> G{"Need deeper help or action?"}
     G -->|No| H["Stop with guidance message"]
     G -->|Yes, explain more| I["Refine guidance in self-help"]
-    G -->|Yes, start workflow| J["Phase 4<br/>Handoff"]
+    G -->|Yes, start workflow| J["Phase 4: Handoff"]
     J --> K["Selected workflow starts at phase 1"]
 
     classDef phase fill:#E8F1FF,stroke:#1D4ED8,color:#0F172A,stroke-width:2px;
@@ -137,15 +137,12 @@ sequenceDiagram
     actor U as User
     participant A as Coding Agent
     participant R as Rosetta Instructions
-    participant D as Discoverer Subagent
 
     U->>A: Ask what Rosetta can do
     A->>R: List workflows, skills, agents
-    A->>D: Build capability catalog
-    D-->>A: Capability Catalog
+    A->>A: Build capability catalog
     A->>R: Acquire matched capabilities
-    A->>D: Extract purpose, inputs, outputs, gates
-    D-->>A: Matched Capabilities
+    A->>A: Extract purpose, inputs, outputs, gates
     A-->>U: Guidance message with next actions
     U->>A: Start the recommended workflow
     A->>R: Acquire selected workflow if needed
@@ -224,7 +221,7 @@ Turn the catalog and matched instructions into first-time-user guidance.
 - Synthesize the catalog and matched capabilities into 101-level guidance
 - Explain what each matched capability does, when to use it, what to expect, and how to invoke it
 - Provide concrete next actions tied to your question
-- Polish the final guidance before presenting it to the user
+- Present the guidance with concrete next actions
 
 **Produced artifacts**
 
@@ -303,14 +300,6 @@ Check the guidance message before you approve a handoff.
 - Asking a generic capability question when you really need a workflow recommendation for one concrete job
 - Forgetting that the selected workflow starts over at its own phase 1 after handoff
 
-## Source Files
+## Source
 
-Authoritative workflow sources used for this page:
-
-- [`instructions/r2/core/workflows/self-help-flow.md`](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/self-help-flow.md)
-- [`docs/web/docs/usage-guide.md`](https://github.com/griddynamics/rosetta/blob/main/docs/web/docs/usage-guide.md)
-- [`docs/web/docs/overview.md`](https://github.com/griddynamics/rosetta/blob/main/docs/web/docs/overview.md)
-- [`docs/web/docs/review.md`](https://github.com/griddynamics/rosetta/blob/main/docs/web/docs/review.md)
-- [`docs/web/docs/developer-guide.md`](https://github.com/griddynamics/rosetta/blob/main/docs/web/docs/developer-guide.md)
-
-This workflow is defined in a single workflow file. No separate phase files exist for `self-help-flow`.
+This page is based on `instructions/r2/core/workflows/self-help-flow.md`.

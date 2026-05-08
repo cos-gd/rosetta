@@ -76,16 +76,18 @@ For this workflow, the always-active Rosetta behavior changes the user experienc
 
 ## Workflow At A Glance
 
-| Phase | What you provide | What the coding agent does | What you get | Review gate |
+| Phase | What you provide | What the coding agent does | What you get | Mandatory workflow stop |
 |---|---|---|---|---|
-| 1. Data Collection | TestRail case, Confluence reference | Reads external QA/business context and creates the test plan | `agents/plans/aqa-<test-name>.md`, initial `agents/aqa-state.md` | No mandatory workflow gate |
+| 1. Data Collection | TestRail case, Confluence reference | Reads external QA/business context and creates the test plan | `agents/plans/aqa-<test-name>.md`, initial `agents/aqa-state.md` | None |
 | 2. Requirements Clarification | Answers about assertions, data, edge cases, scope | Turns vague steps into explicit, measurable assertions | Updated test plan with assertions, edge cases, test data rules | Mandatory user answers before Phase 3 |
-| 3. Code Analysis | Repository test code, project docs, user instruction files | Analyzes framework, conventions, Page Objects, similar tests, helpers, optional frontend code | Updated test plan with architecture findings and target test location | No mandatory workflow gate |
+| 3. Code Analysis | Repository test code, project docs, user instruction files | Analyzes framework, conventions, Page Objects, similar tests, helpers, optional frontend code | Updated test plan with architecture findings and target test location | None |
 | 4. Selector Identification | Frontend code if available, otherwise page HTML when requested | Maps test steps to UI elements and identifies missing selectors without guessing | Selector map, page-source request if needed, updated plan/state | Mandatory user input only if selectors cannot be grounded from code |
-| 5. Selector Implementation | Approved selector set | Adds selectors or Page Object methods using current project conventions | Updated Page Objects and test plan | No mandatory workflow gate |
+| 5. Selector Implementation | Approved selector set | Adds selectors or Page Object methods using current project conventions | Updated Page Objects and test plan | None |
 | 6. Test Implementation | Approved assertions and reusable test architecture | Implements the automated test and stops before execution analysis | Test file plus updated plan/state | Mandatory user execution before Phase 7 |
 | 7. Test Report Analysis | Test report path, logs, or output | Reads report, classifies failures, analyzes root causes, inspects page source for selector errors | Failure analysis and recommended actions | Mandatory user handoff of report/output |
 | 8. Test Corrections | Explicit approval for proposed fixes | Prepares fixes, waits for approval, applies approved changes, updates state | Corrected test/Page Objects and re-test guidance | Explicit approval required before changes |
+
+Recommended review still matters throughout the workflow, but those checks are advisory checkpoints, not extra mandatory stops.
 
 ## Mermaid Flowchart
 
@@ -136,7 +138,7 @@ sequenceDiagram
     U->>A: Request automated QA work
     R-->>A: Enforce sequential phases, no assumptions, state tracking
     A->>X: Read TestRail case and Confluence context
-    A->>F: Create agents/plans/aqa-<test-name>.md and agents/aqa-state.md
+    A->>F: Create agents/plans/aqa-test-name.md and agents/aqa-state.md
     A->>U: Ask clarification questions for assertions, scope, data, edge cases
     U->>A: Provide answers
     A->>F: Update plan with explicit assertions
@@ -145,7 +147,7 @@ sequenceDiagram
         A->>F: Record selectors from frontend code
     else Selectors missing
         A->>U: Request page HTML for specific elements
-        U->>F: Add files under agents/aqa/{TICKET-KEY}/page-sources/
+        U->>F: Add files under agents/aqa/TICKET-KEY/page-sources/
         A->>F: Read page source files and choose selectors
     end
     A->>F: Update Page Objects and implement test
@@ -180,7 +182,7 @@ Artifacts:
 - `agents/plans/aqa-<test-name>.md`
 - `agents/aqa-state.md`
 
-What to review:
+Recommended review:
 - Check that the right TestRail case and Confluence sources were used.
 - Check that the test goal and expected result summary reflect the real scenario.
 
@@ -203,7 +205,7 @@ Artifacts:
 - Updated `agents/plans/aqa-<test-name>.md`
 - Updated `agents/aqa-state.md`
 
-What to review:
+Recommended review:
 - Every expected result should become something measurable.
 - Confirm the agent did not silently invent expected behavior.
 - Confirm test data and edge cases are accurate enough to drive implementation.
@@ -231,7 +233,7 @@ Artifacts:
 - Updated `agents/plans/aqa-<test-name>.md`
 - Updated `agents/aqa-state.md`
 
-What to review:
+Recommended review:
 - The chosen test location should fit the current test organization.
 - Reuse should be real. Shared Page Objects and helpers should not be ignored.
 - Team-specific instructions from `agents/user-instructions/` should be carried forward into implementation.
@@ -243,7 +245,7 @@ Goal:
 
 What you provide:
 - Nothing extra if selectors can be grounded from frontend code.
-- If they cannot, page HTML saved under `agents/aqa/{TICKET-KEY}/page-sources/` using the requested naming convention.
+- If they cannot, page HTML saved under `agents/aqa/TICKET-KEY/page-sources/` using the requested naming convention.
 
 What the coding agent does:
 - Maps each test step to required UI interactions and assertions.
@@ -256,9 +258,9 @@ What the coding agent does:
 Artifacts:
 - Updated `agents/plans/aqa-<test-name>.md`
 - Updated `agents/aqa-state.md`
-- Optional `agents/aqa/{TICKET-KEY}/page-sources/*.html`
+- Optional `agents/aqa/TICKET-KEY/page-sources/*.html`
 
-What to review:
+Recommended review:
 - Verify the source of truth for each selector.
 - Reject fragile selectors when a more stable identifier exists.
 - If HTML was requested, check that the request named exact elements and pages instead of asking vaguely.
@@ -283,7 +285,7 @@ Artifacts:
 - Updated `agents/plans/aqa-<test-name>.md`
 - Updated `agents/aqa-state.md`
 
-What to review:
+Recommended review:
 - Shared test infrastructure must still match local conventions.
 - The agent should preserve file structure and avoid opportunistic refactors.
 - New helper methods should exist only when they support actual test use.
@@ -310,7 +312,7 @@ Artifacts:
 - Updated `agents/plans/aqa-<test-name>.md`
 - Updated `agents/aqa-state.md`
 
-What to review:
+Recommended review:
 - Every assertion from Phase 2 should appear in the test.
 - The test should reuse Page Objects instead of reaching directly into raw selectors unless the project pattern explicitly allows it.
 - The execution command and next-step handoff should be clear enough for a QA engineer to run without guesswork.
@@ -335,7 +337,7 @@ Artifacts:
 - Updated `agents/plans/aqa-<test-name>.md`
 - Updated `agents/aqa-state.md`
 
-What to review:
+Recommended review:
 - Root causes should be evidence-based, not generic guesses.
 - Selector failures should reference actual page-source analysis when page sources exist.
 - Distinguish test bugs from application bugs before approving corrections.
@@ -362,14 +364,14 @@ Artifacts:
 - Updated `agents/plans/aqa-<test-name>.md`
 - Updated `agents/aqa-state.md`
 
-What to review:
+Recommended review:
 - The applied changes must match the approved proposal.
 - Fixes should address root causes without changing test intent.
 - If the failure is an application defect, the workflow should surface that instead of masking it with test changes.
 
 ## How To Review Results
 
-Review each handoff like a QA and test-automation lead, not like a passive approver.
+Review each handoff like a QA and test-automation lead, not like a passive approver. These are recommended review checkpoints, not additional mandatory workflow stops beyond the ones listed in the summary table.
 
 - After Phase 1, verify the workflow is anchored to the right TestRail case and the right Confluence context.
 - After Phase 2, verify assertions are measurable and complete. Weak assertions or missing edge cases here will corrupt every later phase.
@@ -387,9 +389,9 @@ If the page-source request, test plan, or correction proposal is vague, stop the
 These customizations materially improve AQA Flow:
 
 - Keep `agents/user-app/project_description.md` accurate. This workflow treats it as the single source of truth for coding standards.
-- Use `agents/user-instructions/` for team-specific automation rules, report locations, naming conventions, setup rules, and assertion preferences.
-- Keep DDL, config, and API/interface details discoverable in the repo when test data setup or environment behavior matters.
-- If the UI lives in a separate frontend repository, make that code accessible or provide the minimum page HTML needed under `agents/aqa/{TICKET-KEY}/page-sources/`.
+- Use `agents/user-instructions/` for team-specific test creation rules, report locations, naming conventions, setup rules, and assertion preferences.
+- If frontend source code is available, keep it accessible so Phase 3 and Phase 4 can ground selectors there first.
+- If frontend code is unavailable or still insufficient, provide page HTML under `agents/aqa/TICKET-KEY/page-sources/` for the exact elements the agent requests.
 - Prefer stable UI test hooks such as `data-testid` in the frontend. This workflow explicitly prefers them over fragile structural selectors.
 - Keep Page Objects and helper utilities clean and current. This workflow is designed to extend them, not bypass them.
 
@@ -401,7 +403,7 @@ Common artifacts from this workflow:
 - `agents/plans/aqa-<test-name>.md`
 - Updated test file or new test file
 - Modified or new Page Object files
-- Optional `agents/aqa/{TICKET-KEY}/page-sources/*.html`
+- Optional `agents/aqa/TICKET-KEY/page-sources/*.html`
 
 Common artifact content:
 

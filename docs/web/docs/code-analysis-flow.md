@@ -17,7 +17,7 @@ OSS
 - It produces either `docs/<feature>/analysis.md` for `SMALL` scope or `docs/<feature>/module-<module>.md` plus `docs/<feature>/summary.md` for `LARGE` scope.
 - It asks only critical or high impact questions, records assumptions, and keeps every claim tied to code or docs.
 - Requirements extraction is optional and runs only when you explicitly ask for it.
-- Review gates happen at critical unknowns, inside the optional requirements branch, and again before final approval of the analysis.
+- Review gates happen at critical unknowns, inside the optional requirements workflow when that branch is requested, and again before final approval of the analysis.
 
 ## When To Use This Workflow
 
@@ -82,7 +82,7 @@ Rosetta changes the experience in ways you can see from the outside:
 | 1. Context load | Analysis request | Load project context and identify entry points | Workflow state update | No |
 | 2. Scope and classify | Scope boundaries and non goals when needed | Classify `SMALL` or `LARGE` and define module list for large work | Workflow state update | No |
 | 3. Clarify unknowns | Answers to high impact questions | Resolve critical or high unknowns and record assumptions | Workflow state update and documented assumptions | Yes |
-| 4. Requirements branch | Explicit request for requirements recovery | Extract intent from code and author requirements artifacts | `docs/<feature>/REQUIREMENTS/` | Yes |
+| 4. Requirements branch | Explicit request for requirements recovery | Extract intent from code, then enter the requirements workflow with its own approvals | `docs/<feature>/REQUIREMENTS/` | Requirements workflow |
 | 5. Analyze small | Small scoped target | Produce one grounded analysis document | `docs/<feature>/analysis.md` | No |
 | 6. Analyze large parallel | Large scoped target | Partition modules and analyze each one in parallel | `docs/<feature>/module-<module>.md` | No |
 | 7. Summarize | Module analysis documents | Produce one cross module summary | `docs/<feature>/summary.md` | No |
@@ -113,13 +113,13 @@ flowchart TD
     D -- "Yes" --> E["Ask targeted questions and record assumptions"]
     D -- "No" --> F{"Requirements recovery requested"}
     E --> F
-    F -- "Yes" --> G["Create docs/<feature>/REQUIREMENTS/"]
+    F -- "Yes" --> G["Enter requirements workflow and create requirements artifacts"]
     F -- "No" --> H{"Scope size"}
     G --> H
-    H -- "SMALL" --> I["Create docs/<feature>/analysis.md"]
+    H -- "SMALL" --> I["Create analysis artifact"]
     H -- "LARGE" --> J["Partition modules and analyze in parallel"]
-    J --> K["Create docs/<feature>/module-<module>.md"]
-    K --> L["Create docs/<feature>/summary.md"]
+    J --> K["Create per-module analysis artifacts"]
+    K --> L["Create cross-module summary"]
     I --> M["Review groundedness, coverage, and diagrams"]
     L --> M
     M --> N{"User review"}
@@ -177,16 +177,16 @@ sequenceDiagram
     U-->>A: Clarifications or accepted assumptions
     alt Requirements recovery requested
         A->>S: Run reverse engineering, then enter requirements authoring with its own approval gates
-        S-->>F: docs/<feature>/REQUIREMENTS/
+        S-->>F: Requirements artifacts
     end
     alt SMALL scope
         A->>S: Produce one analysis document
-        S-->>F: docs/<feature>/analysis.md
+        S-->>F: Analysis artifact
     else LARGE scope
         A->>S: Partition modules
-        S-->>F: docs/<feature>/module-<module>.md
+        S-->>F: Per-module analysis artifacts
         A->>S: Summarize cross module findings
-        S-->>F: docs/<feature>/summary.md
+        S-->>F: Summary artifact
     end
     A->>S: Review groundedness and coverage
     S-->>A: Review findings
@@ -232,9 +232,9 @@ Goal: resolve only the unknowns that materially affect analysis accuracy.
 Goal: recover requirements from code only when you explicitly asked for that outcome.
 
 - Required user input: an explicit request to extract requirements, SRS style artifacts, or EARS and NFR requirements from code.
-- Agent actions: use reverse engineering to recover intent, then use requirements authoring to produce atomic, testable functional and non functional requirements with its own approval gates.
+- Agent actions: use reverse engineering to recover intent, then enter requirements authoring to produce atomic, testable functional and non functional requirements under that workflow's own approval model.
 - Produced artifacts: `docs/<feature>/REQUIREMENTS/`.
-- Review expectation: yes. This branch inherits the requirements workflow review model.
+- Review expectation: yes. Once this branch starts, approvals follow the requirements workflow and stay separate from the analysis workflow review gates.
 - What to watch: accidental scope expansion from "document this module" into "generate requirements."
 
 ### 5. Analyze small
@@ -244,7 +244,7 @@ Goal: produce one grounded document for a contained scope.
 - Required user input: small scoped target.
 - Agent actions: create `docs/<feature>/analysis.md` covering components, data models, patterns, logic flow as a conceptual algorithm, boundary and edge cases, unhandled edges, Mermaid diagrams, and external dependencies with purpose.
 - Produced artifacts: `docs/<feature>/analysis.md`.
-- Review expectation: no formal gate before review, but the document must stay grounded in files and line references.
+- Review expectation: no separate approval gate in this phase. The document proceeds to phase 8 review and must stay grounded in files and line references.
 - What to watch: code transcription instead of recovered system intent.
 
 ### 6. Analyze large parallel
@@ -254,7 +254,7 @@ Goal: keep large analysis reliable by partitioning the workspace.
 - Required user input: large scoped target.
 - Agent actions: partition the workspace so every file belongs to exactly one module scope, then analyze modules in parallel. Each module document should cover business logic overview, architecture overview, component analysis, interfaces, data contracts, integration patterns, quality observations, and engineering insights.
 - Produced artifacts: `docs/<feature>/module-<module>.md`.
-- Review expectation: no formal gate before review, but overlapping module scopes will create contradictions.
+- Review expectation: no separate approval gate in this phase. The module outputs proceed to phase 8 review, and overlapping module scopes will create contradictions.
 - What to watch: duplicated files across module scopes or module documents that drift into generic summaries.
 
 ### 7. Summarize

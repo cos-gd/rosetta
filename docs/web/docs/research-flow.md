@@ -56,7 +56,7 @@ Research authentication patterns for microservices in this project and recommend
 - Rosetta forces context loading before research starts, so the answer is shaped by project context rather than generic advice.
 - Rosetta requires an explicit approval gate on the research prompt before execution continues.
 - Rosetta uses a dedicated researcher subagent for this workflow, which keeps research work isolated from coding work.
-- General Rosetta questioning behavior may ask for clarification before or during prompt craft when the request is too vague to research safely.
+- Rosetta may ask for clarification when the request is too vague to research safely.
 - Rosetta itself does not see your code or project data. It provides instructions that the coding agent follows inside your workspace.
 
 ## Workflow At A Glance
@@ -65,8 +65,8 @@ Research authentication patterns for microservices in this project and recommend
 |---|---|---|---|---|
 | 1. Context load | Research request | Read `CONTEXT.md`, `ARCHITECTURE.md`, `IMPLEMENTATION.md`; load project context; update state | Loaded project context; updated `research-flow-state.md` | No |
 | 2. Prompt craft | Research request plus project context | Write the optimized research prompt; save it to the feature plan folder; update state | `research-prompt.md` | Yes. You must approve the prompt before research runs |
-| 3. Execute research | Approved `research-prompt.md` | Run the approved research pass in a dedicated researcher subagent; update state | `docs/<feature>-research.md` | No additional gate defined in the workflow |
-| 4. Finalize | Completed research document | Finalize the research document; mark state complete | Finalized `docs/<feature>-research.md`; completed `research-flow-state.md` | No additional workflow-specific gate |
+| 3. Execute research | Approved `research-prompt.md` | Run the approved research pass in a dedicated researcher subagent; update state | `docs/feature-research.md` | No additional gate defined in the workflow |
+| 4. Finalize | Completed research document | Finalize the research document; mark state complete | Finalized `docs/feature-research.md`; completed `research-flow-state.md` | No additional gate defined in the workflow |
 
 ## Mermaid Flowchart
 
@@ -91,7 +91,7 @@ flowchart TD
   D --> E{"User approves<br/>research prompt?"}
   E -- "No, revise" --> D
   E -- "Yes" --> F["Phase 3<br/>Run approved research prompt"]
-  F --> G["Create docs/<feature>-research.md"]
+  F --> G["Create docs/feature-research.md"]
   G --> H["Phase 4<br/>Finalize research document"]
   H --> I["Mark research-flow-state.md complete"]
 
@@ -143,9 +143,9 @@ sequenceDiagram
   U-->>A: Approve or request changes
   alt Prompt approved
     A->>S: Execute approved research prompt
-    S->>F: Create docs/<feature>-research.md
+    S->>F: Create docs/feature-research.md
     S->>F: Finalize document and mark state complete
-    A->>U: Deliver finalized research document for review
+    A->>U: Deliver finalized research document
   else Prompt not approved
     A->>S: Revise research-prompt.md
     S->>F: Update prompt and state
@@ -210,7 +210,7 @@ Turn the research request into an optimized prompt that is specific enough to dr
 
 **Goal**
 
-Run the approved prompt as the research contract.
+Run the approved prompt as the basis for the research pass.
 
 **What you provide**
 
@@ -219,8 +219,8 @@ Run the approved prompt as the research contract.
 **What the agent does**
 
 - Delegates research execution to a dedicated researcher subagent.
-- Uses the approved prompt as the input contract.
-- Produces `docs/<feature>-research.md`.
+- Uses the approved prompt as the input.
+- Produces `docs/feature-research.md`.
 - Updates `research-flow-state.md`.
 
 **What you get**
@@ -239,7 +239,7 @@ Finish the research document and close the workflow state.
 
 **What the agent does**
 
-- Finalizes `docs/<feature>-research.md`.
+- Finalizes `docs/feature-research.md`.
 - Updates `research-flow-state.md` and marks the workflow complete.
 
 **What you get**
@@ -260,7 +260,7 @@ For `research-prompt.md`, verify:
 - The prompt excludes known non-goals.
 - The prompt will produce a useful artifact, not a generic essay.
 
-For `docs/<feature>-research.md`, verify:
+For `docs/feature-research.md`, verify:
 
 - The final answer follows the approved prompt.
 - The reasoning stays within the approved scope.
@@ -268,7 +268,7 @@ For `docs/<feature>-research.md`, verify:
 - Gaps, tradeoffs, and limits are visible instead of hidden.
 - Any recommended direction still fits your architecture and constraints.
 
-If either artifact is wrong, respond with precise comments. Do not approve vague or misframed research prompts, because the rest of the workflow depends on that contract.
+If either artifact is wrong, respond with precise comments. Do not approve vague or misframed research prompts, because the rest of the workflow depends on that approved prompt.
 
 ## Workflow-Specific Customization
 
@@ -288,8 +288,8 @@ Shared Rosetta customization, IDE rules, and MCP guidance already live in [Usage
 - `research-flow-state.md` in the feature temp folder
   - Tracks workflow progress from context load through finalization.
 - `research-prompt.md` in the feature plan folder
-  - The approved contract for the research pass.
-- `docs/<feature>-research.md`
+  - The approved prompt for the research pass.
+- `docs/feature-research.md`
   - The research result produced from the approved prompt and finalized in phase 4.
 
 ## Common Mistakes
