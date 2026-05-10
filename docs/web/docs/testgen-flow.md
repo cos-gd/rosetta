@@ -96,21 +96,6 @@ Rosetta itself provides instructions and routing. The coding agent performs the 
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
     A[Start with Jira ticket or URL] --> B[Phase 0 load or create project config]
     B --> C[Phase 1 collect Jira and Confluence evidence]
@@ -125,39 +110,11 @@ flowchart TD
     I -- Yes --> K[Phase 6 export to TestRail]
     K --> L[Finish with TestRail IDs and export summary]
 
-    classDef start fill:#dbeafe,stroke:#1d4ed8,color:#0f172a;
-    classDef phase fill:#dcfce7,stroke:#16a34a,color:#052e16;
-    classDef gate fill:#fef3c7,stroke:#d97706,color:#78350f;
-    classDef done fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
-
-    class A start;
-    class B,C,D,E,G,H,K phase;
-    class F,I gate;
-    class J,L done;
 ```
 
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
     participant U as User
     participant R as Rosetta instructions

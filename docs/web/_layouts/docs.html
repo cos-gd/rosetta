@@ -85,327 +85,172 @@
   </div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.2/dist/svg-pan-zoom.min.js"></script>
+<style>
+  .docs-mermaid { position: relative; }
+  .docs-mermaid-expand {
+    position: absolute; top: .5rem; right: .5rem; z-index: 2;
+    width: 32px; height: 32px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(15,23,42,.55); color: #fff;
+    border: 1px solid rgba(255,255,255,.25); border-radius: 6px;
+    cursor: pointer; font-size: 16px; line-height: 1;
+    opacity: 0; transition: opacity .15s ease, background .15s ease;
+  }
+  [data-theme="light"] .docs-mermaid-expand {
+    background: rgba(255,255,255,.85); color: #111827;
+    border-color: rgba(0,0,0,.18);
+  }
+  .docs-mermaid:hover .docs-mermaid-expand,
+  .docs-mermaid:focus-within .docs-mermaid-expand,
+  .docs-mermaid-expand:focus { opacity: 1; }
+  .docs-mermaid-expand:hover { background: rgba(15,23,42,.85); }
+  [data-theme="light"] .docs-mermaid-expand:hover { background: #ffffff; }
+
+  .docs-mermaid-modal {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,.78);
+    display: flex; align-items: stretch; justify-content: stretch;
+    padding: 2rem;
+  }
+  .docs-mermaid-modal-inner {
+    position: relative;
+    flex: 1;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  [data-theme="dark"] .docs-mermaid-modal-inner { background: #0f172a; }
+  .docs-mermaid-modal-close {
+    position: absolute; top: .5rem; right: .5rem; z-index: 3;
+    width: 36px; height: 36px;
+    background: transparent; color: inherit;
+    border: 1px solid currentColor; border-radius: 50%;
+    cursor: pointer; font-size: 20px; line-height: 1;
+    opacity: .7;
+  }
+  .docs-mermaid-modal-close:hover { opacity: 1; }
+  .docs-mermaid-modal-stage {
+    flex: 1; min-height: 0; min-width: 0;
+    display: flex; align-items: stretch; justify-content: stretch;
+  }
+  .docs-mermaid-modal-stage svg { display: block; width: 100%; height: 100%; }
+</style>
 <script>
 (function() {
-  var consoleRef = typeof console !== 'undefined' ? console : null;
-  var logger = consoleRef ? (consoleRef.error || consoleRef.log) : function() {};
   var content = document.querySelector('.docs-content');
-  if (!content) return;
+  if (!content || !window.mermaid) return;
+
   var lastTheme = null;
   var renderToken = 0;
-  var DIAGRAM_SCALE = {
-    flowchart: 1.2,
-    sequence: 1.35
-  };
-
-  var DARK_COLOR_MAP = {
-    '#ffffff': '#0f172a',
-    '#f8fafc': '#e5e7eb',
-    '#f3f5f8': '#111827',
-    '#0b1020': '#0f172a',
-    '#0f172a': '#e5e7eb',
-    '#111827': '#e5e7eb',
-    '#0b1f33': '#e5e7eb',
-    '#0f1f33': '#e5e7eb',
-    '#102a1f': '#e5e7eb',
-    '#14532d': '#d6f2e3',
-    '#052e16': '#d6f2e3',
-    '#78350f': '#f1ddbf',
-    '#4a2a00': '#f1ddbf',
-    '#3d2a00': '#f1ddbf',
-    '#3a0d11': '#f2d4d8',
-    '#22133f': '#ddd3f8',
-    '#7f1d1d': '#f2d4d8',
-    '#dbeafe': '#23364d',
-    '#d9f2e3': '#1b3b31',
-    '#e8f1fb': '#23364d',
-    '#e8f1ff': '#23364d',
-    '#e0f2fe': '#223846',
-    '#dceeff': '#23364d',
-    '#eaf3ff': '#23364d',
-    '#ecfdf5': '#1b3b31',
-    '#dcfce7': '#1b3b31',
-    '#e9f7ef': '#1b3b31',
-    '#fef3c7': '#45361f',
-    '#fff7ed': '#45361f',
-    '#fff4d6': '#45361f',
-    '#fff1cc': '#45361f',
-    '#fee2e2': '#47272b',
-    '#fce8e8': '#47272b',
-    '#ece7fb': '#31284a',
-    '#1d4ed8': '#7aa2f7',
-    '#1d4f91': '#6d8fd9',
-    '#2563eb': '#7aa2f7',
-    '#0284c7': '#74a9cf',
-    '#16a34a': '#63a67f',
-    '#15803d': '#5d9b74',
-    '#047857': '#5d9b89',
-    '#1f6f4a': '#5d9b74',
-    '#d97706': '#c89a52',
-    '#b45309': '#b98648',
-    '#a66a00': '#b98648',
-    '#c2410c': '#c7835a',
-    '#dc2626': '#c97a7a',
-    '#a61d24': '#c97a7a',
-    '#5b3fa3': '#8c79cf',
-    '#5eead4': '#76cdbd',
-    '#93c5fd': '#7fa6d8',
-    '#94a3b8': '#7d8aa0',
-    '#cbd5e1': '#98a5b8',
-    '#7dd3fc': '#82b8d9',
-    '#475569': '#8a97ab',
-    '#64748b': '#8a97ab'
-  };
-
-  function trimBlankLines(source) {
-    return source.replace(/^(?:\s*\n)+/, '').replace(/(?:\n\s*)+$/, '');
-  }
 
   function getPageTheme() {
-    return document.documentElement.getAttribute('data-theme') || 'dark';
+    return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default';
   }
 
-  function parseInitDirective(source) {
-    var match = source.match(/^%%\{init:\s*([\s\S]*?)\}%%\s*/);
-    if (!match) return null;
-
-    try {
-      return {
-        match: match[0],
-        config: new Function('return (' + match[1] + ');')()
-      };
-    } catch (error) {
-      logger.call(consoleRef, error);
-      return null;
-    }
-  }
-
-  function replaceColorLiterals(source) {
-    return Object.keys(DARK_COLOR_MAP).reduce(function(next, color) {
-      return next.replace(new RegExp(color.replace('#', '\\#'), 'gi'), DARK_COLOR_MAP[color]);
-    }, source);
-  }
-
-  function normalizeMermaidSource(source, theme) {
-    var normalized = source;
-    var initDirective = parseInitDirective(normalized);
-    var config = initDirective && initDirective.config ? initDirective.config : {};
-    var themeVariables = config.themeVariables || {};
-
-    config.theme = 'base';
-    themeVariables.fontFamily = "'Fira Sans', sans-serif";
-
-    if (theme === 'dark') {
-      themeVariables.background = '#0f172a';
-      themeVariables.textColor = '#e5e7eb';
-      themeVariables.lineColor = '#8a97ab';
-      themeVariables.primaryColor = '#23364d';
-      themeVariables.primaryBorderColor = '#7aa2f7';
-      themeVariables.primaryTextColor = '#e5e7eb';
-      themeVariables.secondaryColor = '#1b3b31';
-      themeVariables.secondaryBorderColor = '#63a67f';
-      themeVariables.secondaryTextColor = '#d6f2e3';
-      themeVariables.tertiaryColor = '#45361f';
-      themeVariables.tertiaryBorderColor = '#c89a52';
-      themeVariables.tertiaryTextColor = '#f1ddbf';
-      themeVariables.actorBkg = '#23364d';
-      themeVariables.actorBorder = '#7aa2f7';
-      themeVariables.actorTextColor = '#e5e7eb';
-      themeVariables.signalColor = '#8a97ab';
-      themeVariables.signalTextColor = '#e5e7eb';
-      themeVariables.labelBoxBkgColor = '#1b3b31';
-      themeVariables.labelBoxBorderColor = '#63a67f';
-      themeVariables.labelTextColor = '#d6f2e3';
-      themeVariables.noteBkgColor = '#45361f';
-      themeVariables.noteBorderColor = '#c89a52';
-      themeVariables.noteTextColor = '#f1ddbf';
-      themeVariables.activationBkgColor = '#23364d';
-      themeVariables.activationBorderColor = '#7aa2f7';
-
-      normalized = replaceColorLiterals(normalized);
-    } else {
-      themeVariables.background = '#ffffff';
-      themeVariables.textColor = '#111827';
-      themeVariables.lineColor = '#475569';
-      themeVariables.primaryColor = '#dbeafe';
-      themeVariables.primaryBorderColor = '#1d4ed8';
-      themeVariables.primaryTextColor = '#111827';
-      themeVariables.secondaryColor = '#dcfce7';
-      themeVariables.secondaryBorderColor = '#16a34a';
-      themeVariables.secondaryTextColor = '#14532d';
-      themeVariables.tertiaryColor = '#fef3c7';
-      themeVariables.tertiaryBorderColor = '#d97706';
-      themeVariables.tertiaryTextColor = '#78350f';
-      themeVariables.actorBkg = '#dbeafe';
-      themeVariables.actorBorder = '#1d4ed8';
-      themeVariables.actorTextColor = '#111827';
-      themeVariables.signalColor = '#475569';
-      themeVariables.signalTextColor = '#111827';
-      themeVariables.labelBoxBkgColor = '#dcfce7';
-      themeVariables.labelBoxBorderColor = '#16a34a';
-      themeVariables.labelTextColor = '#14532d';
-      themeVariables.noteBkgColor = '#fef3c7';
-      themeVariables.noteBorderColor = '#d97706';
-      themeVariables.noteTextColor = '#78350f';
-      themeVariables.activationBkgColor = '#dbeafe';
-      themeVariables.activationBorderColor = '#1d4ed8';
-    }
-
-    config.themeVariables = themeVariables;
-
-    if (initDirective) {
-      normalized = normalized.replace(initDirective.match, '%%{init: ' + JSON.stringify(config) + '}%%\n');
-    } else {
-      normalized = '%%{init: ' + JSON.stringify(config) + '}%%\n' + normalized;
-    }
-
-    return normalized;
-  }
-
-  function getSequenceTheme(theme) {
-    if (theme === 'dark') {
-      return {
-        actorFill: '#23364d',
-        actorStroke: '#7aa2f7',
-        actorText: '#e5e7eb',
-        line: '#8a97ab',
-        labelFill: '#1b3b31',
-        labelStroke: '#63a67f',
-        labelText: '#d6f2e3',
-        noteFill: '#45361f',
-        noteStroke: '#c89a52',
-        noteText: '#f1ddbf',
-        activationFill: '#23364d',
-        activationStroke: '#7aa2f7'
-      };
-    }
-
-    return {
-      actorFill: '#dbeafe',
-      actorStroke: '#1d4ed8',
-      actorText: '#111827',
-      line: '#475569',
-      labelFill: '#dcfce7',
-      labelStroke: '#16a34a',
-      labelText: '#14532d',
-      noteFill: '#fef3c7',
-      noteStroke: '#d97706',
-      noteText: '#78350f',
-      activationFill: '#dbeafe',
-      activationStroke: '#1d4ed8'
-    };
-  }
-
-  function getFlowchartTheme(theme) {
-    if (theme === 'dark') {
-      return {
-        text: '#e5e7eb'
-      };
-    }
-
-    return {
-      text: '#111827'
-    };
-  }
-
-  function setScopedStyle(svg, key, cssText) {
-    var selector = 'style[data-rosetta-style="' + key + '"]';
-    var styleNode = svg.querySelector(selector);
-    if (!styleNode) {
-      styleNode = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-      styleNode.setAttribute('data-rosetta-style', key);
-      svg.insertBefore(styleNode, svg.firstChild);
-    }
-    styleNode.textContent = cssText;
-  }
-
-  function scaleSvg(svg, factor) {
-    var viewBox = svg.getAttribute('viewBox');
-    if (!viewBox) return;
-    var parts = viewBox.trim().split(/\s+/).map(function(value) {
-      return parseFloat(value);
-    });
-    if (parts.length !== 4 || parts.some(function(value) { return Number.isNaN(value); })) {
-      return;
-    }
-
-    svg.style.maxWidth = 'none';
-    svg.style.width = (parts[2] * factor) + 'px';
-    svg.style.height = (parts[3] * factor) + 'px';
-  }
-
-  function styleSequenceSvg(svg, theme) {
-    var palette = getSequenceTheme(theme);
-    setScopedStyle(svg, 'sequence-theme', [
-      '.actor { fill: ' + palette.actorFill + ' !important; stroke: ' + palette.actorStroke + ' !important; }',
-      '.actor-line, .messageLine0, .messageLine1, .loopLine, .note-line { stroke: ' + palette.line + ' !important; }',
-      '.actor-box, .messageText, .labelText, .loopText, .noteText, text, tspan { fill: ' + palette.actorText + ' !important; }',
-      '.marker { fill: ' + palette.line + ' !important; stroke: ' + palette.line + ' !important; }',
-      '.labelBox { fill: ' + palette.labelFill + ' !important; stroke: ' + palette.labelStroke + ' !important; }',
-      '.labelText { fill: ' + palette.labelText + ' !important; }',
-      '.note { fill: ' + palette.noteFill + ' !important; stroke: ' + palette.noteStroke + ' !important; }',
-      '.noteText { fill: ' + palette.noteText + ' !important; }',
-      '.activation0, .activation1, .activation2 { fill: ' + palette.activationFill + ' !important; stroke: ' + palette.activationStroke + ' !important; }'
-    ].join('\n'));
-  }
-
-  function styleFlowchartSvg(svg, theme) {
-    var palette = getFlowchartTheme(theme);
-    setScopedStyle(svg, 'flowchart-theme', [
-      '.label text, .nodeLabel, .cluster-label text, .edgeLabel text, text, tspan { fill: ' + palette.text + ' !important; color: ' + palette.text + ' !important; }',
-      '.label foreignObject div, .label foreignObject span, .edgeLabel foreignObject div, .edgeLabel foreignObject span { color: ' + palette.text + ' !important; }'
-    ].join('\n'));
-  }
-
-  function finalizeRenderedDiagrams(theme) {
-    var svgs = content.querySelectorAll('.docs-mermaid svg');
-    Array.prototype.forEach.call(svgs, function(svg) {
-      var diagramType = svg.getAttribute('aria-roledescription');
-      if (diagramType === 'sequence') {
-        styleSequenceSvg(svg, theme);
-        scaleSvg(svg, DIAGRAM_SCALE.sequence);
-        return;
-      }
-
-      styleFlowchartSvg(svg, theme);
-      scaleSvg(svg, DIAGRAM_SCALE.flowchart);
-    });
-  }
-
-  function ensureMermaidWrappers() {
-    var blocks = content.querySelectorAll(
-      'pre > code.language-mermaid, pre > code[class~="language-mermaid"]'
-    );
-
-    Array.prototype.forEach.call(blocks, function(code) {
+  function ensureWrappers() {
+    var codes = content.querySelectorAll('pre > code.language-mermaid');
+    Array.prototype.forEach.call(codes, function(code) {
       var pre = code.parentElement;
-      if (!pre || pre.closest('.docs-mermaid') || pre.dataset.mermaidProcessed === 'true') {
-        return;
-      }
-
-      var source = trimBlankLines(code.textContent);
+      if (!pre || pre.closest('.docs-mermaid')) return;
+      var source = code.textContent.replace(/^(?:\s*\n)+/, '').replace(/(?:\n\s*)+$/, '');
       var wrapper = document.createElement('div');
-
       wrapper.className = 'docs-mermaid';
-      wrapper.dataset.mermaidProcessed = 'true';
       wrapper.dataset.mermaidSource = source;
-      pre.dataset.mermaidProcessed = 'true';
       pre.replaceWith(wrapper);
     });
   }
 
-  function renderMermaidBlocks() {
+  function attachExpandButton(wrapper) {
+    if (wrapper.querySelector('.docs-mermaid-expand')) return;
+    var svg = wrapper.querySelector('svg');
+    if (!svg) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'docs-mermaid-expand';
+    btn.setAttribute('aria-label', 'Open diagram in larger view');
+    btn.title = 'Open larger (pan and zoom)';
+    btn.textContent = '⤢';
+    btn.addEventListener('click', function() { openLightbox(svg); });
+    wrapper.appendChild(btn);
+  }
+
+  function openLightbox(originalSvg) {
+    var overlay = document.createElement('div');
+    overlay.className = 'docs-mermaid-modal';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+
+    var inner = document.createElement('div');
+    inner.className = 'docs-mermaid-modal-inner';
+
+    var closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'docs-mermaid-modal-close';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.textContent = '×';
+
+    var stage = document.createElement('div');
+    stage.className = 'docs-mermaid-modal-stage';
+
+    inner.appendChild(closeBtn);
+    inner.appendChild(stage);
+    overlay.appendChild(inner);
+    document.body.appendChild(overlay);
+    var prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    var svgClone = originalSvg.cloneNode(true);
+    svgClone.removeAttribute('width');
+    svgClone.removeAttribute('height');
+    svgClone.style.maxWidth = '';
+    svgClone.style.height = '';
+    stage.appendChild(svgClone);
+
+    var pz = null;
+    if (window.svgPanZoom) {
+      try {
+        pz = window.svgPanZoom(svgClone, {
+          controlIconsEnabled: true,
+          zoomEnabled: true,
+          panEnabled: true,
+          fit: true,
+          center: true,
+          minZoom: 0.2,
+          maxZoom: 20
+        });
+      } catch (e) {
+        (console.error || console.log).call(console, e);
+      }
+    }
+
+    function close() {
+      document.removeEventListener('keydown', onKey);
+      if (pz) { try { pz.destroy(); } catch (_) {} }
+      overlay.remove();
+      document.body.style.overflow = prevOverflow;
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+
+    document.addEventListener('keydown', onKey);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+    closeBtn.focus();
+  }
+
+  function render() {
     var theme = getPageTheme();
-    var currentToken = ++renderToken;
+    var token = ++renderToken;
     var wrappers = content.querySelectorAll('.docs-mermaid[data-mermaid-source]');
     var targets = [];
 
     Array.prototype.forEach.call(wrappers, function(wrapper) {
       var target = document.createElement('pre');
       target.className = 'mermaid';
-      target.textContent = normalizeMermaidSource(wrapper.dataset.mermaidSource, theme);
+      target.textContent = wrapper.dataset.mermaidSource;
       wrapper.replaceChildren(target);
-      wrapper.dataset.mermaidRenderedTheme = theme;
       targets.push(target);
     });
 
@@ -414,41 +259,23 @@
     window.mermaid.initialize({
       startOnLoad: false,
       securityLevel: 'loose',
-      theme: 'base'
+      theme: theme
     });
 
     return Promise.resolve(window.mermaid.run({ nodes: targets })).then(function() {
-      if (currentToken !== renderToken) return;
-      finalizeRenderedDiagrams(theme);
+      if (token !== renderToken) return;
       lastTheme = theme;
+      Array.prototype.forEach.call(wrappers, attachExpandButton);
     });
   }
 
-  if (!window.mermaid) {
-    logger.call(consoleRef, 'Mermaid runtime is unavailable on docs pages.');
-    return;
-  }
+  ensureWrappers();
+  render().catch(function(e) { (console.error || console.log).call(console, e); });
 
-  try {
-    ensureMermaidWrappers();
-    renderMermaidBlocks()
-      .catch(function(error) {
-        logger.call(consoleRef, error);
-      });
-
-    new MutationObserver(function() {
-      var theme = getPageTheme();
-      if (theme === lastTheme) return;
-      renderMermaidBlocks().catch(function(error) {
-        logger.call(consoleRef, error);
-      });
-    }).observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme']
-    });
-  } catch (error) {
-    logger.call(consoleRef, error);
-  }
+  new MutationObserver(function() {
+    if (getPageTheme() === lastTheme) return;
+    render().catch(function(e) { (console.error || console.log).call(console, e); });
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 </script>
 <script>

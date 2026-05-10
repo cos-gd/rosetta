@@ -93,21 +93,6 @@ Rosetta changes the experience in ways you can see from the outside:
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
     A["User requests code analysis"] --> B["Load context and entry points"]
     B --> C["Classify scope as SMALL or LARGE"]
@@ -129,37 +114,11 @@ flowchart TD
     O --> M
     N -- "Approve" --> P["Finalize workflow state"]
 
-    classDef work fill:#DBEAFE,stroke:#1D4ED8,color:#111827,stroke-width:1.5px;
-    classDef decision fill:#FEF3C7,stroke:#D97706,color:#111827,stroke-width:1.5px;
-    classDef output fill:#DCFCE7,stroke:#15803D,color:#111827,stroke-width:1.5px;
-    class A,B,C,E,J,M,O,P work;
-    class D,F,H,N decision;
-    class G,I,K,L output;
-    linkStyle default stroke:#475569,stroke-width:1.5px;
 ```
 
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
     autonumber
     participant U as User

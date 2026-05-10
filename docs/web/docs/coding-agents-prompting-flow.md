@@ -87,21 +87,6 @@ For this workflow, the always-active Rosetta behavior changes the UX in visible 
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
     A["Start prompt authoring request"] --> B["Phase 1<br/>Discover"]
     B --> C["Discovery Notes + Reference Set"]
@@ -143,25 +128,6 @@ flowchart TD
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
     actor U as User
     participant R as Rosetta Instructions

@@ -82,21 +82,6 @@ In practice, that changes the user experience in four ways:
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
     A["Start init request"] --> B["P1 Context: Detect mode and inventory files"]
     B --> C{"Plugin mode?"}
@@ -112,36 +97,11 @@ flowchart TD
     M --> N["User reviews results"]
     N --> O["Start a new chat"]
 
-    classDef action fill:#DCEEFF,stroke:#1D4ED8,color:#0B1F33;
-    classDef decision fill:#FFF4D6,stroke:#B45309,color:#4A2A00;
-    classDef review fill:#E9F7EF,stroke:#15803D,color:#123524;
-    class A,B,D,E,F,H,J,K,M,O action;
-    class C decision;
-    class L,N review;
 ```
 
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
     participant U as User
     participant A as Coding agent

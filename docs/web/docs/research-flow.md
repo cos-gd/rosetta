@@ -71,21 +71,6 @@ Research authentication patterns for microservices in this project and recommend
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
   A["User asks for project research"] --> B["Phase 1<br/>Load CONTEXT.md, ARCHITECTURE.md, IMPLEMENTATION.md"]
   B --> C["Update research-flow-state.md"]
@@ -111,25 +96,6 @@ flowchart TD
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
   participant U as User
   participant R as Rosetta instructions

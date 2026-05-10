@@ -79,21 +79,6 @@ For this workflow, the always-active Rosetta behavior changes the experience in 
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
     A["Start request"] --> B["Discovery"]
     B --> C{"Need extra sources?"}
@@ -113,37 +98,11 @@ flowchart TD
     L -->|No| I
     L -->|Yes| M["Finalization"]
 
-    classDef phase fill:#12324a,stroke:#5eead4,color:#f8fafc,stroke-width:2px;
-    classDef gate fill:#1f2937,stroke:#fbbf24,color:#f8fafc,stroke-width:2px;
-    classDef done fill:#1e293b,stroke:#93c5fd,color:#f8fafc,stroke-width:2px;
-    class A,B,D,E,G,I,K phase;
-    class C,F,H,J,L gate;
-    class M done;
-    linkStyle default stroke:#cbd5e1,stroke-width:2px;
 ```
 
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
     participant U as User
     participant A as Coding agent

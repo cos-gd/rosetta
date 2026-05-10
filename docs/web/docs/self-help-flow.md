@@ -67,21 +67,6 @@ Example prompts:
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
     A["User asks a capability question"] --> B["Phase 1: List capabilities"]
     B --> C["Capability Catalog"]
@@ -94,39 +79,11 @@ flowchart TD
     G -->|Yes, start workflow| J["Phase 4: Handoff"]
     J --> K["Selected workflow starts at phase 1"]
 
-    classDef phase fill:#E8F1FF,stroke:#1D4ED8,color:#0F172A,stroke-width:2px;
-    classDef artifact fill:#ECFDF5,stroke:#047857,color:#0F172A,stroke-width:2px;
-    classDef gate fill:#FFF7ED,stroke:#C2410C,color:#0F172A,stroke-width:2px;
-
-    class B,D,F,J phase;
-    class C,E,H,I,K artifact;
-    class G gate;
-
-    linkStyle default stroke:#475569,stroke-width:2px;
 ```
 
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
     autonumber
     actor U as User

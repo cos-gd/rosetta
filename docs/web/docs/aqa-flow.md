@@ -92,27 +92,7 @@ Recommended review still matters throughout the workflow, but those checks are a
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
-    classDef start fill:#d9f2e3,stroke:#1f6f4a,color:#102a1f,stroke-width:2px
-    classDef phase fill:#e8f1fb,stroke:#1d4f91,color:#0f1f33,stroke-width:2px
-    classDef hitl fill:#fff1cc,stroke:#a66a00,color:#3d2a00,stroke-width:2px
-    classDef action fill:#fce8e8,stroke:#a61d24,color:#3a0d11,stroke-width:2px
-    classDef done fill:#ece7fb,stroke:#5b3fa3,color:#22133f,stroke-width:2px
 
     A[Start AQA request]:::start --> B[Phase 1 Data Collection]:::phase
     B --> C[Phase 2 Requirements Clarification]:::phase
@@ -142,25 +122,6 @@ flowchart TD
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
     autonumber
     participant U as User

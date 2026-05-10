@@ -85,25 +85,7 @@ Always-active Rosetta behavior also matters here: the agent should ask targeted 
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
-  classDef work fill:#dbeafe,stroke:#1d4ed8,color:#111827,stroke-width:2px;
-  classDef hitl fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
-  classDef done fill:#dcfce7,stroke:#15803d,color:#052e16,stroke-width:2px;
 
   A[1 Reusable library analysis] --> B[2 Old code analysis]
   B --> C{3 Baseline test phase approved?}
@@ -118,34 +100,11 @@ flowchart TD
   I -->|Yes| J[8 Implementation via Coding Flow]
   J --> K[Validate contracts, behavior, tests, coverage]
 
-  class A,B,D,E,F,G,H,J work;
-  class C,I hitl;
-  class K done;
-  linkStyle default stroke:#334155,stroke-width:2px;
 ```
 
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
   participant U as User
   participant R as Rosetta

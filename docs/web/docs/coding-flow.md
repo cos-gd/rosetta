@@ -90,25 +90,7 @@ Rosetta provides instructions. Coding agents act on them. Rosetta itself does no
 ## Workflow Overview
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'primaryColor':'#dbeafe',
-'primaryBorderColor':'#1d4ed8',
-'primaryTextColor':'#111827',
-'secondaryColor':'#dcfce7',
-'secondaryBorderColor':'#16a34a',
-'secondaryTextColor':'#14532d',
-'tertiaryColor':'#fef3c7',
-'tertiaryBorderColor':'#d97706',
-'tertiaryTextColor':'#78350f',
-'lineColor':'#475569',
-'textColor':'#111827',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 flowchart TD
-  classDef work fill:#dbeafe,stroke:#1d4ed8,color:#111827,stroke-width:2px;
-  classDef hitl fill:#fef3c7,stroke:#b45309,color:#111827,stroke-width:2px;
-  classDef verify fill:#dcfce7,stroke:#15803d,color:#052e16,stroke-width:2px;
 
   A["1 Discovery
 small: inline
@@ -132,34 +114,11 @@ medium/large"]
 medium/large
 small: build and tests confirmed"]
 
-  class A,B,C,E,F,I,J work;
-  class D,H hitl;
-  class G,K verify;
-  linkStyle default stroke:#334155,stroke-width:2px;
 ```
 
 ## Interaction Flow
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{
-'background':'#ffffff',
-'textColor':'#111827',
-'lineColor':'#475569',
-'actorBkg':'#dbeafe',
-'actorBorder':'#1d4ed8',
-'actorTextColor':'#111827',
-'signalColor':'#475569',
-'signalTextColor':'#111827',
-'labelBoxBkgColor':'#dcfce7',
-'labelBoxBorderColor':'#16a34a',
-'labelTextColor':'#14532d',
-'noteBkgColor':'#fef3c7',
-'noteBorderColor':'#d97706',
-'noteTextColor':'#78350f',
-'activationBkgColor':'#dbeafe',
-'activationBorderColor':'#1d4ed8',
-'fontFamily':'Fira Sans, sans-serif'
-}}}%%
 sequenceDiagram
   participant U as User
   participant R as Rosetta
@@ -183,7 +142,8 @@ sequenceDiagram
   S-->>A: Review findings and validation findings
   O-->>U: Present implementation package for approval
   U-->>O: Approve or request revision
-  Note over O,U: For small tasks, the source allows phases 4 and 8 to be combined. This page keeps that conservative: approval stays explicit, and tests do not continue without it.
+  Note over O,U: For small tasks, phases 4 and 8 may be combined.
+  Note over O,U: Approval stays explicit, tests do not continue without it.
   O->>S: Write tests and run final checks
   S-->>A: Passing tests and final validation report
   O-->>U: Deliver final status with evidence
