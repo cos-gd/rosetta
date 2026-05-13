@@ -92,8 +92,7 @@ permalink: /
   <div class="try-inline">
     <div class="try-inline-sidebar">
       <div class="try-inline-tabs">
-        <button class="try-inline-tab is-active" data-filter="free">Free</button>
-        <button class="try-inline-tab" data-filter="pro">Pro</button>
+        <button class="try-inline-tab is-active" data-filter="all">All Workflows</button>
       </div>
       <div class="try-inline-list" id="try-inline-scenarios"></div>
     </div>
@@ -487,7 +486,7 @@ permalink: /
     card.className = 'try-inline-card';
     card.dataset.idx = idx;
     card.dataset.paid = s.paid ? '1' : '0';
-    var badge = s.paid ? '<span class="try-inline-card-tier try-inline-card-tier--pro">Enterprise</span>' : '<span class="try-inline-card-tier try-inline-card-tier--free">Free</span>';
+    var badge = '';
     card.innerHTML = '<div class="try-inline-card-row"><span class="try-inline-card-tag">' + s.tag + '</span>' + badge + '</div>' + s.title;
     card.addEventListener('click', function() { playInline(idx); });
     sidebar.appendChild(card);
@@ -497,17 +496,14 @@ permalink: /
   var tabs = document.querySelectorAll('.try-inline-tab');
   var chatHeader = document.querySelector('.try-inline-chat-header');
   function filterCards(filter) {
-    var isPro = filter === 'pro';
     sidebar.querySelectorAll('.try-inline-card').forEach(function(c) {
-      c.style.display = isPro ? '' : (c.dataset.paid === '0' ? '' : 'none');
+      c.style.display = '';
     });
     if (chatHeader) {
-      chatHeader.textContent = isPro
-        ? 'Available with the enterprise edition'
-        : 'Rosetta analyzing your request\u2026';
+      chatHeader.textContent = 'Rosetta analyzing your request\u2026';
     }
     sidebar.querySelectorAll('.try-inline-card-tier').forEach(function(t) {
-      t.style.display = isPro ? 'inline-block' : 'none';
+      t.style.display = 'none';
     });
   }
   tabs.forEach(function(tab) {
@@ -517,7 +513,7 @@ permalink: /
       filterCards(tab.dataset.filter);
     });
   });
-  filterCards('free');
+  filterCards('all');
 
   function playInline(idx) {
     activeIdx = idx;
@@ -597,8 +593,8 @@ permalink: /
     var autoObserver = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting && activeIdx === -1) {
-          var firstFree = sidebar.querySelector('.try-inline-card[data-paid="0"]');
-          if (firstFree) playInline(parseInt(firstFree.dataset.idx));
+          var firstCard = sidebar.querySelector('.try-inline-card');
+          if (firstCard) playInline(parseInt(firstCard.dataset.idx));
           autoObserver.unobserve(trySection);
         }
       });

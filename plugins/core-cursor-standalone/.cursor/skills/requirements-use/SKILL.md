@@ -2,7 +2,7 @@
 name: requirements-use
 description: Consume approved requirements to drive planning, implementation, and validation with explicit traceability and mandatory HITL for ambiguity or tradeoffs.
 tags: ["requirements", "skills"]
-license: Proprietary
+license: Apache-2.0
 disable-model-invocation: false
 user-invocable: true
 argument-hint: request, requirements-set?, target-scope?, constraints?, delivery-goal?
@@ -188,7 +188,7 @@ HITL gates (use when):
 Use `ACQUIRE FROM KB` to load.
 
 - workflow `requirements-use-flow`
-- rule `rules/requirements-use-best-practices.md`
+- rule `rules/requirements-use-best-practices.mdc`
 - asset `requirements-use/assets/ru-scope-capture.md`
 - asset `requirements-use/assets/ru-traceability-matrix.md`
 - asset `requirements-use/assets/ru-validation-rubric.md`

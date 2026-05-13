@@ -4724,22 +4724,6 @@ body.docs-layout main {
   background: #f7f9fc;
 }
 
-/* ===== PRO BADGE ===== */
-.badge-pro {
-  display: inline-block;
-  font-size: .6rem;
-  font-weight: 700;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: #1a1a1a;
-  background: var(--gd-gold);
-  border-radius: 3px;
-  padding: .1em .45em;
-  vertical-align: middle;
-  line-height: 1.5;
-  white-space: nowrap;
-}
-
 /* ===== INTRO LOGO (theme-aware) ===== */
 .intro-logo--light { display: none; }
 .intro-logo--dark  { display: inline; }

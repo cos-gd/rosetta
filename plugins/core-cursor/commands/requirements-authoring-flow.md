@@ -109,7 +109,7 @@ Skills:
 - skill `requirements-authoring` - authoring, reviewing, validating requirements
 
 Rules:
-- rule `rules/requirements-best-practices.md` - requirements quality and process rules
+- rule `rules/requirements-best-practices.mdc` - requirements quality and process rules
 
 </references>
 

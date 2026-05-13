@@ -1,6 +1,6 @@
 # Rosetta Workflows Index
 
-All paths are relative to Rosetta Core Plugin Path.
+All paths are relative to Rosetta Plugin Path.
 
 - `commands/adhoc-flow.md`: "Rosetta ad-hoc adaptive meta-workflow that constructs, tracks, reviews, and executes a tailored execution plan per user request using building blocks and available instructions. Useful for small or simple tasks if none other workflows matches. Lightweight."
 - `commands/aqa-flow.md`: MUST apply when automated QA/testing task is assigned. (e.g if user asks to write automation tests for feature, create test automation)

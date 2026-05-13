@@ -99,7 +99,7 @@ For detailed change history, use git history and PRs instead of expanding this f
 ### Documentation and Public Surface
 
 - Installation, deployment, quickstart, troubleshooting, and README content were aligned with the current transport/auth model.
-- Usage guides describe workflow phases, expected subagents/artifacts, HITL gates, and user responsibilities for both OSS and PRO workflow families.
+- Usage guides describe workflow phases, expected subagents/artifacts, HITL gates, and user responsibilities for the unified Rosetta workflow set.
 - Docs pages rendered via the Jekyll site now convert fenced Mermaid blocks client-side in the docs layout, preserve authoring as plain ````mermaid` fences, rerender on theme changes, and scale rendered SVGs for better readability on GitHub Pages direct loads.
 - Internal/private environment details were replaced with public-safe placeholders where appropriate.
 - Public Docker Hub references remain intentionally visible because they are part of the OSS distribution surface.

@@ -55,7 +55,7 @@ MANDATORY REVIEW CHECKS:
    - what artifacts to expect
 7. The page follows the required 17-section structure.
 8. At least one readable mermaid flowchart and one readable mermaid sequence diagram are present, with explicit light/dark-safe colors.
-9. The source links point to the correct OSS or PRO repo and include all relevant phase files.
+9. The source links point to the correct Rosetta repository path and include all relevant phase files.
 10. The writing is explicit and compact without losing operational meaning.
 
 REJECTION TRIGGERS:

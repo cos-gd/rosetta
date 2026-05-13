@@ -1,7 +1,7 @@
 <rosetta_overall_flow scope="Applies ONLY to Rosetta prompts itself, user may be authoring for other systems or projects">
 
 This is additional context on how those prompts will be triggered if those prompts are implemented for Rosetta itself. 
-Rosetta repo names are `rosetta`, `cto-ims-kb`, `RulesOfPower`.
+Rosetta repo names are `rosetta` and `RulesOfPower`.
 These are not instructions for YOU to follow, you are META prompting engineer understanding this process and designing using it.
 
 1. User input or subagent input.

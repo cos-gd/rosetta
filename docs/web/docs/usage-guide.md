@@ -201,7 +201,7 @@ Read full workflow: [Code Analysis Flow](/rosetta/docs/code-analysis-flow/)
 </details>
 
 <details markdown="1">
-<summary><b>Research <span class="badge-pro">PRO</span></b></summary>
+<summary><b>Research</b></summary>
 
 Use this for project-related research, investigation, or technical comparison that needs systematic exploration and grounded references. Rosetta first turns the request into a focused research prompt, then runs the approved prompt through a dedicated research pass.
 
@@ -226,7 +226,7 @@ Read full workflow: [Research Flow](/rosetta/docs/research-flow/)
 </details>
 
 <details markdown="1">
-<summary><b>Automated QA <span class="badge-pro">PRO</span></b></summary>
+<summary><b>Automated QA</b></summary>
 
 Creates or updates automated UI tests from a TestRail case, Confluence context, and the project test architecture. The workflow reads requirements first, clarifies assertions, analyzes existing tests and Page Objects, identifies selectors from source or page HTML, implements the test, then waits for execution results before proposing fixes.
 
@@ -254,7 +254,7 @@ Read full workflow: [AQA Flow](/rosetta/docs/aqa-flow/)
 </details>
 
 <details markdown="1">
-<summary><b>Test Case Generation <span class="badge-pro">PRO</span></b></summary>
+<summary><b>Test Case Generation</b></summary>
 
 Generates structured requirements and TestRail-ready test cases from Jira and Confluence. The workflow collects source material, identifies contradictions and gaps, asks targeted clarification questions, creates a requirements document, generates optimized test scenarios, and can export them to TestRail.
 
@@ -281,7 +281,7 @@ Read full workflow: [Test Case Generation Flow](/rosetta/docs/testgen-flow/)
 </details>
 
 <details markdown="1">
-<summary><b>Modernization <span class="badge-pro">PRO</span></b></summary>
+<summary><b>Modernization</b></summary>
 
 Large migration workflow for code conversions, platform upgrades, framework upgrades, containerization, Linux enablement, and rearchitecture. Rosetta documents what exists, validates behavior with evidence, maps the target design, gets approval, then implements from approved specs.
 
@@ -309,7 +309,7 @@ Read full workflow: [Modernization Flow](/rosetta/docs/modernization-flow/)
 </details>
 
 <details markdown="1">
-<summary><b>External Library <span class="badge-pro">PRO</span></b></summary>
+<summary><b>External Library</b></summary>
 
 Onboards an external or private codebase so AI agents can use it in the current project without direct source access during later work. Rosetta packages the external project, extracts a compact learning flow, publishes reference material, and verifies that agents can find it.
 
@@ -333,7 +333,7 @@ Read full workflow: [External Library Flow](/rosetta/docs/external-lib-flow/)
 </details>
 
 <details markdown="1">
-<summary><b>Coding Agents Prompting <span class="badge-pro">PRO</span></b></summary>
+<summary><b>Coding Agents Prompting</b></summary>
 
 Authors or adapts prompts for AI coding agents. Rosetta keeps orchestration thin, records state after every phase, carries an approved Prompt Brief through the work, and validates that the final prompt set traces back to the original intent.
 
@@ -440,26 +440,26 @@ Reusable units of work that workflows and subagents invoke. Each skill focuses o
 | **Init Workspace Rules** | Create local cached agent rules configured for IDE/OS/project context |
 | **Init Workspace Shells** | Generate IDE/CodingAgent shell files from Rosetta schemas |
 | **Init Workspace Verification** | Verify initialization completeness and run catch-up for missed artifacts |
-| **Backward Compatibility** <span class="badge-pro">PRO</span> | Ensure changes preserve backward compatibility |
-| **Code Review** <span class="badge-pro">PRO</span> | Structured code review against standards and intent |
-| **Context Engineering** <span class="badge-pro">PRO</span> | Advanced context construction and optimization |
-| **Data Generation** <span class="badge-pro">PRO</span> | Generate test data and synthetic datasets |
-| **Design** <span class="badge-pro">PRO</span> | System and API design patterns |
-| **Discovery** <span class="badge-pro">PRO</span> | Deep codebase and domain discovery |
-| **Documentation** <span class="badge-pro">PRO</span> | Technical documentation authoring |
-| **Git** <span class="badge-pro">PRO</span> | Git operations and workflow management |
-| **Large File Handling** <span class="badge-pro">PRO</span> | Process files too large for single-pass context |
-| **Plan Review** <span class="badge-pro">PRO</span> | Review execution plans for completeness and risk |
-| **Prompt Diagnosis** <span class="badge-pro">PRO</span> | Diagnose and fix underperforming prompts |
-| **Research** <span class="badge-pro">PRO</span> | Systematic deep research using meta-prompting with grounded references and self-validation |
-| **Scenarios Generation** <span class="badge-pro">PRO</span> | Generate test scenarios from requirements |
-| **Security** <span class="badge-pro">PRO</span> | Security analysis and vulnerability assessment |
-| **Simulation** <span class="badge-pro">PRO</span> | Simulate prompt execution for validation |
-| **Technical Summarization** <span class="badge-pro">PRO</span> | Concise technical summaries of complex content |
-| **Template Execution** <span class="badge-pro">PRO</span> | Execute parameterized prompt templates |
-| **Coding Agents Prompt Authoring** <span class="badge-pro">PRO</span> | Author, update, and validate prompts for AI coding agents with analytics artifacts |
-| **Coding Agents Farm** <span class="badge-pro">PRO</span> | Orchestrate multiple coding agents in parallel on isolated git worktrees |
-| **Natural Writing** <span class="badge-pro">PRO</span> | Clear, human-sounding text without AI cliches or marketing hype |
+| **Backward Compatibility** | Ensure changes preserve backward compatibility |
+| **Code Review** | Structured code review against standards and intent |
+| **Context Engineering** | Advanced context construction and optimization |
+| **Data Generation** | Generate test data and synthetic datasets |
+| **Design** | System and API design patterns |
+| **Discovery** | Deep codebase and domain discovery |
+| **Documentation** | Technical documentation authoring |
+| **Git** | Git operations and workflow management |
+| **Large File Handling** | Process files too large for single-pass context |
+| **Plan Review** | Review execution plans for completeness and risk |
+| **Prompt Diagnosis** | Diagnose and fix underperforming prompts |
+| **Research** | Systematic deep research using meta-prompting with grounded references and self-validation |
+| **Scenarios Generation** | Generate test scenarios from requirements |
+| **Security** | Security analysis and vulnerability assessment |
+| **Simulation** | Simulate prompt execution for validation |
+| **Technical Summarization** | Concise technical summaries of complex content |
+| **Template Execution** | Execute parameterized prompt templates |
+| **Coding Agents Prompt Authoring** | Author, update, and validate prompts for AI coding agents with analytics artifacts |
+| **Coding Agents Farm** | Orchestrate multiple coding agents in parallel on isolated git worktrees |
+| **Natural Writing** | Clear, human-sounding text without AI cliches or marketing hype |
 
 </details>
 
@@ -477,10 +477,10 @@ Workflows delegate phases to specialized subagents. Each has a focused role, its
 | **Engineer** | Executes implementation and testing tasks |
 | **Reviewer** | Inspects artifacts against intent and contracts, provides recommendations |
 | **Validator** | Verifies implementation through actual execution and evidence-based validation |
-| **Analyst** <span class="badge-pro">PRO</span> | Business and technical requirements analysis |
-| **Orchestrator** <span class="badge-pro">PRO</span> | Manages a team of subagents, owns delegation quality end-to-end |
-| **Researcher** <span class="badge-pro">PRO</span> | Deep research with grounded references and systematic exploration |
-| **Prompt Engineer** <span class="badge-pro">PRO</span> | Authors and adapts prompt artifacts under explicit HITL approvals |
+| **Analyst** | Business and technical requirements analysis |
+| **Orchestrator** | Manages a team of subagents, owns delegation quality end-to-end |
+| **Researcher** | Deep research with grounded references and systematic exploration |
+| **Prompt Engineer** | Authors and adapts prompt artifacts under explicit HITL approvals |
 
 </details>
 
@@ -568,13 +568,9 @@ These rules are always active. They cannot be turned off.
 
 ## Plugins
 
-Rosetta is distributed as plugins for Claude Code and Cursor.
+Rosetta is distributed as a single plugin for supported IDEs. The plugin bundles the full Rosetta instruction set locally, including workflows, skills, agents, rules, templates, and bootstrap guardrails.
 
-- **core** — 20 skills, 7 agents, 5 workflows, 11 rules, 7 IDE templates. Full OSS foundation bundled locally.
-- **grid** — 4 skills, 2 agents, 2 workflows, 2 rules. Enterprise extensions (requires core).
-- **rosetta** — bootstrap rule and MCP connection only. Smallest footprint, all instructions loaded from MCP on demand.
-
-See [Installation — Plugin-Based Installation](/rosetta/docs/installation/#plugin-based-installation) for install commands.
+See [Plugins](/rosetta/docs/plugins/) for install commands.
 
 ## Best Practices
 

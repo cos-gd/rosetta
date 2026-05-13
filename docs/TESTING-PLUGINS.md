@@ -3,20 +3,18 @@
 ```
 # install marketplace once
 claude plugin marketplace add ../../GAIN/rosetta/.claude-plugin/marketplace.json
-claude plugin marketplace add ../../GAIN/cto-ims-kb/.claude-plugin/marketplace.json
 
 # install plugins
-claude plugin install core@rosetta
-claude plugin install grid@rosetta-pro
+claude plugin install rosetta@rosetta
 
 # update as many times as you make changes
-claude plugin marketplace update rosetta && claude plugin uninstall core@rosetta && claude plugin install core@rosetta
+claude plugin marketplace update rosetta && claude plugin uninstall rosetta@rosetta && claude plugin install rosetta@rosetta
 ```
 
 # Copilot
 
 Add marketplace to `chat.plugins.marketplaces` in settings using using local files path. Example: `file:///Users/isolomatov/Sources/GAIN/rosetta`.
-Go to agent customizations screen (settings gear icon in Copliot chat plane), click `Browse Marketplaces`, click `install` for `core`.
+Go to agent customizations screen (settings gear icon in Copliot chat plane), click `Browse Marketplaces`, click `install` for `rosetta`.
 
 # Codex
 

@@ -6,7 +6,7 @@ permalink: /docs/aqa-flow/
 
 # AQA Flow
 
-<span class="badge-pro">PRO</span>
+
 
 ## TL;DR
 
@@ -430,12 +430,12 @@ Conditional outputs:
 
 Authoritative source workflow and phases:
 
-- [aqa-flow.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/aqa-flow.md)
-- [aqa-flow-data-collection.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/aqa-flow-data-collection.md)
-- [aqa-flow-requirements-clarification.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/aqa-flow-requirements-clarification.md)
-- [aqa-flow-code-analysis.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/aqa-flow-code-analysis.md)
-- [aqa-flow-selector-identification.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/aqa-flow-selector-identification.md)
-- [aqa-flow-selector-implementation.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/aqa-flow-selector-implementation.md)
-- [aqa-flow-test-implementation.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/aqa-flow-test-implementation.md)
-- [aqa-flow-test-report-analysis.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/aqa-flow-test-report-analysis.md)
-- [aqa-flow-test-correction.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/aqa-flow-test-correction.md)
+- [aqa-flow.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/aqa-flow.md)
+- [aqa-flow-data-collection.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/aqa-flow-data-collection.md)
+- [aqa-flow-requirements-clarification.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/aqa-flow-requirements-clarification.md)
+- [aqa-flow-code-analysis.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/aqa-flow-code-analysis.md)
+- [aqa-flow-selector-identification.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/aqa-flow-selector-identification.md)
+- [aqa-flow-selector-implementation.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/aqa-flow-selector-implementation.md)
+- [aqa-flow-test-implementation.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/aqa-flow-test-implementation.md)
+- [aqa-flow-test-report-analysis.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/aqa-flow-test-report-analysis.md)
+- [aqa-flow-test-correction.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/aqa-flow-test-correction.md)

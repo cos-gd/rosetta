@@ -6,11 +6,7 @@ permalink: /docs/external-lib-flow/
 
 # External Library Flow
 
-<span class="badge-pro">PRO</span>
 
-## Availability
-
-Available in the Pro instructions repository. This workflow is not part of the OSS instruction set.
 
 ## TL;DR
 
@@ -304,4 +300,4 @@ If any of those checks fail, later workflows will either miss the dependency ent
 
 ## Source Files
 
-- [external-lib-flow.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/external-lib-flow.md)
+- [external-lib-flow.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/external-lib-flow.md)

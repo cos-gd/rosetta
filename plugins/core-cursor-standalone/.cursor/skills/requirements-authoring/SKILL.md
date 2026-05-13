@@ -2,7 +2,7 @@
 name: requirements-authoring
 description: Author, update, and validate functional and non-functional requirements as a source of truth using atomic requirement units with explicit user approval.
 tags: ["requirements", "skills"]
-license: Proprietary
+license: Apache-2.0
 disable-model-invocation: false
 user-invocable: true
 argument-hint: request, existing-requirements?, scope?, constraints?, stakeholders?
@@ -468,7 +468,7 @@ HITL gates (use when):
 Use `ACQUIRE FROM KB` to load.
 
 - workflow `requirements-flow`
-- rule `rules/requirements-best-practices.md`
+- rule `rules/requirements-best-practices.mdc`
 - asset `requirements-authoring/assets/ra-intent-capture.md`
 - asset `requirements-authoring/assets/ra-requirement-unit.xml`
 - asset `requirements-authoring/assets/ra-validation-rubric.md`

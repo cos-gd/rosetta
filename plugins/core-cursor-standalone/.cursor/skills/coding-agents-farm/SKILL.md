@@ -1,7 +1,7 @@
 ---
 name: coding-agents-farm
 description: Orchestrate multiple coding agent farms via CLI (Claude, Codex, Copilot, Gemini, OpenCode, Goose) running in parallel on isolated git worktrees. Farm Leader plans, dispatches, monitors, intervenes, and merges results.
-license: Proprietary
+license: Apache-2.0
 disable-model-invocation: false
 user-invocable: true
 argument-hint: tasks-or-plan, cli-selection?, model-preferences?

@@ -1,6 +1,6 @@
 {
   "name": "rosetta",
-  "description": "Rosetta Core for Cursor - Software Engineering Accelerator OSS foundation for AI agent instructions, workflows, and guardrails.",
+  "description": "Rosetta for Cursor - Software Engineering Accelerator instruction set, workflows, and guardrails.",
   "version": "2.0.32",
   "author": {
     "name": "Grid Dynamics",
@@ -21,17 +21,17 @@
   ],
   "category": "productivity",
   "rules": [
-    "./rules/bootstrap-core-policy.md",
-    "./rules/bootstrap-execution-policy.md",
-    "./rules/bootstrap-guardrails.md",
-    "./rules/bootstrap-hitl-questioning.md",
-    "./rules/bootstrap-rosetta-files.md",
-    "./rules/plugin-files-mode.md",
-    "./rules/requirements-best-practices.md",
-    "./rules/requirements-use-best-practices.md",
-    "./rules/speckit-integration-policy.md",
-    "./rules/coding-iac-best-practices.md",
-    "./rules/prompt-best-practices.md"
+    "./rules/bootstrap-core-policy.mdc",
+    "./rules/bootstrap-execution-policy.mdc",
+    "./rules/bootstrap-guardrails.mdc",
+    "./rules/bootstrap-hitl-questioning.mdc",
+    "./rules/bootstrap-rosetta-files.mdc",
+    "./rules/plugin-files-mode.mdc",
+    "./rules/requirements-best-practices.mdc",
+    "./rules/requirements-use-best-practices.mdc",
+    "./rules/speckit-integration-policy.mdc",
+    "./rules/coding-iac-best-practices.mdc",
+    "./rules/prompt-best-practices.mdc"
   ],
   "hooks": "./hooks/hooks.json"
 }

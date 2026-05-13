@@ -6,7 +6,7 @@ permalink: /docs/testgen-flow/
 
 # Test Case Generation Flow
 
-**Availability:** <span class="badge-pro">PRO</span>
+**Availability:**
 
 ## TL;DR
 
@@ -375,11 +375,11 @@ Common project-level artifact:
 
 Authoritative workflow sources:
 
-- [testgen-flow.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/testgen-flow.md)
-- [testgen-flow-project-config-loading.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/testgen-flow-project-config-loading.md)
-- [testgen-flow-data-collection.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/testgen-flow-data-collection.md)
-- [testgen-flow-gap-and-contradiction-analysis.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/testgen-flow-gap-and-contradiction-analysis.md)
-- [testgen-flow-question-generation.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/testgen-flow-question-generation.md)
-- [testgen-flow-requirements-document-generation.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/testgen-flow-requirements-document-generation.md)
-- [testgen-flow-test-case-generation.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/testgen-flow-test-case-generation.md)
-- [testgen-flow-test-case-export.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/testgen-flow-test-case-export.md)
+- [testgen-flow.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/testgen-flow.md)
+- [testgen-flow-project-config-loading.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/testgen-flow-project-config-loading.md)
+- [testgen-flow-data-collection.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/testgen-flow-data-collection.md)
+- [testgen-flow-gap-and-contradiction-analysis.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/testgen-flow-gap-and-contradiction-analysis.md)
+- [testgen-flow-question-generation.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/testgen-flow-question-generation.md)
+- [testgen-flow-requirements-document-generation.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/testgen-flow-requirements-document-generation.md)
+- [testgen-flow-test-case-generation.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/testgen-flow-test-case-generation.md)
+- [testgen-flow-test-case-export.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/testgen-flow-test-case-export.md)

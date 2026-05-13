@@ -15,7 +15,7 @@ Enforce that target prompt:
 - Skills can't call skills, Phase can't call phases, Subagents can't call subagents, Workflows can, and Rules can.
 - No lateral/sibling awareness, no reverse awareness, no cross-skill deep linking (exception: frontmatters, and keywords)
 - Always check those prompts vs their schema (critical, as you must not break contract)
-- If prompt is for rosetta itself (repo with target prompt is cto-ims-kb, rosetta, RulesOfPower), ACQUIRE `coding-agents-prompt-authoring/references/pa-rosetta.md` FROM KB and validate prompt uses it
+- If prompt is for rosetta itself (repo with target prompt is rosetta or RulesOfPower), ACQUIRE `coding-agents-prompt-authoring/references/pa-rosetta.md` FROM KB and validate prompt uses it
 
 </hardening>
 

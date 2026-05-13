@@ -215,31 +215,25 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> dict[str, str]:
     should_normalize = spec.normalize_models or spec.copilot_models or spec.cursor_models or spec.codex_models
     folder_renames: dict[str, str] = dict(spec.rename_folders)
 
-    # Build exact filename mapping (for renaming actual files) and full-path mapping (for content replacement).
-    # path_renames maps "workflows/coding-flow.md" → "commands/coding-flow.md" so content replacement
-    # is precise and never accidentally matches partial folder names or bare words.
-    file_renames: dict[str, str] = {}
+    # Build path_renames: maps source-relative path → final destination-relative path.
+    # Covers both folder renames and regex file renames so content rewriting is precise.
     path_renames: dict[str, str] = {}
-    if folder_renames:
+    if folder_renames or spec.rename_files:
         for src in sorted(core_source.rglob("*")):
             if src.is_dir():
                 continue
             rel = src.relative_to(core_source)
-            if rel.parts[0] not in folder_renames:
-                continue
-            old_folder = rel.parts[0]
-            new_folder = folder_renames[old_folder]
-            filename = rel.name
-            new_filename = filename
-            if spec.rename_files:
-                for old_suf, new_suf in spec.rename_files:
-                    if filename.endswith(old_suf):
-                        new_filename = filename[:-len(old_suf)] + new_suf
-                        file_renames[filename] = new_filename
-                        break
-            old_rel = "/".join(rel.parts)
-            new_parts = [new_folder] + list(rel.parts[1:-1]) + [new_filename]
-            path_renames[old_rel] = "/".join(new_parts)
+            source_rel = "/".join(rel.parts)
+            parts = list(rel.parts)
+            if folder_renames:
+                parts[0] = folder_renames.get(parts[0], parts[0])
+            intermediate_rel = "/".join(parts)
+            final_rel = (
+                _apply_rename_files(intermediate_rel, spec.rename_files)
+                if spec.rename_files else None
+            ) or intermediate_rel
+            if final_rel != source_rel:
+                path_renames[source_rel] = final_rel
     # Add folder-level entries so bare "workflows/" references in instruction text are also updated
     for old_folder, new_folder in folder_renames.items():
         path_renames[f"{old_folder}/"] = f"{new_folder}/"
@@ -268,9 +262,13 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> dict[str, str]:
             target = target.with_suffix(".agent.md")
             renamed_count += 1
 
-        # Rename files in renamed folders using exact mapping (e.g., *.md → *.prompt.md for Copilot)
-        if file_renames and target.name in file_renames:
-            target = target.parent / file_renames[target.name]
+        # Rename files using regex patterns (e.g. rules/*.md → rules/*.mdc for Cursor)
+        if spec.rename_files:
+            dest_rel = "/".join(target.relative_to(destination).parts)
+            new_rel = _apply_rename_files(dest_rel, spec.rename_files)
+            if new_rel:
+                target = destination / new_rel
+                renamed_count += 1
 
         target.parent.mkdir(parents=True, exist_ok=True)
 
@@ -295,9 +293,7 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> dict[str, str]:
 
     msg = f"      copied {copied_count} item(s) to {destination}"
     if renamed_count:
-        msg += f" (renamed {renamed_count} agent(s) to .agent.md)"
-    if file_renames:
-        msg += f" (renamed {len(file_renames)} file(s) with new extension)"
+        msg += f" (renamed {renamed_count} file(s))"
     print(msg, flush=True)
     return path_renames
 
@@ -392,7 +388,7 @@ _BOOTSTRAP_FILES: tuple[str, ...] = (
 )
 
 _PLUGIN_PATH_HOOKS: dict[str, dict] = {
-    "core-claude": {"type": "command", "command": 'printf \'%s\' "{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"SessionStart\\\",\\\"additionalContext\\\":\\\"Rosetta Core Plugin Path: ${CLAUDE_PLUGIN_ROOT}\\\"}}"', "once": True},
+    "core-claude": {"type": "command", "command": 'printf \'%s\' "{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"SessionStart\\\",\\\"additionalContext\\\":\\\"Rosetta Plugin Path: ${CLAUDE_PLUGIN_ROOT}\\\"}}"', "once": True},
     "core-codex": {
         "type": "command",
         "command": (
@@ -401,7 +397,7 @@ _PLUGIN_PATH_HOOKS: dict[str, dict] = {
             '[ ! -f "$workspace_root/.agents/rules/bootstrap-rosetta-files.md" ]; do '
             'workspace_root="$(dirname "$workspace_root")"; done; '
             'if [ -f "$workspace_root/.agents/rules/bootstrap-rosetta-files.md" ]; then '
-            'printf \'%s\' "{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"SessionStart\\\",\\\"additionalContext\\\":\\\"Rosetta Core Plugin Path: $workspace_root/.agents\\\"}}"; fi'
+            'printf \'%s\' "{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"SessionStart\\\",\\\"additionalContext\\\":\\\"Rosetta Plugin Path: $workspace_root/.agents\\\"}}"; fi'
         ),
         "statusMessage": "Loading Rosetta bootstrap",
         "timeout": 30,
@@ -413,16 +409,16 @@ _PLUGIN_PATH_HOOKS: dict[str, dict] = {
             '"$HOME/.local/share/Code/agentPlugins"; do '
             'root="$base/github.com/griddynamics/rosetta/plugins/core-copilot"; '
             'if [ -f "$root/rules/bootstrap-rosetta-files.md" ]; then '
-            'printf \'%s\' "{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"SessionStart\\\",\\\"additionalContext\\\":\\\"Rosetta Core Plugin Path: $root\\\"}}"; '
+            'printf \'%s\' "{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"SessionStart\\\",\\\"additionalContext\\\":\\\"Rosetta Plugin Path: $root\\\"}}"; '
             'break; fi; done'
         ),
         "powershell": (
             '$root = "$env:LOCALAPPDATA\\Code\\agentPlugins\\github.com\\griddynamics\\rosetta\\plugins\\core-copilot"; '
             'if (Test-Path "$root\\rules\\bootstrap-rosetta-files.md") '
-            '{ Write-Output (\'{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Rosetta Core Plugin Path: \' + $root + \'"}}\') }'
+            '{ Write-Output (\'{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Rosetta Plugin Path: \' + $root + \'"}}\') }'
         ),
     },
-    "core-cursor": {"type": "command", "command": 'printf \'{"additional_context":"Rosetta Core Plugin Path: %s"}\' "${CURSOR_PROJECT_DIR}"'},
+    "core-cursor": {"type": "command", "command": 'printf \'{"additional_context":"Rosetta Plugin Path: %s"}\' "${CURSOR_PROJECT_DIR}"'},
 }
 
 def build_bootstrap_replacements(dest_dir: Path) -> tuple[dict[str, str], int]:
@@ -542,7 +538,7 @@ def generate_folder_index(destination: Path, folder_name: str, required_tag: str
 
     entries: list[tuple[str, str]] = []
     for item in sorted(target_dir.iterdir()):
-        if item.name == "INDEX.md" or item.suffix != ".md":
+        if item.name == "INDEX.md" or item.suffix not in (".md", ".mdc"):
             continue
         content = item.read_text(encoding="utf-8")
         if required_tag is not None:
@@ -562,7 +558,7 @@ def generate_folder_index(destination: Path, folder_name: str, required_tag: str
     lines = [
         f"# Rosetta {display_name} Index",
         "",
-        "All paths are relative to Rosetta Core Plugin Path.",
+        "All paths are relative to Rosetta Plugin Path.",
         "",
     ]
     for filename, description in entries:
@@ -677,6 +673,15 @@ def _is_agent_file(relative_path: Path) -> bool:
     )
 
 
+def _apply_rename_files(dest_rel: str, rename_files: tuple[tuple[str, str], ...]) -> str | None:
+    for pattern, replacement in rename_files:
+        if re.fullmatch(pattern, dest_rel):
+            folder = dest_rel.rsplit("/", 1)[0] if "/" in dest_rel else ""
+            new_filename = re.sub(pattern, replacement, dest_rel)
+            return f"{folder}/{new_filename}" if folder else new_filename
+    return None
+
+
 def _inject_index_content(subfolder: Path, index_folder: str, target_rel: str) -> None:
     index_content = (subfolder / index_folder / "INDEX.md").read_text(encoding="utf-8")
     target = subfolder / target_rel
@@ -780,6 +785,7 @@ def sync_generated_plugins(repo_root: Path) -> int:
             preserved_files=("hooks",),
             cursor_models=True,
             rename_folders=(("workflows", "commands"),),
+            rename_files=((r"rules/(.+)\.md", r"\1.mdc"),),
             generated_indexes=("rules", "commands"),
             templates=("hooks/hooks.json.tmpl",),
         ),
@@ -790,7 +796,7 @@ def sync_generated_plugins(repo_root: Path) -> int:
             copilot_models=True,
             rename_agents=True,
             rename_folders=(("workflows", "prompts"),),
-            rename_files=((".md", ".prompt.md"),),
+            rename_files=((r"prompts/(.+)\.md", r"\1.prompt.md"),),
             generated_indexes=("rules", "prompts"),
             templates=(".github/plugin/hooks.json.tmpl",),
         ),
@@ -838,7 +844,7 @@ def sync_generated_plugins(repo_root: Path) -> int:
             subfolder=".cursor",
             excluded_source_folder=".cursor-plugin",
             inject_index_folder="commands",
-            inject_index_target="rules/plugin-files-mode.md",
+            inject_index_target="rules/plugin-files-mode.mdc",
         ),
         StandaloneSpec(
             name="core-copilot-standalone",

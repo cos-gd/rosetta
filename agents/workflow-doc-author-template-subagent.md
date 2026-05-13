@@ -38,8 +38,7 @@ NON-NEGOTIABLE CONTRACT. READ THIS AS AN ENFORCEMENT SPEC, NOT AS FRIENDLY GUIDA
 - Keep the page compact but explicit. Cut fluff, not meaning. Vague, generic, decorative, or placeholder wording is failure.
 - Include at least one mermaid flowchart and one mermaid sequence diagram. All diagrams must define explicit colors for fills, text, borders, and lines that remain readable in light and dark themes.
 - Use exact source links to the correct repo for the workflow file and every phase file:
-  - OSS: `https://github.com/griddynamics/rosetta/blob/main/<path>`
-  - PRO: `https://github.com/griddynamics/cto-ims-kb/blob/main/<path>`
+  - `https://github.com/griddynamics/rosetta/blob/main/<path>`
 - Rosetta provides instructions. Coding agents act on those instructions. Rosetta itself does not see user requests, code, or project data. Do not blur that distinction.
 - Treat every sentence as if it will be audited by a hostile reviewer looking for hallucination, drift, or lazy compression.
 

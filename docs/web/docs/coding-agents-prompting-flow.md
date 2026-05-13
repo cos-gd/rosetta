@@ -6,11 +6,7 @@ permalink: /docs/coding-agents-prompting-flow/
 
 # Coding Agents Prompting Flow
 
-<span class="badge-pro">PRO</span>
 
-## Availability
-
-Available in the Pro instructions repository. This workflow is not part of the OSS instruction set.
 
 ## TL;DR
 
@@ -361,8 +357,8 @@ Review this workflow like a prompt-systems owner, not like a casual editor.
 
 ## Source Files
 
-- [coding-agents-prompting-flow.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/coding-agents-prompting-flow.md)
-- [coding-agents-prompt-authoring/SKILL.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/skills/coding-agents-prompt-authoring/SKILL.md)
-- [pa-prompt-brief.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/skills/coding-agents-prompt-authoring/assets/pa-prompt-brief.md)
-- [pa-validation-report.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/skills/coding-agents-prompt-authoring/assets/pa-validation-report.md)
-- [pa-change-log.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/skills/coding-agents-prompt-authoring/assets/pa-change-log.md)
+- [coding-agents-prompting-flow.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/coding-agents-prompting-flow.md)
+- [coding-agents-prompt-authoring/SKILL.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/skills/coding-agents-prompt-authoring/SKILL.md)
+- [pa-prompt-brief.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/skills/coding-agents-prompt-authoring/assets/pa-prompt-brief.md)
+- [pa-validation-report.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/skills/coding-agents-prompt-authoring/assets/pa-validation-report.md)
+- [pa-change-log.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/skills/coding-agents-prompt-authoring/assets/pa-change-log.md)

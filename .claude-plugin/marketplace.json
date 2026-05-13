@@ -10,14 +10,9 @@
   },
   "plugins": [
     {
-      "name": "core",
-      "source": "./plugins/core-claude",
-      "description": "[DEPRECATED] Uninstall core@rosetta and install rosetta@rosetta instead."
-    },
-    {
       "name": "rosetta",
       "source": "./plugins/core-claude",
-      "description": "Rosetta Core for Claude - Software Engineering Accelerator OSS foundation for AI agent instructions, workflows, and guardrails."
+      "description": "Rosetta for Claude - Software Engineering Accelerator instruction set, workflows, and guardrails."
     }
   ]
 }

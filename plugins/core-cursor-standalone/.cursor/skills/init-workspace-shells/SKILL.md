@@ -1,6 +1,7 @@
 ---
 name: init-workspace-shells
 description: "Rosetta skill to generate IDE/CodingAgent shell files from KB schemas."
+license: Apache-2.0
 model: claude-sonnet-4-6
 tags: ["init", "workspace", "shells", "configure"]
 baseSchema: docs/schemas/skill.md
@@ -39,7 +40,7 @@ Step 1: Identify Environment
 Step 2: Install Base Files
 
 1. ACQUIRE `skills/load-context/SKILL.md` FROM KB — install as SKILL
-2. ACQUIRE `rules/bootstrap.md` FROM KB — install as CORE RULE, copy content (no refs/links)
+2. ACQUIRE `rules/bootstrap.mdc` FROM KB — install as CORE RULE, copy content (no refs/links)
 
 Step 3: MUST Generate Skill Shells
 

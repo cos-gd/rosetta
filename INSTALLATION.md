@@ -411,27 +411,27 @@ Do not set `VERSION`. It uses a server-controlled default for managed upgrades. 
 
 ### Plugin-Based Installation (pre-release)
 
-Rosetta publishes plugins for supported IDEs. Each plugin installs core (20 skills, 7 agents, 4 workflows, bootstrap rules).
+Rosetta publishes plugins for supported IDEs. Each plugin installs the full Rosetta instruction set locally.
 
-Read more about plugin contents and capabilities in the [Usage Guide — Plugins](USAGE_GUIDE.md#plugins).
+Read more about plugin contents and capabilities in [PLUGINS.md](PLUGINS.md).
 
 #### Claude Code
 
 ```sh
 claude plugin marketplace add griddynamics/rosetta
-claude plugin install core@rosetta
+claude plugin install rosetta@rosetta
 ```
 
 Updating after installation:
 
 ```sh
 claude plugin marketplace update rosetta
-claude plugin update core@rosetta
+claude plugin update rosetta@rosetta
 ```
 
 #### VS Code / GitHub Copilot
 
-Install `core-copilot` via VS Code Copilot Plugins (not VS Code extensions).
+Install `rosetta` via VS Code Copilot Plugins (not VS Code extensions).
 
 #### JetBrains / GitHub Copilot
 
@@ -573,7 +573,7 @@ After initialization, Rosetta maintains these files in your repository. Read mor
 
 **Plugins:**
 
-- **Claude Code:** `claude plugin uninstall core@rosetta`
+- **Claude Code:** `claude plugin uninstall rosetta@rosetta`
 - **VS Code / GitHub Copilot:** Remove the Copilot agent plugin
 - **Codex:** Delete the extracted plugin files from the repository
 

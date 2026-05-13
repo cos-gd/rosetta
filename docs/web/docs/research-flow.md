@@ -6,11 +6,7 @@ permalink: /docs/research-flow/
 
 # Research Flow
 
-<span class="badge-pro">PRO</span>
 
-## Availability
-
-Available in the Pro instructions repository. This workflow is not part of the OSS instruction set.
 
 ## TL;DR
 
@@ -271,4 +267,4 @@ Shared Rosetta customization, IDE rules, and MCP guidance already live in [Usage
 
 ## Source Files
 
-- [research-flow.md](https://github.com/griddynamics/cto-ims-kb/blob/main/instructions/r2/grid/workflows/research-flow.md)
+- [research-flow.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/research-flow.md)

@@ -1,7 +1,7 @@
 ---
 name: research
 description: Rosetta skill for systematic deep research using meta-prompting. Use when conducting project-related research that requires grounded references, incremental tracking, and self-validation.
-license: Proprietary
+license: Apache-2.0
 disable-model-invocation: false
 user-invocable: true
 argument-hint: feature, request, scope?

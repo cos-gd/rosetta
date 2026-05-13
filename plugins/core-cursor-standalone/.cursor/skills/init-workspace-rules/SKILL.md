@@ -1,6 +1,7 @@
 ---
 name: init-workspace-rules
 description: "Rosetta skill to create local cached agent rules configured for IDE/OS/project context."
+license: Apache-2.0
 model: claude-sonnet-4-6
 tags: ["init", "workspace", "rules"]
 baseSchema: docs/schemas/skill.md
@@ -23,7 +24,7 @@ Validation: all Rosetta content exists as local files, root entry point triggers
 - Rules consumed by AI agents, not humans
 - **Full-copy mode** — copies complete file content from Rosetta to local workspace
 - **Adapt** — copy content AS-IS; adapt ONLY IDE format: extension, frontmatter, directory. Never rewrite instruction content.
-- **Exclusion set** — `init-workspace-*` skills/workflows, `templates/shell-schemas/*`, `configure/*`, `rules/bootstrap.md` MUST NOT BE copied
+- **Exclusion set** — `init-workspace-*` skills/workflows, `templates/shell-schemas/*`, `configure/*`, `rules/bootstrap.mdc` MUST NOT BE copied
 - **Bundled ACQUIRE** — when ACQUIRE returns multiple `<rosetta:file>` sections, strip tags, merge into one file with one frontmatter
 - **state.mode** — `init` creates all files; `upgrade` fills gaps only, never overwrites human-customized files
 - Make sure that you follow original activation conditions, MUST never make all rules to be ALWAYS activated/loaded (overflows context)
@@ -55,7 +56,7 @@ Step 3: Discover Full Rosetta Content (subagent)
 
 Step 4: MUST Install Root Entry Point and Bootstrap Rules
 
-1. ACQUIRE `rules/local-files-mode.md` FROM KB — install as root entry point per IDE configure spec
+1. ACQUIRE `rules/local-files-mode.mdc` FROM KB — install as root entry point per IDE configure spec
 2. Embed Rosetta version marker (e.g., "R2.0") in core root file for staleness detection
 3. Apply IDE-specific frontmatter format from configure file
 4. ACQUIRE each `rules/bootstrap-*.md` FROM KB — install as individual rule files per IDE configure spec

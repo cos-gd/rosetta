@@ -1,6 +1,6 @@
 # Rosetta Rules Index
 
-All paths are relative to Rosetta Core Plugin Path.
+All paths are relative to Rosetta Plugin Path.
 
 - `rules/bootstrap-core-policy.md`: Bootstrap prerequisites, request routing, and process-level operating constraints.
 - `rules/bootstrap-execution-policy.md`: Defines planning, task execution, validation, orchestration, and memory behavior for bootstrap flow.
