@@ -1,7 +1,7 @@
 {
-  "name": "core",
+  "name": "rosetta",
   "description": "Rosetta Core for Cursor - Software Engineering Accelerator OSS foundation for AI agent instructions, workflows, and guardrails.",
-  "version": "2.0.31",
+  "version": "2.0.32",
   "author": {
     "name": "Grid Dynamics",
     "email": "rosetta-support@griddynamics.com"
@@ -24,11 +24,14 @@
     "./rules/bootstrap-core-policy.md",
     "./rules/bootstrap-execution-policy.md",
     "./rules/bootstrap-guardrails.md",
+    "./rules/bootstrap-hitl-questioning.md",
     "./rules/bootstrap-rosetta-files.md",
     "./rules/plugin-files-mode.md",
     "./rules/requirements-best-practices.md",
     "./rules/requirements-use-best-practices.md",
-    "./rules/speckit-integration-policy.md"
+    "./rules/speckit-integration-policy.md",
+    "./rules/coding-iac-best-practices.md",
+    "./rules/prompt-best-practices.md"
   ],
   "hooks": "./hooks/hooks.json"
 }

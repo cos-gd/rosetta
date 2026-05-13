@@ -6,18 +6,18 @@
   },
   "metadata": {
     "description": "Rosetta - Software Engineering Accelerator providing AI agents with unified access to instructions, workflows, skills, and business context",
-    "version": "2.0.7"
+    "version": "2.0.8"
   },
   "plugins": [
     {
       "name": "core",
       "source": "./plugins/core-claude",
-      "description": "Rosetta Core for Claude - Software Engineering Accelerator OSS foundation for AI agent instructions, workflows, and guardrails."
+      "description": "[DEPRECATED] Uninstall core@rosetta and install rosetta@rosetta instead."
     },
     {
       "name": "rosetta",
-      "source": "./plugins/rosetta",
-      "description": "Lightweight Rosetta plugin with bootstrap always enforced and Rosetta MCP for all instructions, workflows, skills, and project context. Must get approval from the client to use MCP."
+      "source": "./plugins/core-claude",
+      "description": "Rosetta Core for Claude - Software Engineering Accelerator OSS foundation for AI agent instructions, workflows, and guardrails."
     }
   ]
 }

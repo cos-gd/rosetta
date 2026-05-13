@@ -6,18 +6,13 @@
   },
   "metadata": {
     "description": "Rosetta - Software Engineering Accelerator providing AI agents with unified access to instructions, workflows, skills, and business context",
-    "version": "2.0.7"
+    "version": "2.0.8"
   },
   "plugins": [
     {
-      "name": "core",
+      "name": "rosetta",
       "source": "plugins/core-cursor",
       "description": "Rosetta Core for Cursor - Software Engineering Accelerator OSS foundation for AI agent instructions, workflows, and guardrails."
-    },
-    {
-      "name": "rosetta",
-      "source": "plugins/rosetta",
-      "description": "Lightweight Rosetta plugin with bootstrap always enforced and Rosetta MCP for all instructions, workflows, skills, and project context. Must get approval from the client to use MCP."
     }
   ]
 }

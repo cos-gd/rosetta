@@ -1,7 +1,7 @@
 {
-  "name": "core",
+  "name": "rosetta",
   "description": "Rosetta Core for Claude - Software Engineering Accelerator OSS foundation for AI agent instructions, workflows, and guardrails.",
-  "version": "2.0.31",
+  "version": "2.0.32",
   "author": {
     "name": "Grid Dynamics",
     "email": "rosetta-support@griddynamics.com"
