@@ -108,6 +108,8 @@ Create `docs/original-test-coverage-<lib/project>.md` for each project including
 
 ## Validation Checkpoint
 
+MUST spawn separate subagent to validate grounding, truthfulness, gaps, consistency, reasoning, and overall completion of the phase.
+
 Before proceeding to Phase 4:
 - [ ] All projects have ≥80% code coverage
 - [ ] Coverage reports generated and documented

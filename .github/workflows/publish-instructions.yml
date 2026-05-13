@@ -113,6 +113,7 @@ jobs:
           echo "date=${DATE}" >> $GITHUB_OUTPUT
 
           ARCHIVES=""
+          # Includes standard plugins and standalone variants (core-cursor-standalone, core-copilot-standalone)
           for plugin_dir in plugins/*/; do
             folder=$(basename "$plugin_dir")
             plugin_json=$(find "$plugin_dir" -name "plugin.json" -maxdepth 3 | head -1)
@@ -123,7 +124,11 @@ jobs:
             version=$(jq -r '.version' "$plugin_json")
             zip_name="${folder}-${version}-${DATE}.zip"
             echo "Creating archive: ${zip_name} (version: ${version})"
-            (cd "$plugin_dir" && zip -r "../../${zip_name}" . -x "*.git*")
+            if [[ "$folder" == *-standalone ]]; then
+              (cd "$plugin_dir" && zip -r "../../${zip_name}" . -x "*.git*" -x "plugin.json")
+            else
+              (cd "$plugin_dir" && zip -r "../../${zip_name}" . -x "*.git*")
+            fi
             echo "  Size: $(du -h "${zip_name}" | cut -f1)"
             ARCHIVES="${ARCHIVES} ${zip_name}"
           done

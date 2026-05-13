@@ -112,6 +112,8 @@ Each specification **MUST** include:
 
 ## Validation Checkpoint
 
+MUST spawn separate subagent to validate grounding, truthfulness, gaps, consistency, reasoning, and overall completion of the phase.
+
 Before proceeding to Phase 2:
 - [ ] All required sections present for each project
 - [ ] Free from generalizations (only facts documented)

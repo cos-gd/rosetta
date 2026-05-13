@@ -60,6 +60,8 @@ baseSchema: docs/schemas/phase.md
 
 ## Validation Checkpoint
 
+MUST spawn separate subagent to validate grounding, truthfulness, gaps, consistency, reasoning, and overall completion of the phase.
+
 Before marking as complete, validate in memory! do not write this section!
 - [ ] All final documentation phases executed
 - [ ] All inter-project dependencies accounted for

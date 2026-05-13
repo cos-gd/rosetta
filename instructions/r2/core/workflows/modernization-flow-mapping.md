@@ -111,6 +111,8 @@ For each class or enum or any language construct, specify:
 
 ## Validation Checkpoint
 
+MUST spawn separate subagent to validate grounding, truthfulness, gaps, consistency, reasoning, and overall completion of the phase.
+
 After implementation mapping:
 - [ ] Mapping completeness verified
 - [ ] Traceability ensured (source → target clear)

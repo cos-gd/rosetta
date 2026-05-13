@@ -21,11 +21,43 @@ BOOTSTRAP_PREFIX = (
     "Rosetta get_context_instructions:\n"
 )
 
-COPILOT_MODEL_MAP: dict[str, str] = {
-    "opus": "claude opus 4.6",
-    "sonnet": "claude sonnet 4.6",
-    "haiku": "claude haiku 4.5",
+CURSOR_MODEL_MAP: dict[str, str] = {
+    "opus":                   "claude-opus-4-6",
+    "sonnet":                 "claude-sonnet-4-6",
+    "haiku":                  "claude-haiku-4-5",
+    "gpt-5.5":                "gpt-5.5",
+    "gpt-5.4":                "gpt-5.4",
+    "gpt-5.3-codex":          "gpt-5.3-codex",
+    "gemini-3.1-pro-preview": "gemini-3.1-pro-preview",
+    "gemini-3.1-pro":         "gemini-3.1-pro",
+    "gemini-3-flash":         "gemini-3-flash",
 }
+
+COPILOT_MODEL_MAP: dict[str, str] = {
+    "opus":                   "Claude Opus 4.6",
+    "sonnet":                 "Claude Sonnet 4.6",
+    "haiku":                  "Claude Haiku 4.5",
+    "gpt-5.5":                "GPT-5.5",
+    "gpt-5.4":                "GPT-5.4",
+    "gpt-5.3-codex":          "GPT-5.3-Codex",
+    "gemini-3.1-pro-preview": "Gemini 3.1 Pro (Preview)",
+    "gemini-3.1-pro":         "Gemini 3.1 Pro",
+    "gemini-3-flash":         "Gemini 3 Flash",
+}
+
+
+@dataclass(frozen=True)
+class StandaloneSpec:
+    name: str
+    source_plugin: str
+    destination: Path
+    subfolder: str
+    excluded_source_folder: str
+    pre_cleanup: tuple[str, ...] = ()
+    post_cleanup: tuple[str, ...] = ()
+    copilot_instructions: bool = False
+    inject_index_folder: str | None = None
+    inject_index_target: str | None = None
 
 
 @dataclass(frozen=True)
@@ -36,8 +68,10 @@ class PluginSyncSpec:
     preserved_files: tuple[str, ...] = ()
     normalize_models: bool = False
     copilot_models: bool = False
+    cursor_models: bool = False
     codex_models: bool = False
     rename_agents: bool = False
+    rename_folders: tuple[tuple[str, str], ...] = ()
     generated_indexes: tuple[str, ...] = ()
     templates: tuple[str, ...] = ()
 
@@ -55,12 +89,20 @@ def normalize_claude_model(value: str) -> str:
     return "inherit"
 
 
-def normalize_copilot_model(value: str) -> str:
-    lowered = value.strip().lower()
-    for key, mapped in COPILOT_MODEL_MAP.items():
-        if key in lowered:
+def _normalize_by_map(value: str, model_map: dict[str, str]) -> str:
+    first = value.split(",")[0].strip().lower()
+    for key, mapped in model_map.items():
+        if key in first:
             return mapped
-    return lowered
+    return first
+
+
+def normalize_copilot_model(value: str) -> str:
+    return _normalize_by_map(value, COPILOT_MODEL_MAP)
+
+
+def normalize_cursor_model(value: str) -> str:
+    return _normalize_by_map(value, CURSOR_MODEL_MAP)
 
 
 def normalize_codex_model(value: str) -> tuple[str | None, str | None]:
@@ -164,17 +206,25 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> None:
         normalizer = None
     elif spec.copilot_models:
         normalizer = normalize_copilot_model
+    elif spec.cursor_models:
+        normalizer = normalize_cursor_model
     else:
         normalizer = normalize_claude_model
 
-    should_normalize = spec.normalize_models or spec.copilot_models or spec.codex_models
+    should_normalize = spec.normalize_models or spec.copilot_models or spec.cursor_models or spec.codex_models
+    folder_renames: dict[str, str] = dict(spec.rename_folders)
 
     for source_file in sorted(core_source.rglob("*")):
         if source_file.name == ".DS_Store":
             continue
 
         relative_path = source_file.relative_to(core_source)
-        target = destination / relative_path
+        if folder_renames:
+            parts = list(relative_path.parts)
+            parts[0] = folder_renames.get(parts[0], parts[0])
+            target = destination / Path(*parts)
+        else:
+            target = destination / relative_path
 
         if source_file.is_dir():
             target.mkdir(parents=True, exist_ok=True)
@@ -190,15 +240,17 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> None:
 
         target.parent.mkdir(parents=True, exist_ok=True)
 
-        if should_normalize and source_file.suffix == ".md":
+        if source_file.suffix == ".md" and (should_normalize or folder_renames):
             source_content = source_file.read_text(encoding="utf-8")
-            if spec.codex_models:
-                rewritten = rewrite_codex_frontmatter_models(source_content)
+            if should_normalize:
+                if spec.codex_models:
+                    rewritten = rewrite_codex_frontmatter_models(source_content)
+                else:
+                    rewritten = rewrite_frontmatter_models(source_content, normalizer=normalizer)
             else:
-                rewritten = rewrite_frontmatter_models(
-                    source_content,
-                    normalizer=normalizer,
-                )
+                rewritten = source_content
+            for old, new in folder_renames.items():
+                rewritten = rewritten.replace(f"{old}/", f"{new}/")
             target.write_text(rewritten, encoding="utf-8")
             shutil.copystat(source_file, target, follow_symlinks=True)
             copied_count += 1
@@ -445,7 +497,7 @@ def _toml_multiline(value: str) -> str:
     return f'"""\n{escaped}\n"""'
 
 
-def generate_folder_index(destination: Path, folder_name: str) -> None:
+def generate_folder_index(destination: Path, folder_name: str, required_tag: str | None = None) -> None:
     """Generate <folder>/INDEX.md listing markdown files with descriptions."""
     target_dir = destination / folder_name
     if not target_dir.is_dir():
@@ -456,6 +508,10 @@ def generate_folder_index(destination: Path, folder_name: str) -> None:
         if item.name == "INDEX.md" or item.suffix != ".md":
             continue
         content = item.read_text(encoding="utf-8")
+        if required_tag is not None:
+            raw_tags = _extract_frontmatter_field(content, "tags")
+            if required_tag not in raw_tags:
+                continue
         description = _extract_frontmatter_field(content, "description")
         if not description:
             description = item.stem.replace("-", " ").title()
@@ -464,8 +520,10 @@ def generate_folder_index(destination: Path, folder_name: str) -> None:
     if not entries:
         return
 
+    _FOLDER_TITLE_ALIASES: dict[str, str] = {"commands": "Workflows"}
+    display_name = _FOLDER_TITLE_ALIASES.get(folder_name, folder_name.title())
     lines = [
-        f"# Rosetta {folder_name.title()} Index",
+        f"# Rosetta {display_name} Index",
         "",
         "All paths are relative to Rosetta Core Plugin Path.",
         "",
@@ -582,6 +640,86 @@ def _is_agent_file(relative_path: Path) -> bool:
     )
 
 
+def _inject_index_content(subfolder: Path, index_folder: str, target_rel: str) -> None:
+    index_content = (subfolder / index_folder / "INDEX.md").read_text(encoding="utf-8")
+    target = subfolder / target_rel
+    content = target.read_text(encoding="utf-8")
+    closing_tag = "</plugin_files_mode>"
+    content = content.replace(closing_tag, f"\n{index_content.strip()}\n\n{closing_tag}")
+    target.write_text(content, encoding="utf-8")
+    print(f"      injected {index_folder}/INDEX.md into {target_rel}", flush=True)
+
+
+def _generate_copilot_instructions(subfolder: Path) -> None:
+    source_file = subfolder / "rules" / "plugin-files-mode.md"
+    content = source_file.read_text(encoding="utf-8")
+    body = strip_frontmatter(content)
+    insert_text = (
+        'Rosetta plugin root: ".github", get_context_instructions: must read fully all five '
+        '"cat .github/rules/bootstrap-*.md" files all lines. You MUST FOLLOW ALL instructions '
+        'and then MUST select workflow and execute it. All workflows are stored in '
+        '".github/workflows/<workflowtag>.md". Example "./.github/workflows/coding-flow.md".'
+    )
+    closing_tag = "</plugin_files_mode>"
+    body = body.replace(closing_tag, f"{insert_text}\n{closing_tag}")
+    (subfolder / "copilot-instructions.md").write_text(body, encoding="utf-8")
+    print("      generated copilot-instructions.md", flush=True)
+
+
+def _generate_standalone_plugin_json(source: Path, spec: StandaloneSpec) -> None:
+    plugin_json_path = next(source.rglob("plugin.json"), None)
+    version = "0.0.0"
+    if plugin_json_path:
+        version = json.loads(plugin_json_path.read_text(encoding="utf-8")).get("version", version)
+    data = {"name": spec.name, "version": version}
+    (spec.destination / "plugin.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    print(f"      generated plugin.json (version: {version})", flush=True)
+
+
+def generate_standalone_plugin(spec: StandaloneSpec, plugins_root: Path) -> None:
+    source = plugins_root / spec.source_plugin
+    if spec.destination.exists():
+        shutil.rmtree(spec.destination)
+    spec.destination.mkdir(parents=True)
+
+    subfolder_path = spec.destination / spec.subfolder
+    subfolder_path.mkdir(parents=True)
+
+    copied = 0
+    for item in sorted(source.iterdir()):
+        if item.name == spec.excluded_source_folder:
+            continue
+        target = subfolder_path / item.name
+        if item.is_dir():
+            shutil.copytree(item, target)
+        else:
+            shutil.copy2(item, target)
+        copied += 1
+
+    for rel in spec.pre_cleanup:
+        path = subfolder_path / rel
+        if path.is_dir():
+            shutil.rmtree(path)
+        elif path.is_file():
+            path.unlink()
+
+    if spec.copilot_instructions:
+        _generate_copilot_instructions(subfolder_path)
+
+    if spec.inject_index_folder and spec.inject_index_target:
+        _inject_index_content(subfolder_path, spec.inject_index_folder, spec.inject_index_target)
+
+    for rel in spec.post_cleanup:
+        path = subfolder_path / rel
+        if path.is_dir():
+            shutil.rmtree(path)
+        elif path.is_file():
+            path.unlink()
+
+    _generate_standalone_plugin_json(source, spec)
+    print(f"      copied {copied} item(s) into {spec.subfolder}/", flush=True)
+
+
 def sync_generated_plugins(repo_root: Path) -> int:
     core_source = repo_root / "instructions" / "r2" / "core"
     if not core_source.is_dir():
@@ -603,7 +741,9 @@ def sync_generated_plugins(repo_root: Path) -> int:
             destination=repo_root / "plugins" / "core-cursor",
             preserved_folder=".cursor-plugin",
             preserved_files=("hooks",),
-            generated_indexes=("rules", "workflows"),
+            cursor_models=True,
+            rename_folders=(("workflows", "commands"),),
+            generated_indexes=("rules", "commands"),
             templates=("hooks/hooks.json.tmpl",),
         ),
         PluginSyncSpec(
@@ -632,14 +772,51 @@ def sync_generated_plugins(repo_root: Path) -> int:
         reset_generated_tree(spec.destination, spec.preserved_folder, spec.preserved_files)
         copy_core_tree(spec, core_source)
         for folder_name in spec.generated_indexes:
-            generate_folder_index(spec.destination, folder_name)
+            tag = "workflow" if folder_name in ("workflows", "commands") else None
+            generate_folder_index(spec.destination, folder_name, required_tag=tag)
         if replacements is None:
             replacements, total_violations = build_bootstrap_replacements(spec.destination)
         if spec.templates:
-            process_templates(spec.destination, spec.templates, replacements)
+            plugin_replacements = replacements
+            if spec.rename_folders:
+                plugin_replacements = {}
+                for k, v in replacements.items():
+                    for old, new in spec.rename_folders:
+                        v = v.replace(f"{old}/", f"{new}/")
+                    plugin_replacements[k] = v
+            process_templates(spec.destination, spec.templates, plugin_replacements)
         if spec.name == "core-copilot":
             generate_copilot_runtime_layout(spec.destination)
         if spec.name == "core-codex":
             generate_codex_subagents(spec.destination, core_source)
             generate_codex_runtime_layout(spec.destination)
+
+    standalone_specs = [
+        StandaloneSpec(
+            name="core-cursor-standalone",
+            source_plugin="core-cursor",
+            destination=repo_root / "plugins" / "core-cursor-standalone",
+            subfolder=".cursor",
+            excluded_source_folder=".cursor-plugin",
+            inject_index_folder="commands",
+            inject_index_target="rules/plugin-files-mode.md",
+        ),
+        StandaloneSpec(
+            name="core-copilot-standalone",
+            source_plugin="core-copilot",
+            destination=repo_root / "plugins" / "core-copilot-standalone",
+            subfolder=".github",
+            excluded_source_folder=".github",
+            pre_cleanup=(".mcp.json", "hooks.json", "templates"),
+            post_cleanup=("rules/plugin-files-mode.md",),
+            copilot_instructions=True,
+            inject_index_folder="workflows",
+            inject_index_target="copilot-instructions.md",
+        ),
+    ]
+
+    for spec in standalone_specs:
+        print(f"   generating {spec.name}", flush=True)
+        generate_standalone_plugin(spec, repo_root / "plugins")
+
     return 1 if total_violations else 0

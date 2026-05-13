@@ -30,6 +30,5 @@
     "./rules/requirements-use-best-practices.md",
     "./rules/speckit-integration-policy.md"
   ],
-  "commands": "./workflows/",
   "hooks": "./hooks/hooks.json"
 }

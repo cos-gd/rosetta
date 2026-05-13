@@ -85,6 +85,8 @@ baseSchema: docs/schemas/phase.md
 
 ## Validation Checkpoint
 
+MUST spawn separate subagent to validate grounding, truthfulness, gaps, consistency, reasoning, and overall completion of the phase.
+
 Before proceeding to Phase 6:
 - [ ] Cross-project flows documented without omissions
 - [ ] Similarities and inconsistencies identified

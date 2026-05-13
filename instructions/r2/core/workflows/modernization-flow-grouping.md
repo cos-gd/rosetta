@@ -66,6 +66,8 @@ For each class group, document:
 
 ## Validation Checkpoint
 
+MUST spawn separate subagent to validate grounding, truthfulness, gaps, consistency, reasoning, and overall completion of the phase.
+
 After each class group analysis, validate (in memory! do not write this section!):
 - [ ] Class group mappings supported by explicit findings (validate in 1-2 lines)
 - [ ] Flows traced with evidence
