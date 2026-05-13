@@ -55,7 +55,7 @@ Read `references/specflow-mcp-tools.md` to route the user to the correct phase (
 When SpecFlow returns a review report and the user wants to fix their specs before another iteration, delegate to Rosetta core:
 
 - Skill: `skills/requirements-authoring`
-- Workflow: `workflows/requirements-authoring-flow.md`
+- Workflow: `prompts/requirements-authoring-flow.prompt.md`
 
 That skill handles iterative requirement updates with explicit user approval — matching the "consolidate the review report into updated specs" loop.
 

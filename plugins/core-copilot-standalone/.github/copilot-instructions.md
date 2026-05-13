@@ -42,7 +42,7 @@ Prep Step 1:
 - This is a Rosetta bootstrap for release R2.0 RUNNING AS A PLUGIN
 - Actual rules, skills, agents, workflows are bundled in plugin files
 - Plugin files mode is activated: Rosetta/KB/KnowledgeBase MCP means you MUST USE local plugin files
-- Plugin structure: `skills/`, `agents/`, `workflows/`, `rules/` at plugin root
+- Plugin structure: `skills/`, `agents/`, `prompts/`, `rules/` at plugin root
 
 # COMMAND ALIASES - PLUGIN MODE
 
@@ -53,17 +53,17 @@ Prep Step 1:
 - `ACQUIRE <file[.md]> FROM KB` => read local plugin files:
   - Search in: `{skills,/**/<file-name-with-extension>`
   - Search in: `agents/<file-name-with-extension>`
-  - Search in: `workflows/<file-name-with-extension>`
+  - Search in: `prompts/<file-name-with-extension>`
   - Search in: `rules/<file-name-with-extension>`
   - Use glob/find to locate file in plugin structure
 
 - `SEARCH <KEYWORDS> IN KB` => use grep or codebase search in plugin root with KEYWORDS as query or file name:
-  - Search in: `skills/`, `agents/`, `workflows/`, `rules/`
+  - Search in: `skills/`, `agents/`, `prompts/`, `rules/`
 
 - `LIST <path> IN KB` => list immediate children in plugin structure:
   - `LIST skills IN KB` => list `skills/` folder (skill directories)
   - `LIST agents IN KB` => list `agents/` folder (agent files)
-  - `LIST workflows IN KB` => list `workflows/` folder (workflow files)
+  - `LIST workflows IN KB` => list `prompts/` folder (workflow files)
   - `LIST rules IN KB` => list `rules/` folder (rule files)
   - `LIST skills/<skill-name> IN KB` => list contents of specific skill directory
 
@@ -82,30 +82,30 @@ USE SKILL `load-context`, if available
 - RULE in `rules/*.md`
 - SKILL in `skills/*/SKILL.md`
 - AGENT, SUBAGENT in `agents/*.md`
-- WORKFLOW, COMMAND in `workflows/*.md`
+- WORKFLOW, COMMAND in `prompts/*.md`
 
 # PREP STEP 1:
 
 - THIS FILE IS PREP STEP 1.
 - bootstrap-*.md RULES CONTAIN PREP STEP 2 & 3 TO COMPLETE.
 
-Rosetta plugin root: ".github", get_context_instructions: must read fully all five "cat .github/rules/bootstrap-*.md" files all lines. You MUST FOLLOW ALL instructions and then MUST select workflow and execute it. All workflows are stored in ".github/workflows/<workflowtag>.md". Example "./.github/workflows/coding-flow.md".
+Rosetta plugin root: ".github", get_context_instructions: must read fully all five "cat .github/rules/bootstrap-*.md" files all lines. You MUST FOLLOW ALL instructions and then MUST select workflow and execute it. All workflows (prompts) are stored in ".github/prompts/<workflowtag>.prompt.md". Example "./.github/prompts/coding-flow.prompt.md".
 
 # Rosetta Workflows Index
 
 All paths are relative to Rosetta Core Plugin Path.
 
-- `workflows/adhoc-flow.md`: "Rosetta ad-hoc adaptive meta-workflow that constructs, tracks, reviews, and executes a tailored execution plan per user request using building blocks and available instructions. Useful for small or simple tasks if none other workflows matches. Lightweight."
-- `workflows/aqa-flow.md`: MUST apply when automated QA/testing task is assigned. (e.g if user asks to write automation tests for feature, create test automation)
-- `workflows/code-analysis-flow.md`: "Rosetta workflow for reverse-engineering an existing codebase into grounded architecture documentation. Use when user asks to analyze, document, or reverse-engineer a code module, repository, or feature. Scales to SMALL (single doc) or LARGE (per-module + summary). Optional requirements branch captures SMART/MECE/EARS functional and non-functional requirements from code."
-- `workflows/coding-agents-prompting-flow.md`: Reusable workflow for prompt authoring/adaptation with thin orchestration and explicit HITL approvals. discover -> extract+intake -> blueprint -> for_each_prompt_loop(draft -> hardening -> edit) -> simulate -> validate.
-- `workflows/coding-flow.md`: "Rosetta coding and implementation workflow, includes discovery, tech specs, tech plan, subagent plan review, user plan review, implementation, subagent review implementation, validation, user review, and final validation with reviewer gates, HITL gates, and subagent delegation."
-- `workflows/external-lib-flow.md`: Use if user asks to make AI use or teach AI or onboard AI or document for AI the EXTERNAL private library or project codebase for understanding and usage in existing workspace. So that AI can use external library in current project without having direct access to its source code.
-- `workflows/init-workspace-flow.md`: "Rosetta workflow to initialize or upgrade a workspace, includes identify context, init proxying shells for target skills/agents/commands, workspace discovery, copy rules (optional, not recommended), identify patterns used, generate documentation, clarify questions, verification."
-- `workflows/modernization-flow.md`: If user asks for entire code conversion (C++ to Java), modernization (Windows to Linux Containers), upgrade (.NET 4.5 to .NET 10), re-architecture (Monolith to Microservices, SQL to NOSQL), implementing containerization or Linux support, and similar flows. Additionally including discovery/research/planning for modernization.
-- `workflows/requirements-authoring-flow.md`: Rosetta workflow for requirements authoring (creating, updating, improving, reviewing). Guides AI through discovery, intent capture, iterative requirement drafting with mandatory user approvals, validation, and delivery. Contains discovery, research, intent capture, outline, drafting, validating, and finalization
-- `workflows/research-flow.md`: Rosetta workflow for project-related deep research using meta-prompting approach. Use when user requests research, analysis, or investigation that requires systematic exploration with grounded references. Contains context load, prompt crafting using reasoning, executing research with parallel subagents, and finalization.
-- `workflows/self-help-flow.md`: Rosetta self-help. Ask about capabilities, learn how to use them, get guidance on developing with Rosetta, or seamlessly switch to executing any discovered workflow. Answers "what can you do", "how do I use X", "how modernization works", "what workflows are available", etc.
-- `workflows/testgen-flow.md`: MUST apply when test case generation task is assigned. (e.g if a user asks to generate test cases for TICKET-123, create test scenarios from Jira, analyze requirements and generate tests, export tests to TestRail)
+- `prompts/adhoc-flow.prompt.md`: "Rosetta ad-hoc adaptive meta-workflow that constructs, tracks, reviews, and executes a tailored execution plan per user request using building blocks and available instructions. Useful for small or simple tasks if none other workflows matches. Lightweight."
+- `prompts/aqa-flow.prompt.md`: MUST apply when automated QA/testing task is assigned. (e.g if user asks to write automation tests for feature, create test automation)
+- `prompts/code-analysis-flow.prompt.md`: "Rosetta workflow for reverse-engineering an existing codebase into grounded architecture documentation. Use when user asks to analyze, document, or reverse-engineer a code module, repository, or feature. Scales to SMALL (single doc) or LARGE (per-module + summary). Optional requirements branch captures SMART/MECE/EARS functional and non-functional requirements from code."
+- `prompts/coding-agents-prompting-flow.prompt.md`: Reusable workflow for prompt authoring/adaptation with thin orchestration and explicit HITL approvals. discover -> extract+intake -> blueprint -> for_each_prompt_loop(draft -> hardening -> edit) -> simulate -> validate.
+- `prompts/coding-flow.prompt.md`: "Rosetta coding and implementation workflow, includes discovery, tech specs, tech plan, subagent plan review, user plan review, implementation, subagent review implementation, validation, user review, and final validation with reviewer gates, HITL gates, and subagent delegation."
+- `prompts/external-lib-flow.prompt.md`: Use if user asks to make AI use or teach AI or onboard AI or document for AI the EXTERNAL private library or project codebase for understanding and usage in existing workspace. So that AI can use external library in current project without having direct access to its source code.
+- `prompts/init-workspace-flow.prompt.md`: "Rosetta workflow to initialize or upgrade a workspace, includes identify context, init proxying shells for target skills/agents/commands, workspace discovery, copy rules (optional, not recommended), identify patterns used, generate documentation, clarify questions, verification."
+- `prompts/modernization-flow.prompt.md`: If user asks for entire code conversion (C++ to Java), modernization (Windows to Linux Containers), upgrade (.NET 4.5 to .NET 10), re-architecture (Monolith to Microservices, SQL to NOSQL), implementing containerization or Linux support, and similar flows. Additionally including discovery/research/planning for modernization.
+- `prompts/requirements-authoring-flow.prompt.md`: Rosetta workflow for requirements authoring (creating, updating, improving, reviewing). Guides AI through discovery, intent capture, iterative requirement drafting with mandatory user approvals, validation, and delivery. Contains discovery, research, intent capture, outline, drafting, validating, and finalization
+- `prompts/research-flow.prompt.md`: Rosetta workflow for project-related deep research using meta-prompting approach. Use when user requests research, analysis, or investigation that requires systematic exploration with grounded references. Contains context load, prompt crafting using reasoning, executing research with parallel subagents, and finalization.
+- `prompts/self-help-flow.prompt.md`: Rosetta self-help. Ask about capabilities, learn how to use them, get guidance on developing with Rosetta, or seamlessly switch to executing any discovered workflow. Answers "what can you do", "how do I use X", "how modernization works", "what workflows are available", etc.
+- `prompts/testgen-flow.prompt.md`: MUST apply when test case generation task is assigned. (e.g if a user asks to generate test cases for TICKET-123, create test scenarios from Jira, analyze requirements and generate tests, export tests to TestRail)
 
 </plugin_files_mode>

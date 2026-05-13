@@ -29,7 +29,7 @@ Receiving a user request → immediately writing code, files, scripts, or comman
 <planning_and_documentation_sync_rules>
 
 1. Update IMPLEMENTATION.md after each task.
-2. MUST FULLY FOLLOW workflows/commands/flows - this ensures users get proper solution for their problem
+2. MUST FULLY FOLLOW prompts/commands/flows - this ensures users get proper solution for their problem
 3. MUST NOT NEVER JUMP DIRECTLY TO IMMEDIATE EXECUTION, you are in ENTERPRISE environment, NOT startup, you MUST REASON, prep steps are direct path to get to the point the right way!
 4. Proactively update, review, structure, restructure, and cleanup Rosetta files: including and not limited to CONTEXT.md, ARCHITECTURE.md, CODEMAP.md, TECHSTACK.md, DEPENDENCIES.md, PATTERNS/\*
 5. Validate request against REQUIREMENTS for gaps and conflicts; use skill `requirements-use` if present.

@@ -70,7 +70,15 @@ For detailed change history, use git history and PRs instead of expanding this f
 - Skill assets: `plan_manager.js` (CLI, no npm deps), `pm-schema.md` (data structure reference), `plan_manager.test.js` (60 unit tests).
 - Key behaviors: resume-safe `next` command returns `in_progress` steps with `resume: true` before `open` steps; plans stored at `plans/<name>/plan.json`; self-describing `help` command.
 - Converted `adhoc-flow-with-plan-manager` workflow to `USE SKILL plan-manager`; data structure externalized to `pm-schema.md`.
-- Plugins (`core-claude`, `core-cursor`) are auto-synced from core by `scripts/pre_commit.py`.
+- All plugins (`core-claude`, `core-cursor`, `core-copilot`, `core-codex`, `core-cursor-standalone`, `core-copilot-standalone`) are auto-synced from core by `scripts/pre_commit.py`.
+
+### Plugin Generator
+
+- **Model normalization** — `plugin_generator.py` selects the first model from the frontmatter `model:` comma-separated list using `_normalize_by_map`. `CURSOR_MODEL_MAP` maps to Cursor format (`claude-sonnet-4-6`, `gpt-5.4`); `COPILOT_MODEL_MAP` maps to Copilot format (`Claude Sonnet 4.6`, `GPT-5.4`). Fixes previous behavior where Copilot searched the entire comma-separated string and always returned Claude even when the intended first model was GPT.
+- **Folder/file rename (precise path replacement)** — `copy_core_tree` builds two dicts from a source scan: `file_renames` (old filename → new filename, for actual file renaming) and `path_renames` (full old path → full new path, for content replacement). `path_renames` entries are exact strings like `"workflows/coding-flow.md"` → `"commands/coding-flow.md"`, preventing accidental partial-word matches. Folder-level entries (`"workflows/"` → `"commands/"`) are added explicitly so bare folder references in instruction text are also updated. Both dicts are derived from `spec.rename_folders` and `spec.rename_files`. Cursor renames `workflows/` → `commands/`; Copilot renames `workflows/` → `prompts/` and files `*.md` → `*.prompt.md`. Bootstrap hook content is patched with the same `path_renames` before template processing. Index title is normalized to `# Rosetta Workflows Index` regardless of physical folder name via `_FOLDER_TITLE_ALIASES`.
+- **Copilot prompts rename** — `workflows/` → `prompts/`, files `*.md` → `*.prompt.md` for core-copilot and core-copilot-standalone. `PluginSyncSpec` gains `rename_files: tuple[tuple[str, str], ...]` (suffix pairs). `copilot-instructions.md` and bootstrap hook content reference `prompts/*.prompt.md`. `_FOLDER_TITLE_ALIASES` maps `"prompts"` → `"Workflows"`.
+- **Workflow index filtering** — `generate_folder_index` accepts `required_tag` parameter. Only files with `tags: ["workflow"]` appear in workflow/commands indexes; the 31 phase files (aqa-flow-*, init-workspace-flow-*, etc.) are excluded.
+- **Standalone plugins** — `StandaloneSpec` dataclass drives a second-pass generation loop producing `core-cursor-standalone` and `core-copilot-standalone`. Each standalone is fully wiped and recreated from its main plugin. Supports `pre_cleanup`, `post_cleanup`, `copilot_instructions`, `inject_index_folder`/`inject_index_target` for per-platform customizations. Copilot standalone generates `copilot-instructions.md` from `plugin-files-mode.md` with an inserted context instruction and appended workflow index; removes hooks, mcp.json, templates, and plugin-files-mode.md. Cursor standalone injects the commands index into `rules/plugin-files-mode.md`. Standalone `plugin.json` (version inherited from main plugin) is excluded from CI zip archives via `*-standalone` branch in `publish-instructions.yml`.
 
 ### Workflows and Automation
 
@@ -81,7 +89,7 @@ For detailed change history, use git history and PRs instead of expanding this f
   - build/publish pipeline repairs
   - rosetta-mcp publish gating that waits for the matching `ims-mcp` version to appear on PyPI before upload
   - native Git pre-commit hook shim with a shared Python entrypoint under `scripts/`
-  - generated `plugins/core-claude`, `plugins/core-cursor`, `plugins/core-copilot`, and `plugins/core-codex` trees sourced from `instructions/r2/core`
+  - generated plugin trees sourced from `instructions/r2/core` for all six plugin variants
   - plugin-specific packaging transforms for model metadata, generated indexes, and local marketplace/manifests
   - bootstrap hooks inlined at build time via `hooks.json.tmpl` templates and generic `process_templates` engine; runtime shell scripts eliminated; 4 platform-specific placeholder formats (Claude, Codex, Cursor, Copilot) generated once per build
   - Jira loader recovery after upstream API changes

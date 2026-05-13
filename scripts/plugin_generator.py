@@ -72,6 +72,7 @@ class PluginSyncSpec:
     codex_models: bool = False
     rename_agents: bool = False
     rename_folders: tuple[tuple[str, str], ...] = ()
+    rename_files: tuple[tuple[str, str], ...] = ()
     generated_indexes: tuple[str, ...] = ()
     templates: tuple[str, ...] = ()
 
@@ -197,7 +198,7 @@ def reset_generated_tree(
     )
 
 
-def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> None:
+def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> dict[str, str]:
     destination = spec.destination
     copied_count = 0
     renamed_count = 0
@@ -213,6 +214,35 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> None:
 
     should_normalize = spec.normalize_models or spec.copilot_models or spec.cursor_models or spec.codex_models
     folder_renames: dict[str, str] = dict(spec.rename_folders)
+
+    # Build exact filename mapping (for renaming actual files) and full-path mapping (for content replacement).
+    # path_renames maps "workflows/coding-flow.md" → "commands/coding-flow.md" so content replacement
+    # is precise and never accidentally matches partial folder names or bare words.
+    file_renames: dict[str, str] = {}
+    path_renames: dict[str, str] = {}
+    if folder_renames:
+        for src in sorted(core_source.rglob("*")):
+            if src.is_dir():
+                continue
+            rel = src.relative_to(core_source)
+            if rel.parts[0] not in folder_renames:
+                continue
+            old_folder = rel.parts[0]
+            new_folder = folder_renames[old_folder]
+            filename = rel.name
+            new_filename = filename
+            if spec.rename_files:
+                for old_suf, new_suf in spec.rename_files:
+                    if filename.endswith(old_suf):
+                        new_filename = filename[:-len(old_suf)] + new_suf
+                        file_renames[filename] = new_filename
+                        break
+            old_rel = "/".join(rel.parts)
+            new_parts = [new_folder] + list(rel.parts[1:-1]) + [new_filename]
+            path_renames[old_rel] = "/".join(new_parts)
+    # Add folder-level entries so bare "workflows/" references in instruction text are also updated
+    for old_folder, new_folder in folder_renames.items():
+        path_renames[f"{old_folder}/"] = f"{new_folder}/"
 
     for source_file in sorted(core_source.rglob("*")):
         if source_file.name == ".DS_Store":
@@ -238,9 +268,13 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> None:
             target = target.with_suffix(".agent.md")
             renamed_count += 1
 
+        # Rename files in renamed folders using exact mapping (e.g., *.md → *.prompt.md for Copilot)
+        if file_renames and target.name in file_renames:
+            target = target.parent / file_renames[target.name]
+
         target.parent.mkdir(parents=True, exist_ok=True)
 
-        if source_file.suffix == ".md" and (should_normalize or folder_renames):
+        if source_file.suffix == ".md" and (should_normalize or path_renames):
             source_content = source_file.read_text(encoding="utf-8")
             if should_normalize:
                 if spec.codex_models:
@@ -249,8 +283,8 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> None:
                     rewritten = rewrite_frontmatter_models(source_content, normalizer=normalizer)
             else:
                 rewritten = source_content
-            for old, new in folder_renames.items():
-                rewritten = rewritten.replace(f"{old}/", f"{new}/")
+            for old, new in path_renames.items():
+                rewritten = rewritten.replace(old, new)
             target.write_text(rewritten, encoding="utf-8")
             shutil.copystat(source_file, target, follow_symlinks=True)
             copied_count += 1
@@ -262,7 +296,10 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> None:
     msg = f"      copied {copied_count} item(s) to {destination}"
     if renamed_count:
         msg += f" (renamed {renamed_count} agent(s) to .agent.md)"
+    if file_renames:
+        msg += f" (renamed {len(file_renames)} file(s) with new extension)"
     print(msg, flush=True)
+    return path_renames
 
 
 def _extract_frontmatter_field(content: str, field: str) -> str:
@@ -520,7 +557,7 @@ def generate_folder_index(destination: Path, folder_name: str, required_tag: str
     if not entries:
         return
 
-    _FOLDER_TITLE_ALIASES: dict[str, str] = {"commands": "Workflows"}
+    _FOLDER_TITLE_ALIASES: dict[str, str] = {"commands": "Workflows", "prompts": "Workflows"}
     display_name = _FOLDER_TITLE_ALIASES.get(folder_name, folder_name.title())
     lines = [
         f"# Rosetta {display_name} Index",
@@ -657,8 +694,8 @@ def _generate_copilot_instructions(subfolder: Path) -> None:
     insert_text = (
         'Rosetta plugin root: ".github", get_context_instructions: must read fully all five '
         '"cat .github/rules/bootstrap-*.md" files all lines. You MUST FOLLOW ALL instructions '
-        'and then MUST select workflow and execute it. All workflows are stored in '
-        '".github/workflows/<workflowtag>.md". Example "./.github/workflows/coding-flow.md".'
+        'and then MUST select workflow and execute it. All workflows (prompts) are stored in '
+        '".github/prompts/<workflowtag>.prompt.md". Example "./.github/prompts/coding-flow.prompt.md".'
     )
     closing_tag = "</plugin_files_mode>"
     body = body.replace(closing_tag, f"{insert_text}\n{closing_tag}")
@@ -752,7 +789,9 @@ def sync_generated_plugins(repo_root: Path) -> int:
             preserved_folder=".github",
             copilot_models=True,
             rename_agents=True,
-            generated_indexes=("rules", "workflows"),
+            rename_folders=(("workflows", "prompts"),),
+            rename_files=((".md", ".prompt.md"),),
+            generated_indexes=("rules", "prompts"),
             templates=(".github/plugin/hooks.json.tmpl",),
         ),
         PluginSyncSpec(
@@ -770,19 +809,19 @@ def sync_generated_plugins(repo_root: Path) -> int:
     for spec in plugin_specs:
         print(f"   syncing {spec.name}", flush=True)
         reset_generated_tree(spec.destination, spec.preserved_folder, spec.preserved_files)
-        copy_core_tree(spec, core_source)
+        path_renames = copy_core_tree(spec, core_source)
         for folder_name in spec.generated_indexes:
-            tag = "workflow" if folder_name in ("workflows", "commands") else None
+            tag = "workflow" if folder_name in ("workflows", "commands", "prompts") else None
             generate_folder_index(spec.destination, folder_name, required_tag=tag)
         if replacements is None:
             replacements, total_violations = build_bootstrap_replacements(spec.destination)
         if spec.templates:
             plugin_replacements = replacements
-            if spec.rename_folders:
+            if path_renames:
                 plugin_replacements = {}
                 for k, v in replacements.items():
-                    for old, new in spec.rename_folders:
-                        v = v.replace(f"{old}/", f"{new}/")
+                    for old, new in path_renames.items():
+                        v = v.replace(old, new)
                     plugin_replacements[k] = v
             process_templates(spec.destination, spec.templates, plugin_replacements)
         if spec.name == "core-copilot":
@@ -810,7 +849,7 @@ def sync_generated_plugins(repo_root: Path) -> int:
             pre_cleanup=(".mcp.json", "hooks.json", "templates"),
             post_cleanup=("rules/plugin-files-mode.md",),
             copilot_instructions=True,
-            inject_index_folder="workflows",
+            inject_index_folder="prompts",
             inject_index_target="copilot-instructions.md",
         ),
     ]

@@ -495,23 +495,29 @@ Plugins are an alternative delivery mechanism to MCP. They deliver instructions 
 
 Each plugin contains core instructions: 20 skills, 7 agents, 4 workflows, and bootstrap rules. The content is identical across plugins — only the format differs per IDE.
 
-| Plugin | IDE |
-|---|---|
-| `core-claude` | Claude Code |
-| `core-cursor` | Cursor |
-| `core-copilot` | VS Code Copilot, JetBrains Copilot |
-| `core-codex` | Codex |
+| Plugin | IDE | Mode |
+|---|---|---|
+| `core-claude` | Claude Code | Plugin marketplace |
+| `core-cursor` | Cursor | Plugin marketplace |
+| `core-copilot` | VS Code Copilot, JetBrains Copilot | Plugin marketplace |
+| `core-codex` | Codex | Plugin marketplace |
+| `core-cursor-standalone` | Cursor | Direct extraction into repo (`.cursor/`) |
+| `core-copilot-standalone` | VS Code Copilot, JetBrains Copilot | Direct extraction into repo (`.github/`) |
 
-All four are generated from a single source tree (`instructions/r2/core/`) by the plugin generator (`scripts/plugin_generator.py`). The generator copies core instructions and adapts them for the target coding agent:
+All plugins are generated from a single source tree (`instructions/r2/core/`) by the plugin generator (`scripts/plugin_generator.py`). The generator copies core instructions and adapts them for the target coding agent:
 
-- **Model rewriting** — normalizes frontmatter `model:` to the platform's format
+- **Model rewriting** — selects the first model from the frontmatter `model:` comma-separated list and normalizes it to the platform's format. Cursor uses `CURSOR_MODEL_MAP` (e.g. `claude-sonnet-4-6`, `gpt-5.4`); Copilot uses `COPILOT_MODEL_MAP` (e.g. `Claude Sonnet 4.6`, `GPT-5.4`); Claude Code uses short names (`sonnet`, `opus`, `haiku`).
 - **Agent file format** — converts agent markdown to the IDE's expected format (`.agent.md` for Copilot, `.toml` for Codex)
-- **Directory layout** — restructures output to match IDE conventions (`.agents/` and `.codex/` for Codex, runtime configs at root for Copilot)
-- **Index generation** — produces `rules/INDEX.md` and `workflows/INDEX.md` listings
+- **Directory layout** — restructures output to match IDE conventions (`.agents/` and `.codex/` for Codex, runtime configs at root for Copilot). Cursor uses `commands/` instead of `workflows/` for workflow files; Copilot uses `prompts/` with files renamed from `*.md` to `*.prompt.md`. Content references are rewritten using precise full-path replacement (`workflows/coding-flow.md` → `commands/coding-flow.md` / `prompts/coding-flow.prompt.md`) to avoid accidental partial-word matches. `PluginSyncSpec` fields `rename_folders` and `rename_files` (suffix pairs) drive both file renaming and content rewriting; the generator builds exact `path_renames` dicts at sync time.
+- **Index generation** — produces `rules/INDEX.md` and `workflows/INDEX.md` (or `commands/INDEX.md` for Cursor, `prompts/INDEX.md` for Copilot) listings. Only files with `tags: ["workflow"]` appear in the workflow index; phase files are excluded. `commands/`, `prompts/`, and `workflows/` folders all use the heading `# Rosetta Workflows Index` via `_FOLDER_TITLE_ALIASES`.
 - **Template processing** — the generator supports `.tmpl` files inside preserved config folders: it substitutes platform-specific placeholders and writes the rendered output alongside the template (same path, `.tmpl` suffix removed). Currently used for `hooks.json`, which embeds the bootstrap payload at generation time and cannot be static. The mechanism is general-purpose and can be applied to any config that requires generated content.
 - **Copilot session locking** — Copilot has no native hook deduplication, so the generated hooks include a file-based lock ensuring each bootstrap entry fires exactly once per session. Other platforms use IDE-native mechanisms (Claude Code: `"once": true`; Codex and Cursor: built-in deduplication).
 
-Each plugin has a preserved config folder (`.claude-plugin/`, `.cursor-plugin/`, `.github/`, `.codex-plugin/`) containing the IDE-specific manifest (`plugin.json`), the `hooks.json.tmpl` template, and any static configs. Everything outside that folder is generated — wiped and regenerated on each sync. `hooks.json` is the rendered output of the template and is fully regenerated on every sync, not preserved as static content. Cursor does not need hooks to load bootstrap, because rules are supported (template placeholder still must be generated!)
+Each standard plugin has a preserved config folder (`.claude-plugin/`, `.cursor-plugin/`, `.github/`, `.codex-plugin/`) containing the IDE-specific manifest (`plugin.json`), the `hooks.json.tmpl` template, and any static configs. Everything outside that folder is generated — wiped and regenerated on each sync.
+
+**Standalone plugins** (`core-cursor-standalone`, `core-copilot-standalone`) are a second-pass derivative: generated from the already-built main plugins and placed entirely under the IDE's expected subfolder (`.cursor/` or `.github/`), ready to be extracted directly into any repository without an IDE plugin installer. Standalone folders are fully wiped and recreated on each sync. Key differences from main plugins:
+- **Cursor standalone** — copies main plugin content (excluding `.cursor-plugin/`) into `.cursor/`; injects `commands/INDEX.md` content before `</plugin_files_mode>` in `rules/plugin-files-mode.md`.
+- **Copilot standalone** — copies main plugin content (excluding `.github/`) into `.github/`; removes `hooks.json`, `.mcp.json`, `templates/`; generates `copilot-instructions.md` from `rules/plugin-files-mode.md` with an additional context instruction and the `prompts/INDEX.md` appended; removes `rules/plugin-files-mode.md` (content is incorporated). Both `plugin.json` (excluded from zip) and version inheritance from the main plugin are handled automatically by the generator.
 
 ### Reference Sources (readonly, packages currently used)
 

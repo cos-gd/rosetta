@@ -49,7 +49,7 @@ Prep Step 1:
 - This is a Rosetta bootstrap for release R2.0 RUNNING AS A PLUGIN
 - Actual rules, skills, agents, workflows are bundled in plugin files
 - Plugin files mode is activated: Rosetta/KB/KnowledgeBase MCP means you MUST USE local plugin files
-- Plugin structure: `skills/`, `agents/`, `workflows/`, `rules/` at plugin root
+- Plugin structure: `skills/`, `agents/`, `prompts/`, `rules/` at plugin root
 
 # COMMAND ALIASES - PLUGIN MODE
 
@@ -60,17 +60,17 @@ Prep Step 1:
 - `ACQUIRE <file[.md]> FROM KB` => read local plugin files:
   - Search in: `{skills,/**/<file-name-with-extension>`
   - Search in: `agents/<file-name-with-extension>`
-  - Search in: `workflows/<file-name-with-extension>`
+  - Search in: `prompts/<file-name-with-extension>`
   - Search in: `rules/<file-name-with-extension>`
   - Use glob/find to locate file in plugin structure
 
 - `SEARCH <KEYWORDS> IN KB` => use grep or codebase search in plugin root with KEYWORDS as query or file name:
-  - Search in: `skills/`, `agents/`, `workflows/`, `rules/`
+  - Search in: `skills/`, `agents/`, `prompts/`, `rules/`
 
 - `LIST <path> IN KB` => list immediate children in plugin structure:
   - `LIST skills IN KB` => list `skills/` folder (skill directories)
   - `LIST agents IN KB` => list `agents/` folder (agent files)
-  - `LIST workflows IN KB` => list `workflows/` folder (workflow files)
+  - `LIST workflows IN KB` => list `prompts/` folder (workflow files)
   - `LIST rules IN KB` => list `rules/` folder (rule files)
   - `LIST skills/<skill-name> IN KB` => list contents of specific skill directory
 
@@ -89,7 +89,7 @@ USE SKILL `load-context`, if available
 - RULE in `rules/*.md`
 - SKILL in `skills/*/SKILL.md`
 - AGENT, SUBAGENT in `agents/*.md`
-- WORKFLOW, COMMAND in `workflows/*.md`
+- WORKFLOW, COMMAND in `prompts/*.md`
 
 # PREP STEP 1:
 
