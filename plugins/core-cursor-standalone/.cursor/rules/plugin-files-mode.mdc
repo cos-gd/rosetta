@@ -2,6 +2,7 @@
 name: plugin-files-mode
 description: Rosetta bootstrap rule, top SKILL to understand user request and properly work on it
 alwaysApply: true
+applyTo: "**"
 trigger: always_on
 baseSchema: docs/schemas/rule.md
 ---

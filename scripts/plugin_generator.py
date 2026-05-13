@@ -54,6 +54,7 @@ class StandaloneSpec:
     subfolder: str
     excluded_source_folder: str
     pre_cleanup: tuple[str, ...] = ()
+    pre_move_files: tuple[tuple[str, str, str, str], ...] = ()
     post_cleanup: tuple[str, ...] = ()
     copilot_instructions: bool = False
     cursor_instructions: bool = False
@@ -708,20 +709,19 @@ def _generate_cursor_instructions(subfolder: Path) -> None:
 
 
 def _generate_copilot_instructions(subfolder: Path) -> None:
-    source_file = subfolder / "rules" / "plugin-files-mode.md"
-    content = source_file.read_text(encoding="utf-8")
-    body = strip_frontmatter(content)
+    target = subfolder / "instructions" / "plugin-files-mode.instructions.md"
+    content = target.read_text(encoding="utf-8")
     insert_text = (
-        'Rosetta plugin root: ".github", get_context_instructions: must read fully all five '
-        '"cat .github/rules/bootstrap-*.md" files all lines. READ THE ENTIRE OUTPUT ALL ~700 LINES. Do not stop until fully read. '
-        'Bootstrap contains very important content in the beginning, middle, and in the end. You MUST FOLLOW ALL instructions '
-        'and then MUST select workflow and execute it. All workflows (prompts) are stored in '
-        '".github/prompts/<workflowtag>.prompt.md". Example ".github/prompts/coding-flow.prompt.md".'
+        'Rosetta plugin root: ".github". You MUST FOLLOW ALL bootstrap-* '
+        'instructions and execute every prep step in order. After prep steps, '
+        'you MUST select a workflow and execute it. All workflows (prompts) '
+        'are stored in ".github/prompts/<workflowtag>.prompt.md". '
+        'Example ".github/prompts/coding-flow.prompt.md".'
     )
     closing_tag = "</plugin_files_mode>"
-    body = body.replace(closing_tag, f"{insert_text}\n{closing_tag}")
-    (subfolder / "copilot-instructions.md").write_text(body, encoding="utf-8")
-    print("      generated copilot-instructions.md", flush=True)
+    content = content.replace(closing_tag, f"{insert_text}\n{closing_tag}")
+    target.write_text(content, encoding="utf-8")
+    print("      injected copilot instructions into instructions/plugin-files-mode.instructions.md", flush=True)
 
 
 def _generate_standalone_plugin_json(source: Path, spec: StandaloneSpec) -> None:
@@ -760,6 +760,17 @@ def generate_standalone_plugin(spec: StandaloneSpec, plugins_root: Path) -> None
             shutil.rmtree(path)
         elif path.is_file():
             path.unlink()
+
+    for glob_pattern, target_dir, name_matcher, name_replacement in spec.pre_move_files:
+        target_path = subfolder_path / target_dir
+        target_path.mkdir(parents=True, exist_ok=True)
+        moved = 0
+        for src in sorted(subfolder_path.glob(glob_pattern)):
+            new_name = re.sub(name_matcher, name_replacement, src.name)
+            shutil.move(str(src), str(target_path / new_name))
+            moved += 1
+        if moved:
+            print(f"      moved {moved} file(s) {glob_pattern} → {target_dir}/", flush=True)
 
     if spec.copilot_instructions:
         _generate_copilot_instructions(subfolder_path)
@@ -873,10 +884,13 @@ def sync_generated_plugins(repo_root: Path) -> int:
             subfolder=".github",
             excluded_source_folder=".github",
             pre_cleanup=(".mcp.json", "hooks.json", "templates"),
-            post_cleanup=("rules/plugin-files-mode.md",),
+            pre_move_files=(
+                ("rules/bootstrap-*.md", "instructions", r"(.+)\.md", r"\1.instructions.md"),
+                ("rules/plugin-files-mode.md", "instructions", r"(.+)\.md", r"\1.instructions.md"),
+            ),
             copilot_instructions=True,
             inject_index_folder="prompts",
-            inject_index_target="copilot-instructions.md",
+            inject_index_target="instructions/plugin-files-mode.instructions.md",
         ),
     ]
 

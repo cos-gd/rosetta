@@ -2,6 +2,7 @@
 name: bootstrap-execution-policy
 description: Defines planning, task execution, validation, orchestration, and memory behavior for bootstrap flow.
 alwaysApply: true
+applyTo: "**"
 trigger: always_on
 tags: ["rosetta-bootstrap", "execution", "policy"]
 baseSchema: docs/schemas/rule.md
