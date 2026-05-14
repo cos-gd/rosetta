@@ -12,7 +12,7 @@ Windsurf supports custom configuration through repository-committed files. These
 **Configuration Locations:**
 - `AGENTS.md` - Cascade behavior instructions
 - `.windsurf/rules/` - Path-specific rules for Cascade
-- `.windsurf/commands/` - Slash commands for Cascade
+- `.windsurf/prompts/` - Slash commands for Cascade
 - `.windsurf/prompts/` - Automation workflows for Cascade
 - `.windsurf/skills/` - Multi-step tasks with supporting resources
 
@@ -154,7 +154,7 @@ paths:
 
 Reusable prompts invoked with `/command-name`.
 
-**Location:** `.windsurf/commands/`
+**Location:** `.windsurf/prompts/`
 
 **File Format:** Markdown with optional YAML frontmatter
 
@@ -174,7 +174,7 @@ Reusable prompts invoked with `/command-name`.
 
 ### Example Command Files
 
-**`.windsurf/commands/review.md`:**
+**`.windsurf/prompts/review.md`:**
 
 ```markdown
 ---
@@ -216,7 +216,7 @@ Perform comprehensive code review:
 Provide specific feedback with line numbers and actionable suggestions.
 ```
 
-**`.windsurf/commands/test.md`:**
+**`.windsurf/prompts/test.md`:**
 
 ```markdown
 ---
@@ -237,7 +237,7 @@ Generate comprehensive unit tests for the selected code:
 Use appropriate mocking for external dependencies.
 ```
 
-**`.windsurf/commands/deploy.md`:**
+**`.windsurf/prompts/deploy.md`:**
 
 ```markdown
 ---
@@ -414,7 +414,7 @@ your-project/
     │   ├── typescript.md
     │   ├── react.md
     │   └── api.md
-    ├── commands/
+    ├── prompts/
     │   ├── review.md
     │   ├── test.md
     │   └── deploy.md

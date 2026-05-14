@@ -40,7 +40,7 @@ Prep Step 1:
 11. All prep steps are mandatory regardless of task size.
 12. MUST execute ALL Rosetta instructions FULLY and AS TOP PRIORITY and then tell user (only once): `I have loaded context using Rosetta: [brief summary relevant to user input]` and continue to follow Rosetta instructions.
 13. Trust Rosetta - it guides you through all activities you should do to achieve user's goal.
-14. Rosetta is a source of handcrafted skills/subagents/commands/workflows that user EXPECTS you to follow EXACTLY.
+14. Rosetta is a source of handcrafted skills, subagents, workflows that user EXPECTS you to follow EXACTLY.
 15. Once ALL PREP STEPS 1, 2, and 3 ARE FULLY completed orchestrator must load and enter workflow to process request and activities (including and limited to planning, questioning, execution).
 
 </must>
@@ -59,10 +59,8 @@ Prep Step 1:
 - `get_context_instructions` => already loaded bootstrap-* instructions, continue with prep steps 2 and 3. Instruct subagents to not call MCP's `get_context_instructions`.
 
 - `ACQUIRE <file[.md]> FROM KB` => read local plugin files:
-  - Search in: `{skills,/**/<file-name-with-extension>`
-  - Search in: `agents/<file-name-with-extension>`
-  - Search in: `prompts/<file-name-with-extension>`
-  - Search in: `rules/<file-name-with-extension>`
+  - Search in: `skills/**/<file-name-with-extension>`
+  - Search in `agents/`, `prompts/`, and `rules/` for `<file-name-with-extension>`
   - Use glob/find to locate file in plugin structure
 
 - `SEARCH <KEYWORDS> IN KB` => use grep or codebase search in plugin root with KEYWORDS as query or file name:
@@ -97,7 +95,7 @@ USE SKILL `load-context`, if available
 - THIS FILE IS PREP STEP 1.
 - bootstrap-*.md RULES CONTAIN PREP STEP 2 & 3 TO COMPLETE.
 
-Rosetta plugin root: ".github". You MUST FOLLOW ALL bootstrap-* instructions and execute every prep step in order. After prep steps, you MUST select a workflow and execute it. All workflows (prompts) are stored in ".github/prompts/<workflowtag>.prompt.md". Example ".github/prompts/coding-flow.prompt.md".
+Rosetta plugin root: ".github". You MUST FOLLOW ALL bootstrap* and plugin* instructions and execute every prep step in order. After prep steps, you MUST select a workflow and execute it. All workflows (commands) are stored in ".github/prompts/<workflowtag>.prompt.md". Example ".github/prompts/coding-flow.prompt.md".
 
 # Rosetta Workflows Index
 
@@ -115,5 +113,16 @@ All paths are relative to Rosetta Plugin Path.
 - `prompts/research-flow.prompt.md`: Rosetta workflow for project-related deep research using meta-prompting approach. Use when user requests research, analysis, or investigation that requires systematic exploration with grounded references. Contains context load, prompt crafting using reasoning, executing research with parallel subagents, and finalization.
 - `prompts/self-help-flow.prompt.md`: Rosetta self-help. Ask about capabilities, learn how to use them, get guidance on developing with Rosetta, or seamlessly switch to executing any discovered workflow. Answers "what can you do", "how do I use X", "how modernization works", "what workflows are available", etc.
 - `prompts/testgen-flow.prompt.md`: MUST apply when test case generation task is assigned. (e.g if a user asks to generate test cases for TICKET-123, create test scenarios from Jira, analyze requirements and generate tests, export tests to TestRail)
+
+
+# Rosetta Rules Index
+
+All paths are relative to Rosetta Plugin Path.
+
+- `rules/coding-iac-best-practices.md`: Rules for authoring reliable IaC artifacts.
+- `rules/prompt-best-practices.md`: Rules for authoring reliable, minimal, and clear prompts for AI agents. Apply when creating, refactoring, reviewing, or validating any prompt artifact.
+- `rules/requirements-best-practices.md`: Rules for authoring reliable, explicit, and traceable requirements with mandatory user back-and-forth and per-unit approval.
+- `rules/requirements-use-best-practices.md`: Rules for consuming requirements with strict traceability, explicit approvals, and no unapproved scope.
+- `rules/speckit-integration-policy.md`: Define mandatory SpecKit detection and hybrid-execution rules in bootstrap flow.
 
 </plugin_files_mode>

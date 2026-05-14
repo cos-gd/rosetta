@@ -55,11 +55,13 @@ class StandaloneSpec:
     excluded_source_folder: str
     pre_cleanup: tuple[str, ...] = ()
     pre_move_files: tuple[tuple[str, str, str, str], ...] = ()
+    rename_folders: tuple[tuple[str, str], ...] = ()
+    rename_files: tuple[tuple[str, str], ...] = ()
+    regenerated_indexes: tuple[tuple[str, str | None], ...] = ()
     post_cleanup: tuple[str, ...] = ()
     copilot_instructions: bool = False
     cursor_instructions: bool = False
-    inject_index_folder: str | None = None
-    inject_index_target: str | None = None
+    inject_indexes: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -75,7 +77,11 @@ class PluginSyncSpec:
     rename_agents: bool = False
     rename_folders: tuple[tuple[str, str], ...] = ()
     rename_files: tuple[tuple[str, str], ...] = ()
+    pre_copy_folders: tuple[tuple[str, str], ...] = ()
+    pre_move_files: tuple[tuple[str, str, str, str], ...] = ()
     generated_indexes: tuple[str, ...] = ()
+    include_bootstrap_in_hooks: bool = True
+    include_indexes_in_hooks: bool = True
     templates: tuple[str, ...] = ()
 
 
@@ -216,6 +222,32 @@ def copy_core_tree(spec: PluginSyncSpec, core_source: Path) -> dict[str, str]:
 
     should_normalize = spec.normalize_models or spec.copilot_models or spec.cursor_models or spec.codex_models
     folder_renames: dict[str, str] = dict(spec.rename_folders)
+
+    # pre_copy_folders: copy source folders under alternate names before the rename pass.
+    # Only model frontmatter is normalized; no path_renames content rewriting, no file renames.
+    for src_folder, tgt_folder in spec.pre_copy_folders:
+        src_path = core_source / src_folder
+        if not src_path.is_dir():
+            continue
+        tgt_path = destination / tgt_folder
+        if tgt_path.exists():
+            shutil.rmtree(tgt_path)
+        shutil.copytree(src_path, tgt_path)
+        normalized = 0
+        if should_normalize:
+            for md_file in sorted(tgt_path.rglob("*.md")):
+                content = md_file.read_text(encoding="utf-8")
+                if spec.codex_models:
+                    content = rewrite_codex_frontmatter_models(content)
+                else:
+                    content = rewrite_frontmatter_models(content, normalizer=normalizer)
+                md_file.write_text(content, encoding="utf-8")
+                normalized += 1
+        print(
+            f"      pre-copied {src_folder}/ → {tgt_folder}/"
+            + (f" ({normalized} model-normalized)" if normalized else ""),
+            flush=True,
+        )
 
     # Build path_renames: maps source-relative path → final destination-relative path.
     # Covers both folder renames and regex file renames so content rewriting is precise.
@@ -380,13 +412,29 @@ def _ps_lock(n: int) -> str:
 
 
 _BOOTSTRAP_FILES: tuple[str, ...] = (
-    "rules/plugin-files-mode.md",
+    # plugin-files-mode variants MUST stay FIRST in this tuple.
+    # `build_bootstrap_replacements` attaches BOOTSTRAP_PREFIX to the first
+    # bootstrap-classified entry it finds per plugin; reordering this list
+    # would silently move the prefix onto a different file.
+    # Hooks read from each plugin's own destination; missing variants are
+    # silently skipped per plugin.
+    "rules/plugin-files-mode.md",     # claude, codex, copilot
+    "rules/plugin-files-mode.mdc",    # cursor
+    # bootstrap-* rules
     "rules/bootstrap-core-policy.md",
+    "rules/bootstrap-core-policy.mdc",
     "rules/bootstrap-execution-policy.md",
+    "rules/bootstrap-execution-policy.mdc",
+    "rules/bootstrap-hitl-questioning.md",
+    "rules/bootstrap-hitl-questioning.mdc",
     "rules/bootstrap-guardrails.md",
+    "rules/bootstrap-guardrails.mdc",
     "rules/bootstrap-rosetta-files.md",
+    "rules/bootstrap-rosetta-files.mdc",
+    # indexes
     "rules/INDEX.md",
-    "workflows/INDEX.md",
+    "workflows/INDEX.md",   # claude, codex
+    "commands/INDEX.md",    # cursor, copilot
 )
 
 _PLUGIN_PATH_HOOKS: dict[str, dict] = {
@@ -410,76 +458,100 @@ _PLUGIN_PATH_HOOKS: dict[str, dict] = {
             'for base in "$HOME/Library/Application Support/Code/agentPlugins" '
             '"$HOME/.local/share/Code/agentPlugins"; do '
             'root="$base/github.com/griddynamics/rosetta/plugins/core-copilot"; '
-            'if [ -f "$root/rules/bootstrap-rosetta-files.md" ]; then '
+            'if [ -f "$root/commands/coding-flow.md" ]; then '
             'printf \'%s\' "{\\\"hookSpecificOutput\\\":{\\\"hookEventName\\\":\\\"SessionStart\\\",\\\"additionalContext\\\":\\\"Rosetta Plugin Path: $root\\\"}}"; '
             'break; fi; done'
         ),
         "powershell": (
             '$root = "$env:LOCALAPPDATA\\Code\\agentPlugins\\github.com\\griddynamics\\rosetta\\plugins\\core-copilot"; '
-            'if (Test-Path "$root\\rules\\bootstrap-rosetta-files.md") '
+            'if (Test-Path "$root\\commands\\coding-flow.md") '
             '{ Write-Output (\'{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Rosetta Plugin Path: \' + $root + \'"}}\') }'
         ),
     },
     "core-cursor": {"type": "command", "command": 'printf \'{"additional_context":"Rosetta Plugin Path: %s"}\' "${CURSOR_PROJECT_DIR}"'},
 }
 
-def build_bootstrap_replacements(dest_dir: Path) -> tuple[dict[str, str], int]:
-    """Read bootstrap files once, build all platform-specific placeholder values.
+def build_bootstrap_replacements(
+    plugin_destinations: dict[str, Path],
+    plugin_flags: dict[str, tuple[bool, bool]],
+) -> tuple[dict[str, str], int]:
+    """Build per-plugin bootstrap-hook payloads, reading each plugin's own files.
+
+    For each plugin in `plugin_destinations`, iterate `_BOOTSTRAP_FILES` and read
+    those that exist under the plugin's destination. Missing variants are silently
+    skipped (one plugin's layout is not another's). `BOOTSTRAP_PREFIX` is applied
+    to the first *bootstrap-classified* entry found per plugin.
+
+    `plugin_flags` maps plugin name → (include_bootstrap, include_indexes); each
+    entry is classified "bootstrap" or "index" by path and appended only when the
+    corresponding flag is True for that plugin.
 
     Returns (replacements dict, violation count).
     """
     violations = 0
     errors: list[str] = []
-    claude_entries: list[dict] = []
-    codex_entries: list[dict] = []
-    cursor_entries: list[dict] = []
-    copilot_entries: list[dict] = []
+    plugin_entries: dict[str, list[dict]] = {name: [] for name in plugin_destinations}
 
-    for n, rel_file in enumerate(_BOOTSTRAP_FILES):
-        src = dest_dir / rel_file
-        if not src.is_file():
-            print(f"WARNING: {src} not found, skipping", file=sys.stderr)
-            continue
+    for plugin_name, dest in plugin_destinations.items():
+        inc_bs, inc_idx = plugin_flags.get(plugin_name, (True, True))
+        prefix_applied = False
+        entries = plugin_entries[plugin_name]
 
-        content = src.read_text(encoding="utf-8")
-        body = strip_frontmatter(content)
-        text = (BOOTSTRAP_PREFIX + body) if n == 0 else body
-        escaped = json_escape_for_additional_context(text)
-        bash_escaped = _bash_single_quote_escape(escaped)
-        ps_escaped = _ps_single_quote_escape(escaped)
+        for rel_file in _BOOTSTRAP_FILES:
+            src = dest / rel_file
+            if not src.is_file():
+                continue  # silent — most variants are not present in any given plugin
 
-        if len(escaped) > 10000:
-            errors.append(f"ERROR: {rel_file} additionalContext is {len(escaped)} chars (max 10000)")
-            violations += 1
+            kind = "index" if rel_file.endswith("/INDEX.md") else "bootstrap"
+            if kind == "bootstrap" and not inc_bs:
+                continue
+            if kind == "index" and not inc_idx:
+                continue
 
-        claude_entries.append({
-            "type": "command",
-            "command": f'printf \'%s\' \'{{"hookSpecificOutput":{{"hookEventName":"SessionStart","additionalContext":"{bash_escaped}"}}}}\'',
-            "once": True,
-        })
-        codex_entries.append({
-            "type": "command",
-            "command": f'printf \'%s\' \'{{"hookSpecificOutput":{{"hookEventName":"SessionStart","additionalContext":"{bash_escaped}"}}}}\'',
-            "statusMessage": "Loading Rosetta bootstrap",
-            "timeout": 30,
-        })
-        cursor_entries.append({
-            "type": "command",
-            "command": f'printf \'%s\' \'{{"additional_context":"{bash_escaped}"}}\'',
-        })
-        copilot_entries.append({
-            "type": "command",
-            "bash": f'{_bash_lock(n)}; printf \'%s\' \'{{"hookSpecificOutput":{{"hookEventName":"SessionStart","additionalContext":"{bash_escaped}"}}}}\'',
-            "powershell": f'{_ps_lock(n)}; Write-Output \'{{"hookSpecificOutput":{{"hookEventName":"SessionStart","additionalContext":"{ps_escaped}"}}}}\'',
-        })
+            body = strip_frontmatter(src.read_text(encoding="utf-8"))
+            if kind == "bootstrap" and not prefix_applied:
+                text = BOOTSTRAP_PREFIX + body
+                prefix_applied = True
+            else:
+                text = body
+            escaped = json_escape_for_additional_context(text)
+            bash_escaped = _bash_single_quote_escape(escaped)
+            ps_escaped = _ps_single_quote_escape(escaped)
 
-    for entries, name in (
-        (claude_entries, "core-claude"),
-        (codex_entries, "core-codex"),
-        (copilot_entries, "core-copilot"),
-        (cursor_entries, "core-cursor"),
-    ):
-        path_hook = _PLUGIN_PATH_HOOKS.get(name)
+            if len(escaped) > 10000:
+                errors.append(
+                    f"ERROR: {plugin_name} {rel_file} additionalContext is {len(escaped)} chars (max 10000)"
+                )
+                violations += 1
+
+            n_lock = len(entries)  # unique per-plugin lock index for copilot
+            if plugin_name == "core-claude":
+                entries.append({
+                    "type": "command",
+                    "command": f'printf \'%s\' \'{{"hookSpecificOutput":{{"hookEventName":"SessionStart","additionalContext":"{bash_escaped}"}}}}\'',
+                    "once": True,
+                })
+            elif plugin_name == "core-codex":
+                entries.append({
+                    "type": "command",
+                    "command": f'printf \'%s\' \'{{"hookSpecificOutput":{{"hookEventName":"SessionStart","additionalContext":"{bash_escaped}"}}}}\'',
+                    "statusMessage": "Loading Rosetta bootstrap",
+                    "timeout": 30,
+                })
+            elif plugin_name == "core-cursor":
+                entries.append({
+                    "type": "command",
+                    "command": f'printf \'%s\' \'{{"additional_context":"{bash_escaped}"}}\'',
+                })
+            elif plugin_name == "core-copilot":
+                entries.append({
+                    "type": "command",
+                    "bash": f'{_bash_lock(n_lock)}; printf \'%s\' \'{{"hookSpecificOutput":{{"hookEventName":"SessionStart","additionalContext":"{bash_escaped}"}}}}\'',
+                    "powershell": f'{_ps_lock(n_lock)}; Write-Output \'{{"hookSpecificOutput":{{"hookEventName":"SessionStart","additionalContext":"{ps_escaped}"}}}}\'',
+                })
+
+    for plugin_name, entries in plugin_entries.items():
+        path_hook = _PLUGIN_PATH_HOOKS.get(plugin_name)
         if path_hook:
             entries.append(path_hook)
 
@@ -487,16 +559,20 @@ def build_bootstrap_replacements(dest_dir: Path) -> tuple[dict[str, str], int]:
         return json.dumps(entries, ensure_ascii=False)[1:-1]
 
     replacements = {
-        "{{BOOTSTRAP_HOOKS_CLAUDE}}": _inner(claude_entries),
-        "{{BOOTSTRAP_HOOKS_CODEX}}": _inner(codex_entries),
-        "{{BOOTSTRAP_HOOKS_CURSOR}}": _inner(cursor_entries),
-        "{{BOOTSTRAP_HOOKS_COPILOT}}": _inner(copilot_entries),
+        "{{BOOTSTRAP_HOOKS_CLAUDE}}":  _inner(plugin_entries.get("core-claude", [])),
+        "{{BOOTSTRAP_HOOKS_CODEX}}":   _inner(plugin_entries.get("core-codex", [])),
+        "{{BOOTSTRAP_HOOKS_CURSOR}}":  _inner(plugin_entries.get("core-cursor", [])),
+        "{{BOOTSTRAP_HOOKS_COPILOT}}": _inner(plugin_entries.get("core-copilot", [])),
     }
 
     for err in errors:
         print(err, file=sys.stderr)
 
-    print(f"      built {len(replacements)} template replacements from {len(_BOOTSTRAP_FILES)} bootstrap files", flush=True)
+    print(
+        f"      built per-plugin hook payloads: "
+        + ", ".join(f"{name}={len(entries)}" for name, entries in plugin_entries.items()),
+        flush=True,
+    )
     return replacements, violations
 
 
@@ -694,34 +770,26 @@ def _inject_index_content(subfolder: Path, index_folder: str, target_rel: str) -
     print(f"      injected {index_folder}/INDEX.md into {target_rel}", flush=True)
 
 
-def _generate_cursor_instructions(subfolder: Path) -> None:
-    target = subfolder / "rules" / "plugin-files-mode.mdc"
+def _inject_plugin_instructions(
+    subfolder: Path,
+    target_rel: str,
+    plugin_root: str,
+    workflow_folder: str,
+    workflow_ext: str,
+) -> None:
+    target = subfolder / target_rel
     content = target.read_text(encoding="utf-8")
     insert_text = (
-        'Rosetta plugin root: ".cursor". You MUST FOLLOW ALL bootstrap-* instructions and execute every prep step in order. '
-        'After prep steps, you MUST select a workflow and execute it. All workflows (commands) are stored in '
-        '".cursor/commands/<workflowtag>.md". Example ".cursor/commands/coding-flow.md".'
+        f'Rosetta plugin root: "{plugin_root}". You MUST FOLLOW ALL bootstrap* and plugin* '
+        f'instructions and execute every prep step in order. After prep steps, '
+        f'you MUST select a workflow and execute it. All workflows (commands) '
+        f'are stored in "{plugin_root}/{workflow_folder}/<workflowtag>{workflow_ext}". '
+        f'Example "{plugin_root}/{workflow_folder}/coding-flow{workflow_ext}".'
     )
     closing_tag = "</plugin_files_mode>"
     content = content.replace(closing_tag, f"{insert_text}\n{closing_tag}")
     target.write_text(content, encoding="utf-8")
-    print("      injected cursor instructions into rules/plugin-files-mode.mdc", flush=True)
-
-
-def _generate_copilot_instructions(subfolder: Path) -> None:
-    target = subfolder / "instructions" / "plugin-files-mode.instructions.md"
-    content = target.read_text(encoding="utf-8")
-    insert_text = (
-        'Rosetta plugin root: ".github". You MUST FOLLOW ALL bootstrap-* '
-        'instructions and execute every prep step in order. After prep steps, '
-        'you MUST select a workflow and execute it. All workflows (prompts) '
-        'are stored in ".github/prompts/<workflowtag>.prompt.md". '
-        'Example ".github/prompts/coding-flow.prompt.md".'
-    )
-    closing_tag = "</plugin_files_mode>"
-    content = content.replace(closing_tag, f"{insert_text}\n{closing_tag}")
-    target.write_text(content, encoding="utf-8")
-    print("      injected copilot instructions into instructions/plugin-files-mode.instructions.md", flush=True)
+    print(f"      injected plugin instructions into {target_rel}", flush=True)
 
 
 def _generate_standalone_plugin_json(source: Path, spec: StandaloneSpec) -> None:
@@ -761,25 +829,85 @@ def generate_standalone_plugin(spec: StandaloneSpec, plugins_root: Path) -> None
         elif path.is_file():
             path.unlink()
 
+    path_renames: dict[str, str] = {}
+
     for glob_pattern, target_dir, name_matcher, name_replacement in spec.pre_move_files:
         target_path = subfolder_path / target_dir
         target_path.mkdir(parents=True, exist_ok=True)
         moved = 0
         for src in sorted(subfolder_path.glob(glob_pattern)):
             new_name = re.sub(name_matcher, name_replacement, src.name)
+            old_rel = "/".join(src.relative_to(subfolder_path).parts)
+            new_rel = f"{target_dir}/{new_name}"
             shutil.move(str(src), str(target_path / new_name))
+            path_renames[old_rel] = new_rel
             moved += 1
         if moved:
             print(f"      moved {moved} file(s) {glob_pattern} → {target_dir}/", flush=True)
 
+    for src_folder, dst_folder in spec.rename_folders:
+        src_dir = subfolder_path / src_folder
+        if not src_dir.is_dir():
+            continue
+        dst_dir = subfolder_path / dst_folder
+        if dst_dir.exists():
+            shutil.rmtree(dst_dir)
+        shutil.move(str(src_dir), str(dst_dir))
+        path_renames[f"{src_folder}/"] = f"{dst_folder}/"
+        print(f"      renamed folder {src_folder}/ → {dst_folder}/", flush=True)
+
+    if spec.rename_files:
+        renamed = 0
+        for src in sorted(subfolder_path.rglob("*.md")):
+            if src.name == "INDEX.md":
+                continue
+            rel = "/".join(src.relative_to(subfolder_path).parts)
+            new_rel = _apply_rename_files(rel, spec.rename_files)
+            if new_rel and new_rel != rel:
+                dst = subfolder_path / new_rel
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(src), str(dst))
+                path_renames[rel] = new_rel
+                renamed += 1
+        if renamed:
+            print(f"      renamed {renamed} file(s) by suffix patterns", flush=True)
+
+    if path_renames:
+        rewritten = 0
+        for md_file in sorted(subfolder_path.rglob("*.md")):
+            content = md_file.read_text(encoding="utf-8")
+            new_content = content
+            for old, new in path_renames.items():
+                new_content = new_content.replace(old, new)
+            if new_content != content:
+                md_file.write_text(new_content, encoding="utf-8")
+                rewritten += 1
+        if rewritten:
+            print(f"      rewrote path refs in {rewritten} markdown file(s)", flush=True)
+
+    for folder_name, required_tag in spec.regenerated_indexes:
+        generate_folder_index(subfolder_path, folder_name, required_tag=required_tag)
+
     if spec.copilot_instructions:
-        _generate_copilot_instructions(subfolder_path)
+        _inject_plugin_instructions(
+            subfolder_path,
+            target_rel="instructions/plugin-files-mode.instructions.md",
+            plugin_root=".github",
+            workflow_folder="prompts",
+            workflow_ext=".prompt.md",
+        )
 
     if spec.cursor_instructions:
-        _generate_cursor_instructions(subfolder_path)
+        _inject_plugin_instructions(
+            subfolder_path,
+            target_rel="rules/plugin-files-mode.mdc",
+            plugin_root=".cursor",
+            workflow_folder="commands",
+            workflow_ext=".md",
+        )
 
-    if spec.inject_index_folder and spec.inject_index_target:
-        _inject_index_content(subfolder_path, spec.inject_index_folder, spec.inject_index_target)
+    for index_folder, target_rel in spec.inject_indexes:
+        _inject_index_content(subfolder_path, index_folder, target_rel)
 
     for rel in spec.post_cleanup:
         path = subfolder_path / rel
@@ -825,9 +953,8 @@ def sync_generated_plugins(repo_root: Path) -> int:
             preserved_folder=".github",
             copilot_models=True,
             rename_agents=True,
-            rename_folders=(("workflows", "prompts"),),
-            rename_files=((r"prompts/(.+)\.md", r"\1.prompt.md"),),
-            generated_indexes=("rules", "prompts"),
+            rename_folders=(("workflows", "commands"),),
+            generated_indexes=("rules", "commands"),
             templates=(".github/plugin/hooks.json.tmpl",),
         ),
         PluginSyncSpec(
@@ -840,18 +967,39 @@ def sync_generated_plugins(repo_root: Path) -> int:
         ),
     ]
 
-    replacements: dict[str, str] | None = None
-    total_violations = 0
+    plugin_flags = {
+        spec.name: (spec.include_bootstrap_in_hooks, spec.include_indexes_in_hooks)
+        for spec in plugin_specs
+    }
+
+    # Pass 1: materialize every plugin's destination tree (reset → copy → pre_move → indexes).
+    # All destinations must exist before bootstrap-hook payloads can be read per-plugin.
+    path_renames_by_spec: dict[str, dict[str, str]] = {}
     for spec in plugin_specs:
         print(f"   syncing {spec.name}", flush=True)
         reset_generated_tree(spec.destination, spec.preserved_folder, spec.preserved_files)
-        path_renames = copy_core_tree(spec, core_source)
+        path_renames_by_spec[spec.name] = copy_core_tree(spec, core_source)
+        for glob_pattern, target_dir, name_matcher, name_replacement in spec.pre_move_files:
+            target_path = spec.destination / target_dir
+            target_path.mkdir(parents=True, exist_ok=True)
+            moved = 0
+            for src in sorted(spec.destination.glob(glob_pattern)):
+                new_name = re.sub(name_matcher, name_replacement, src.name)
+                shutil.move(str(src), str(target_path / new_name))
+                moved += 1
+            if moved:
+                print(f"      moved {moved} file(s) {glob_pattern} → {target_dir}/", flush=True)
         for folder_name in spec.generated_indexes:
             tag = "workflow" if folder_name in ("workflows", "commands", "prompts") else None
             generate_folder_index(spec.destination, folder_name, required_tag=tag)
-        if replacements is None:
-            replacements, total_violations = build_bootstrap_replacements(spec.destination)
+
+    plugin_destinations = {spec.name: spec.destination for spec in plugin_specs}
+    replacements, total_violations = build_bootstrap_replacements(plugin_destinations, plugin_flags)
+
+    # Pass 2: process templates (using each plugin's captured path_renames) and run runtime layouts.
+    for spec in plugin_specs:
         if spec.templates:
+            path_renames = path_renames_by_spec.get(spec.name, {})
             plugin_replacements = replacements
             if path_renames:
                 plugin_replacements = {}
@@ -873,9 +1021,11 @@ def sync_generated_plugins(repo_root: Path) -> int:
             destination=repo_root / "plugins" / "core-cursor-standalone",
             subfolder=".cursor",
             excluded_source_folder=".cursor-plugin",
+            pre_cleanup=("templates",),
             cursor_instructions=True,
-            inject_index_folder="commands",
-            inject_index_target="rules/plugin-files-mode.mdc",
+            inject_indexes=(
+                ("commands", "rules/plugin-files-mode.mdc"),
+            ),
         ),
         StandaloneSpec(
             name="core-copilot-standalone",
@@ -885,12 +1035,20 @@ def sync_generated_plugins(repo_root: Path) -> int:
             excluded_source_folder=".github",
             pre_cleanup=(".mcp.json", "hooks.json", "templates"),
             pre_move_files=(
-                ("rules/bootstrap-*.md", "instructions", r"(.+)\.md", r"\1.instructions.md"),
+                ("rules/bootstrap-*.md",       "instructions", r"(.+)\.md", r"\1.instructions.md"),
                 ("rules/plugin-files-mode.md", "instructions", r"(.+)\.md", r"\1.instructions.md"),
             ),
+            rename_folders=(("commands", "prompts"),),
+            rename_files=((r"prompts/(.+)\.md", r"\1.prompt.md"),),
+            regenerated_indexes=(
+                ("rules",   None),
+                ("prompts", "workflow"),
+            ),
             copilot_instructions=True,
-            inject_index_folder="prompts",
-            inject_index_target="instructions/plugin-files-mode.instructions.md",
+            inject_indexes=(
+                ("prompts", "instructions/plugin-files-mode.instructions.md"),
+                ("rules",   "instructions/plugin-files-mode.instructions.md"),
+            ),
         ),
     ]
 

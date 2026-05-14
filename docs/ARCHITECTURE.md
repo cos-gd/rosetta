@@ -515,9 +515,9 @@ All plugins are generated from a single source tree (`instructions/r2/core/`) by
 
 Each standard plugin has a preserved config folder (`.claude-plugin/`, `.cursor-plugin/`, `.github/`, `.codex-plugin/`) containing the IDE-specific manifest (`plugin.json`), the `hooks.json.tmpl` template, and any static configs. Everything outside that folder is generated — wiped and regenerated on each sync.
 
-**Standalone plugins** (`core-cursor-standalone`, `core-copilot-standalone`) are a second-pass derivative: generated from the already-built main plugins and placed entirely under the IDE's expected subfolder (`.cursor/` or `.github/`), ready to be extracted directly into any repository without an IDE plugin installer. Standalone folders are fully wiped and recreated on each sync. Key differences from main plugins:
-- **Cursor standalone** — copies main plugin content (excluding `.cursor-plugin/`) into `.cursor/`; injects `commands/INDEX.md` content before `</plugin_files_mode>` in `rules/plugin-files-mode.md`.
-- **Copilot standalone** — copies main plugin content (excluding `.github/`) into `.github/`; removes `hooks.json`, `.mcp.json`, `templates/`; generates `copilot-instructions.md` from `rules/plugin-files-mode.md` with an additional context instruction and the `prompts/INDEX.md` appended; removes `rules/plugin-files-mode.md` (content is incorporated). Both `plugin.json` (excluded from zip) and version inheritance from the main plugin are handled automatically by the generator.
+**Standalone plugins** (`core-cursor-standalone`, `core-copilot-standalone`) are a second-pass derivative: generated from the already-built main plugins and placed entirely under the IDE's expected subfolder (`.cursor/` or `.github/`), ready to be extracted directly into any repository without an IDE plugin installer. Standalone folders are fully wiped and recreated on each sync. Standalones own the IDE-specific transforms that don't apply to the marketplace plugin format. Key differences from main plugins:
+- **Cursor standalone** — copies main plugin content (excluding `.cursor-plugin/`) into `.cursor/`; injects `commands/INDEX.md` content before `</plugin_files_mode>` in `rules/plugin-files-mode.mdc`. Cursor uses `rules/` and `commands/` in both plugin and standalone, so no folder renaming is needed.
+- **Copilot standalone** — copies main plugin content (excluding `.github/`) into `.github/`; strips `hooks.json`, `.mcp.json`, `templates/`. Then moves `rules/bootstrap-*.md` and `rules/plugin-files-mode.md` to `instructions/*.instructions.md` (Copilot workspace auto-loads these via `applyTo: "**"`); renames `commands/` → `prompts/` and `*.md` → `*.prompt.md` (Copilot workspace recognizes only `.github/prompts/*.prompt.md` for slash-prompts). All cross-references inside markdown are rewritten by an exact-string pass. No hooks in standalone — instructions auto-load instead. `plugin.json` (excluded from the zip) and version inheritance from the main plugin are handled automatically by the generator.
 
 ### Reference Sources (readonly, packages currently used)
 
@@ -531,7 +531,7 @@ This is for reference purposes only: do not change, do not copy.
 
 MUST validate MCP changes using `.env.dev` and `ims-mcp-server/validation/verify_mcp.py` (testing harness of MCP itself).
 Integrate new features to this testing harness if needed and easy.
-MUST execute `venv/bin/python scripts/pre_commit.py` from repository root.
+MUST execute `venv/bin/python scripts/pre_commit.py` from repository root. Never filter/grep/tail its output.
 Entire `verify_mcp.py` and ALL tests must work.
 Always run `verify_mcp.py`: with R2 only.
 If REDIS-dependent feature is affected RUN verify_mcp.py with and without REDIS_URL (example: `plan_manager` tool).
