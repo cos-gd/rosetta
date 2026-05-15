@@ -94,7 +94,8 @@ Done when: checklist passes and unresolved issues are either fixed or explicitly
 2. You should combine affected and existing requirements for the proper narrative/story
 3. If there are multiple stories - create todo task to review each story separately
 4. Review story-by-story with user for approval
-5. Do not assume user has a context, explain like user sees this first time
+5. The narrative must still be very specific so that it allows to fully approve every aspect of requirements
+6. Do not assume user has a context, explain like user sees this first time
 
 </user_review>
 
