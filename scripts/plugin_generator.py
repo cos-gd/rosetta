@@ -41,7 +41,7 @@ COPILOT_MODEL_MAP: dict[str, str] = {
     "gpt-5.4":                "GPT-5.4",
     "gpt-5.3-codex":          "GPT-5.3-Codex",
     "gemini-3.1-pro-preview": "Gemini 3.1 Pro (Preview)",
-    "gemini-3.1-pro":         "Gemini 3.1 Pro",
+    "gemini-3.1-pro":         "Gemini 3.1 Pro (Preview)",
     "gemini-3-flash":         "Gemini 3 Flash",
 }
 
