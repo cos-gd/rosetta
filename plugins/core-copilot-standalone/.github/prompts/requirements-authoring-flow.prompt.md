@@ -90,9 +90,9 @@ Done when: checklist passes and unresolved issues are either fixed or explicitly
 
 <user_review phase="7" priority="must" subagent="HITL" role="HITL">
 
-1. Review all drafts requirements with user by providing a clear and exact story as a narrative/walk-through of a functionality of the application that this affected, use simple words and sentences. If possible you can also do that from point of view of the actor that this requirements affect (user of the app, admin of the dashboard, etc.).
-2. You should think and combine affected and existing requirements in stories
-3. If there are multiple stories - create todo task to review each story
+1. Review all drafts requirements with user by providing a clear and exact story as a narrative/walk-through of a functionality of the application that this affected, use simple words and sentences. If possible you can also do that from point of view of the actor that this requirements affect (user of the app, admin of the dashboard, etc)
+2. You should combine affected and existing requirements for the proper narrative/story
+3. If there are multiple stories - create todo task to review each story separately
 4. Do not assume user has a context, explain like user sees this first time
 
 </user_review>
