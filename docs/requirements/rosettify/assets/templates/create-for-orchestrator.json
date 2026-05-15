@@ -1,6 +1,6 @@
 {
-  "name": "[plan-title]",
-  "description": "[user-request-summary]",
+  "name": "[plan-name]",
+  "description": "[plan-description]",
   "previous_version": null,
   "phases": [
     {
