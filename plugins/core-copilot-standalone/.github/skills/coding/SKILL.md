@@ -31,13 +31,14 @@ Principles:
 - SRP for files: each file has single purpose, no duplicate or similar content across files
 - MUST ensure data safety per bootstrap guardrails
 - Documentation: ONLY as instructed by rules or user
+- Use background terminal when starting services to prevent getting stuck.
 
 Project documentation — MUST keep current in target project:
 - `CONTEXT.md`, `ARCHITECTURE.md`, `IMPLEMENTATION.md`, `DEPENDENCIES.md`, `TECHSTACK.md`, `CODEMAP.md`
 
 Validation methodology:
 
-- Systematic, logical, dependency-ordered: databases (queries/statements) → APIs (curl/similar) → Web (Chrome DevTools/Playwright) → Mobile (Appium/similar)
+- Systematic, logical, dependency-ordered: databases (queries/statements) → APIs (curl/similar) → Web (Chrome DevTools/Playwright) → Mobile (Appium/similar), solid foundation first.
 - Check logs and running services locally
 - Clean up after validation, ALWAYS consider consequences of validation actions
 - CLI testing harness for libraries/packages: CLI commands outputting intermediate results including requests/responses
