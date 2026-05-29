@@ -253,12 +253,12 @@ describe("MCP — plan lifecycle", () => {
     expect(Array.isArray(created.phases)).toBe(true);
     expect(fs.existsSync(file)).toBe(true);
 
-    // 2. next — phase 1 active, s1 should be ready
+    // 2. next — phase 1 active, s1 should be actionable
     const nextRes = await client.callTool("plan", { subcommand: "next", plan_file: file });
     expect(nextRes.isError).toBe(false);
-    const nextResult = nextRes.payload as { ready: { id: string }[]; count: number };
-    expect(nextResult.ready.some((s) => s.id === "s1")).toBe(true);
-    expect(nextResult.ready.some((s) => s.id === "s3")).toBe(false); // phase 2 blocked
+    const nextResult = nextRes.payload as { next: { id: string }[]; count: number };
+    expect(nextResult.next.some((s) => s.id === "s1")).toBe(true);
+    expect(nextResult.next.some((s) => s.id === "s3")).toBe(false); // phase 2 blocked
 
     // 3. show_status
     const showRes = await client.callTool("plan", { subcommand: "show_status", plan_file: file });
@@ -290,11 +290,11 @@ describe("MCP — plan lifecycle", () => {
     // Phase 1 complete now, phase 2 should become active
     expect(["in_progress", "open"]).toContain(upd2Result.plan_status);
 
-    // 6. next — phase 2 now active, s3 should be ready (s1 dep complete)
+    // 6. next — phase 2 now active, s3 should be actionable (s1 dep complete)
     const nextRes2 = await client.callTool("plan", { subcommand: "next", plan_file: file });
     expect(nextRes2.isError).toBe(false);
-    const nr2 = nextRes2.payload as { ready: { id: string }[] };
-    expect(nr2.ready.some((s) => s.id === "s3")).toBe(true);
+    const nr2 = nextRes2.payload as { next: { id: string }[] };
+    expect(nr2.next.some((s) => s.id === "s3")).toBe(true);
 
     // 7. query — full plan
     const qRes = await client.callTool("plan", { subcommand: "query", plan_file: file });
@@ -356,9 +356,9 @@ describe("MCP — plan next with target_id", () => {
       target_id: "p2",
     });
     expect(r.isError).toBe(false);
-    const res = r.payload as { ready: { id: string }[] };
-    expect(res.ready.some((s) => s.id === "s2")).toBe(true);
-    expect(res.ready.some((s) => s.id === "s1")).toBe(false);
+    const res = r.payload as { next: { id: string }[] };
+    expect(res.next.some((s) => s.id === "s2")).toBe(true);
+    expect(res.next.some((s) => s.id === "s1")).toBe(false);
   });
 
   it("returns target_not_found for nonexistent phase", async () => {

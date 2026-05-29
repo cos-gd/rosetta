@@ -63,8 +63,11 @@ For detailed change history, use git history and PRs instead of expanding this f
 - Current commands: `plan` (create, next, update_status, show_status, query, upsert, create-with-template, upsert-with-template, list-templates), `help`.
 - **Atomic write cycle (FR-PLAN-0024)**: every plan mutation uses a rename-as-guard write cycle — rename plan to `<file>.bakNNN` (backup chain, up to 5 retained), then write new content. `previous_version` field on the plan JSON tracks the prior backup path. Bounded to 50 retries; `backup_create_failed` on exhaustion.
 - **Template registry (FR-PLAN-0033)**: two compiled-in template kinds (`create`, `upsert`) with strict bidirectional placeholder matching. Seed templates: `for-orchestrator` (create) and `for-subagent` (upsert). New subcommands `create-with-template`, `upsert-with-template`, `list-templates`.
-- **Compressed-tree output (FR-PLAN-0040)**: all write subcommands return `{ plan, previous_version, phases[{steps}] }` instead of ad-hoc result shapes. CLI output is dense JSON (no indent, FR-SHRD-0008).
+- **PlanWriteResult output (FR-PLAN-0040)**: all write subcommands return the single shared `PlanWriteResult` = `{ plan, previous_version, phases[{steps}] }` (renamed from "compressed-tree"). CLI output is dense JSON (no indent, FR-SHRD-0008).
+- **`next` is `PlanNextResult` (FR-PLAN-0011)**: `{ parent?, next[], count, plan_status, Overall{Open,InProgress,Blocked,Failed,Complete}Count }`. Array = in_progress→open→blocked→failed truncated to limit (default **3**); steps carry `status` (no per-step flags); `parent` only with `--target` (phase scalar fields, no steps); counts scoped to filter else whole plan. Blocked/failed retrieved via `show_status`→`query`→`update_status`.
+- **No internal-traceability leakage (FR-ARCH-0016)**: emitted output (results, errors, help, schema descriptions, notes) carries no requirement IDs / internal paths / dataset prefixes; IDs kept in code comments only. Help `schemas` keyed by exported type name (FR-HELP-0002/FR-PLAN-0041); help `notes` carry construction-flow + phase-scoped + recovery guidance (FR-PLAN-0042).
 - Envelope is internal: frontends extract payload via `extractOutput` and log failures via `logFailure` before output — consumers never see the raw envelope wrapper.
+- Follow-up help-clarity backlog (P1–P10) captured in `plans/rosettify/plan-help-improvements-proposal.md`.
 - Validated with `npm run typecheck` and `npm run test` (vitest, 90%+ line + branch coverage).
 
 ### Instructions and Skills

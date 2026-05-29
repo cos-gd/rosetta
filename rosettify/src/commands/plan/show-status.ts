@@ -28,7 +28,7 @@ export const showStatusInputSchema = {
 
 export const showStatusOutputSchema = {
   type: "object" as const,
-  description: "FR-PLAN-0013 — status summary for plan, phase, or step",
+  description: "PlanShowStatusResult — status summary for plan, phase, or step",
   properties: {
     name: { type: "string" },
     status: { type: "string" },

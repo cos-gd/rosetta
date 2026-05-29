@@ -81,21 +81,36 @@ export interface NextStep {
   depends_on: string[];
   phase_id: string;
   phase_name: string;
-  resume?: boolean;
-  previously_blocked?: boolean;
-  previously_failed?: boolean;
   subagent?: string;
   role?: string;
   model?: string;
 }
 
-export interface NextResult {
-  ready: NextStep[];
-  count: number;
-  plan_status: Status;
+export interface PlanNextParent {
+  id: string;
+  name: string;
+  description: string;
+  status: Status;
+  depends_on: string[];
+  subagent?: string;
+  role?: string;
+  model?: string;
 }
 
-export interface UpdateStatusResult {
+export interface PlanNextResult {
+  parent?: PlanNextParent;
+  next: NextStep[];
+  count: number;
+  plan_status: Status;
+  OverallOpenCount: number;
+  OverallInProgressCount: number;
+  OverallBlockedCount: number;
+  OverallFailedCount: number;
+  OverallCompleteCount: number;
+}
+
+// FR-PLAN-0015 / FR-PLAN-0012 — update_status result (id, status, plan_status)
+export interface PlanUpdateStatusResult {
   id: string;
   status: Status;
   plan_status: Status;
@@ -143,11 +158,9 @@ export interface ShowStatusStepResult {
   model?: string;
 }
 
-// FR-PLAN-0015 — compressed-tree is the sole return shape; message? field removed
-export interface UpsertResult {
-  id: string;
-  plan_status: Status;
-}
+// Named result types per SRP+DRY type rule
+export type PlanShowStatusResult = ShowStatusPlanResult | ShowStatusPhaseResult | ShowStatusStepResult;
+export type PlanQueryResult = Plan | Phase | Step;
 
 // ---------------------------------------------------------------------------
 // Merge Functions (RFC 7396)

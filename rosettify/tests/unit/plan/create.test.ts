@@ -9,7 +9,7 @@ import * as os from "os";
 import * as path from "path";
 import { cmdCreate } from "../../../src/commands/plan/create.js";
 import { loadPlan } from "../../../src/commands/plan/core.js";
-import type { CompressedPlanTree } from "../../../src/commands/plan/output.js";
+import type { PlanWriteResult } from "../../../src/commands/plan/output.js";
 
 let tmpDir: string;
 
@@ -32,7 +32,7 @@ describe("cmdCreate — FR-PLAN-0010 / FR-PLAN-0040", () => {
     const result = await cmdCreate(file, { name: "My Plan" });
 
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
 
     // FR-PLAN-0040 — root fields
     expect(tree.plan).toBeDefined();
@@ -52,7 +52,7 @@ describe("cmdCreate — FR-PLAN-0010 / FR-PLAN-0040", () => {
     const result = await cmdCreate(file, { name: "My Plan" });
 
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
     expect(tree.previous_version).toBeNull();
   });
 
@@ -87,7 +87,7 @@ describe("cmdCreate — FR-PLAN-0010 / FR-PLAN-0040", () => {
     };
     const result = await cmdCreate(file, data);
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
 
     expect(tree.phases.length).toBe(1);
     const phase = tree.phases[0]!;
@@ -113,7 +113,7 @@ describe("cmdCreate — FR-PLAN-0010 / FR-PLAN-0040", () => {
     const file = planFile();
     const result = await cmdCreate(file, {});
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
     expect(tree.plan.name).toBe("Unnamed Plan");
   });
 
@@ -204,7 +204,7 @@ describe("cmdCreate — FR-PLAN-0010 / FR-PLAN-0040", () => {
     };
     const result = await cmdCreate(file, data);
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
     expect(tree.plan.status).toBe("open");
     expect(tree.phases[0]!.status).toBe("open");
   });
@@ -248,11 +248,11 @@ describe("cmdCreate — FR-PLAN-0010 / FR-PLAN-0040", () => {
 
     const first = await cmdCreate(file, { name: "Original Plan" });
     expect(first.ok).toBe(true);
-    expect((first.result as CompressedPlanTree).plan.name).toBe("Original Plan");
+    expect((first.result as PlanWriteResult).plan.name).toBe("Original Plan");
 
     const second = await cmdCreate(file, { name: "Replaced Plan" });
     expect(second.ok).toBe(true);
-    expect((second.result as CompressedPlanTree).plan.name).toBe("Replaced Plan");
+    expect((second.result as PlanWriteResult).plan.name).toBe("Replaced Plan");
 
     const plan = loadPlan(file)!;
     expect(plan.name).toBe("Replaced Plan");

@@ -11,7 +11,7 @@ import { cmdUpsert } from "../../../src/commands/plan/upsert.js";
 import { savePlan, loadPlan } from "../../../src/commands/plan/core.js";
 import { planToolDef } from "../../../src/commands/plan/index.js";
 import { fullPlan, minimalPlan } from "../../fixtures/plans.js";
-import type { CompressedPlanTree } from "../../../src/commands/plan/output.js";
+import type { PlanWriteResult } from "../../../src/commands/plan/output.js";
 
 let tmpDir: string;
 
@@ -43,7 +43,7 @@ describe("cmdUpsert — FR-PLAN-0040 compressed-tree result", () => {
     const file = writePlan();
     const result = await cmdUpsert(file, "entire_plan", { description: "Updated desc" });
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
 
     expect(tree.plan).toBeDefined();
     expect(tree.plan.status).toBeDefined();
@@ -60,7 +60,7 @@ describe("cmdUpsert — FR-PLAN-0040 compressed-tree result", () => {
     const file = writePlan();
     const result = await cmdUpsert(file, "entire_plan", { description: "Updated" });
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
 
     // previous_version is non-null
     expect(tree.previous_version).not.toBeNull();
@@ -76,7 +76,7 @@ describe("cmdUpsert — FR-PLAN-0040 compressed-tree result", () => {
     const file = writePlan();
     const result = await cmdUpsert(file, "entire_plan", { description: "x" });
     expect(result.ok).toBe(true);
-    expect((result.result as CompressedPlanTree).previous_version).not.toBeNull();
+    expect((result.result as PlanWriteResult).previous_version).not.toBeNull();
   });
 });
 
@@ -89,7 +89,7 @@ describe("cmdUpsert — entire_plan on missing file (create)", () => {
     const file = planFile("new.json");
     const result = await cmdUpsert(file, "entire_plan", { name: "Created" });
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
 
     // Compressed-tree shape
     expect(tree.plan).toBeDefined();
@@ -227,7 +227,7 @@ describe("cmdUpsert — status field stripping (FR-PLAN-0015)", () => {
     expect(plan.phases[0]!.steps[0]!.status).toBe("open");
 
     // The compressed-tree result should have no message field (it was removed in Phase 5)
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
     expect((tree as Record<string, unknown>)["message"]).toBeUndefined();
   });
 });

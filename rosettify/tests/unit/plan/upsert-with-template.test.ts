@@ -11,7 +11,7 @@ import { cmdUpsertWithTemplate } from "../../../src/commands/plan/upsert-with-te
 import { planToolDef } from "../../../src/commands/plan/index.js";
 import { loadPlan, savePlan } from "../../../src/commands/plan/core.js";
 import { cmdCreate } from "../../../src/commands/plan/create.js";
-import type { CompressedPlanTree } from "../../../src/commands/plan/output.js";
+import type { PlanWriteResult } from "../../../src/commands/plan/output.js";
 import type { Plan } from "../../../src/commands/plan/core.js";
 
 let tmpDir: string;
@@ -45,7 +45,7 @@ describe("cmdUpsertWithTemplate — FR-PLAN-0031 happy path", () => {
     const result = await cmdUpsertWithTemplate(file, "ph-impl", "for-subagent", "Implementation", "Implement the feature");
 
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
 
     // FR-PLAN-0040 — compressed-tree shape
     expect(tree.plan).toBeDefined();
@@ -70,7 +70,7 @@ describe("cmdUpsertWithTemplate — FR-PLAN-0031 happy path", () => {
     const result = await cmdUpsertWithTemplate(file, "ph-impl", "for-subagent", "Implementation", "Impl desc");
 
     expect(result.ok).toBe(true);
-    const tree = result.result as CompressedPlanTree;
+    const tree = result.result as PlanWriteResult;
     expect(fs.existsSync(tree.previous_version!)).toBe(true);
   });
 
@@ -186,12 +186,12 @@ describe("cmdUpsertWithTemplate — FR-PLAN-0031 previous_version tracking", () 
 
     const r1 = await cmdUpsertWithTemplate(file, "ph-impl", "for-subagent", "Impl", "desc1");
     expect(r1.ok).toBe(true);
-    const v1 = (r1.result as CompressedPlanTree).previous_version;
+    const v1 = (r1.result as PlanWriteResult).previous_version;
     expect(v1).toContain(".bak000");
 
     const r2 = await cmdUpsertWithTemplate(file, "ph-test", "for-subagent", "Test", "desc2");
     expect(r2.ok).toBe(true);
-    const v2 = (r2.result as CompressedPlanTree).previous_version;
+    const v2 = (r2.result as PlanWriteResult).previous_version;
     expect(v2).toContain(".bak001");
 
     // Each backup is a different file

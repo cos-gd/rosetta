@@ -1,57 +1,92 @@
 /**
- * Unit tests for plan help content — FR-PLAN-0016 / FR-HELP-0002.
- * Verifies planSchemasDict coverage, notes array, and subcommand examples.
+ * Unit tests for plan help content.
+ * Verifies planSchemasDict coverage, notes array, subcommand examples, and no-leak assertion.
  */
 import { describe, it, expect } from "vitest";
 import { planSchemasDict } from "../../../src/commands/plan/schemas.js";
 import { planHelpContent, planNotes } from "../../../src/commands/plan/help-content.js";
 
 // ---------------------------------------------------------------------------
-// FR-HELP-0002 — planSchemasDict contains every subcommand
+// planSchemasDict — type-name keyed, one entry per distinct type
 // ---------------------------------------------------------------------------
 
-describe("planSchemasDict — FR-HELP-0002", () => {
-  const EXPECTED_SUBCOMMANDS = [
-    "create",
-    "next",
-    "update_status",
-    "show_status",
-    "query",
-    "upsert",
-    "create-with-template",
-    "upsert-with-template",
-    "list-templates",
+describe("planSchemasDict — type-name keys", () => {
+  const EXPECTED_TYPE_NAME_KEYS = [
+    // Input types
+    "PlanCreateInput",
+    "PlanNextInput",
+    "PlanUpdateStatusInput",
+    "PlanTargetInput",         // shared by show_status and query
+    "PlanUpsertInput",
+    "PlanCreateWithTemplateInput",
+    "PlanUpsertWithTemplateInput",
+    "PlanListTemplatesInput",
+    // Result types
+    "PlanWriteResult",         // shared by all 4 write subcommands
+    "PlanNextResult",
+    "PlanUpdateStatusResult",
+    "PlanShowStatusResult",
+    "PlanQueryResult",
+    "PlanTemplateCatalog",
+    // Shared data shapes
+    "Plan",
+    "Phase",
+    "Step",
   ] as const;
 
-  // FR-HELP-0002 — flat dictionary includes one entry per subcommand (keyed by subcommand name)
-  it("contains an entry for every plan subcommand", () => {
-    for (const name of EXPECTED_SUBCOMMANDS) {
-      expect(planSchemasDict[name]).toBeDefined();
+  it("contains an entry for every expected type name", () => {
+    for (const name of EXPECTED_TYPE_NAME_KEYS) {
+      expect(planSchemasDict[name], `Missing key: ${name}`).toBeDefined();
     }
   });
 
+  it("schemas dict is a flat dictionary (Record<string, unknown>)", () => {
+    expect(typeof planSchemasDict).toBe("object");
+    expect(planSchemasDict).not.toBeNull();
+  });
+
+  it("does not use old subcommand-name keys (no 'create', 'next' as top-level input keys)", () => {
+    // The old dict used subcommand names as input keys; new dict uses type names
+    // (subcommand names like 'create' may still appear inside nested schema objects
+    // but should NOT appear as planSchemasDict top-level input-schema keys)
+    // We verify by checking that OLD-style output keys are gone
+    expect(planSchemasDict["create-output"]).toBeUndefined();
+    expect(planSchemasDict["next-output"]).toBeUndefined();
+    expect(planSchemasDict["compressed-tree"]).toBeUndefined();
+  });
+
   it("does not expose input_schema or output_schema as root keys (per M1 fix)", () => {
-    // The help shape after M1 fix must NOT include these top-level fields
     const helpResult = planHelpContent;
     expect((helpResult as Record<string, unknown>)["input_schema"]).toBeUndefined();
     expect((helpResult as Record<string, unknown>)["output_schema"]).toBeUndefined();
   });
+});
 
-  it("schemas is a flat dictionary (Record<string, unknown>)", () => {
-    expect(typeof planSchemasDict).toBe("object");
-    expect(planSchemasDict).not.toBeNull();
+// ---------------------------------------------------------------------------
+// No-leak assertion — no FR-IDs or NFR-IDs in emitted help
+// ---------------------------------------------------------------------------
+
+describe("planHelpContent — no-leak assertion", () => {
+  it("serialized help contains no FR-ID or NFR-ID strings", () => {
+    const serialized = JSON.stringify(planHelpContent);
+    const match = serialized.match(/\bN?FR-[A-Z0-9]/);
+    expect(match, `Found requirement ID leak: ${match?.[0]}`).toBeNull();
+  });
+
+  it("serialized help contains no 'compressed-tree' wording", () => {
+    const serialized = JSON.stringify(planHelpContent);
+    expect(serialized).not.toContain("compressed-tree");
   });
 });
 
 // ---------------------------------------------------------------------------
-// FR-PLAN-0016 — notes array contains every required behavior
+// Notes array contents
 // ---------------------------------------------------------------------------
 
-describe("planHelpContent — FR-PLAN-0016 notes array", () => {
-  // FR-PLAN-0016 requires 7 specific behavior notes
-  it("notes array has at least 7 entries", () => {
+describe("planHelpContent — notes array", () => {
+  it("notes array has at least 11 entries (7 original + 4 new)", () => {
     expect(Array.isArray(planNotes)).toBe(true);
-    expect(planNotes.length).toBeGreaterThanOrEqual(7);
+    expect(planNotes.length).toBeGreaterThanOrEqual(11);
   });
 
   it("notes array is string[]", () => {
@@ -61,42 +96,62 @@ describe("planHelpContent — FR-PLAN-0016 notes array", () => {
     }
   });
 
-  // Each FR-PLAN-0016 mandated behavior is matched by a discriminating phrase unique to that note,
-  // so a copy-edit that drops a note entirely cannot be hidden behind a generic keyword match.
-  it("notes include FR-PLAN-0015 silent-drop behavior (discriminator: 'silently drops status')", () => {
+  it("notes include silent-drop behavior (discriminator: 'silently drops status')", () => {
     expect(planNotes.some((n) => n.includes("silently drops status"))).toBe(true);
   });
 
-  it("notes include FR-PLAN-0024 write-cycle summary (discriminator: 'write-cycle process')", () => {
+  it("notes include write-cycle summary (discriminator: 'write-cycle process')", () => {
     expect(planNotes.some((n) => n.includes("write-cycle process"))).toBe(true);
   });
 
-  it("notes include FR-PLAN-0024 .bakNNN rename + previous_version (discriminator: '.bakNNN' and 'previous_version')", () => {
+  it("notes include .bakNNN rename + previous_version (discriminator: '.bakNNN' and 'previous_version')", () => {
     expect(planNotes.some((n) => n.includes(".bakNNN") && n.includes("previous_version"))).toBe(true);
   });
 
-  it("notes include FR-PLAN-0024 backup retention with default 5 (discriminator: 'retention' and 'default 5')", () => {
+  it("notes include backup retention with default 5 (discriminator: 'retention' and 'default 5')", () => {
     expect(planNotes.some((n) => n.includes("retention") && n.includes("default 5"))).toBe(true);
   });
 
-  it("notes include FR-SHRD-0009 missing-but-bak read retry (discriminator: 'missing but at least one backup exists')", () => {
+  it("notes include missing-but-bak read retry (discriminator: 'missing but at least one backup exists')", () => {
     expect(planNotes.some((n) => n.includes("missing but at least one backup exists"))).toBe(true);
   });
 
-  it("notes include FR-PLAN-0033 template kind separation (discriminator: 'two kinds' and 'cannot be used with the other kind')", () => {
+  it("notes include template kind separation (discriminator: 'two kinds' and 'cannot be used with the other kind')", () => {
     expect(planNotes.some((n) => n.includes("two kinds") && n.includes("cannot be used with the other kind"))).toBe(true);
   });
 
-  it("notes include FR-PLAN-0034 placeholder syntax (discriminator: '[placeholder-name]' and 'match exactly')", () => {
+  it("notes include placeholder syntax (discriminator: '[placeholder-name]' and 'match exactly')", () => {
     expect(planNotes.some((n) => n.includes("[placeholder-name]") && n.includes("match exactly"))).toBe(true);
+  });
+
+  // 4 new notes from FR-PLAN-0042
+  it("notes include plan-construction-flow note (discriminator: 'plan construction flow')", () => {
+    expect(planNotes.some((n) => n.includes("plan construction flow"))).toBe(true);
+  });
+
+  it("notes include phase-scoped execution note (discriminator: 'phase-scoped execution')", () => {
+    expect(planNotes.some((n) => n.includes("phase-scoped execution"))).toBe(true);
+  });
+
+  it("notes include what-next-returns note (discriminator: 'what next returns')", () => {
+    expect(planNotes.some((n) => n.includes("what next returns"))).toBe(true);
+  });
+
+  it("notes include getting-blocked/failed note (discriminator: 'show_status' and 'query')", () => {
+    expect(planNotes.some((n) => n.includes("show_status") && n.includes("query"))).toBe(true);
+  });
+
+  it("concepts.resume is absent from help content", () => {
+    const concepts = planHelpContent.concepts as Record<string, unknown>;
+    expect(concepts["resume"]).toBeUndefined();
   });
 });
 
 // ---------------------------------------------------------------------------
-// FR-PLAN-0016 / FR-PLAN-0018 — subcommand entries with dual-form examples
+// Subcommand entries with dual-form examples
 // ---------------------------------------------------------------------------
 
-describe("planHelpContent — FR-PLAN-0016 subcommand examples", () => {
+describe("planHelpContent — subcommand examples", () => {
   const EXPECTED_SUBCOMMANDS = [
     "create",
     "next",
@@ -109,7 +164,6 @@ describe("planHelpContent — FR-PLAN-0016 subcommand examples", () => {
     "list-templates",
   ];
 
-  // FR-PLAN-0016 — one subcommand entry per registered subcommand
   it("has entries for all 9 subcommands", () => {
     const names = planHelpContent.subcommands.map((s) => s.name);
     for (const expected of EXPECTED_SUBCOMMANDS) {
@@ -117,7 +171,6 @@ describe("planHelpContent — FR-PLAN-0016 subcommand examples", () => {
     }
   });
 
-  // FR-PLAN-0018 — each subcommand has dual-form examples: tip (bracketed) + real (quoted)
   it("every subcommand entry has examples with tip and real fields", () => {
     for (const sub of planHelpContent.subcommands) {
       expect(sub.examples).toBeDefined();
@@ -126,9 +179,7 @@ describe("planHelpContent — FR-PLAN-0016 subcommand examples", () => {
     }
   });
 
-  // FR-PLAN-0018 — tip uses bracketed placeholders, real uses quoted values
   it("tip examples contain bracketed placeholders", () => {
-    // At least some tip examples should have [bracket] syntax
     const tipsWithBrackets = planHelpContent.subcommands.filter((s) => {
       const tip = (s.examples as Record<string, string>)["tip"] ?? "";
       return tip.includes("[") && tip.includes("]");
@@ -136,24 +187,30 @@ describe("planHelpContent — FR-PLAN-0016 subcommand examples", () => {
     expect(tipsWithBrackets.length).toBeGreaterThan(0);
   });
 
-  it("real examples do not have unsubstituted [placeholder] text", () => {
-    for (const sub of planHelpContent.subcommands) {
-      const real = (sub.examples as Record<string, string>)["real"] ?? "";
-      // Real examples should use concrete values, not [plan_file] placeholder syntax
-      // Exception: list-templates has no args so its real may be just the command
-      if (real.length > 0) {
-        // Accept — real values from requirements may have [] for actual plan IDs
-        expect(typeof real).toBe("string");
-      }
-    }
+  it("next subcommand description mentions default 3", () => {
+    const next = planHelpContent.subcommands.find((s) => s.name === "next")!;
+    expect(next.description).toContain("3");
+  });
+
+  it("next subcommand args mention default 3", () => {
+    const next = planHelpContent.subcommands.find((s) => s.name === "next")!;
+    const limit = (next.args as Record<string, string>)["limit"];
+    expect(limit).toContain("3");
+  });
+
+  it("next subcommand description does NOT mention flags like resume or previously_blocked", () => {
+    const next = planHelpContent.subcommands.find((s) => s.name === "next")!;
+    expect(next.description).not.toContain("resume");
+    expect(next.description).not.toContain("previously_blocked");
+    expect(next.description).not.toContain("previously_failed");
   });
 });
 
 // ---------------------------------------------------------------------------
-// FR-PLAN-0016 — plan help content required fields
+// Required fields
 // ---------------------------------------------------------------------------
 
-describe("planHelpContent — FR-PLAN-0016 required fields", () => {
+describe("planHelpContent — required fields", () => {
   it("has plan_file field", () => {
     expect(planHelpContent.plan_file).toBeDefined();
   });
@@ -177,16 +234,17 @@ describe("planHelpContent — FR-PLAN-0016 required fields", () => {
     expect(Array.isArray(templates.upsert)).toBe(true);
   });
 
-  it("has plan_authoring_guidance field with FR-PLAN-0016 verbatim text", () => {
-    // FR-PLAN-0016 quotes this string verbatim — any drift is a contract regression.
+  it("has plan_authoring_guidance field with verbatim text", () => {
     expect(planHelpContent.plan_authoring_guidance).toBe(
       "the last step in each phase should verify all work in that phase was actually completed; " +
       "the last phase should verify all work across the entire plan was completed",
     );
   });
 
-  it("has next_steps_for_ai field", () => {
+  it("has next_steps_for_ai field mentioning 'steps' (not 'ready steps')", () => {
     expect(planHelpContent.next_steps_for_ai).toBeDefined();
     expect(typeof planHelpContent.next_steps_for_ai).toBe("string");
+    // Should say 'steps' not 'ready steps'
+    expect(planHelpContent.next_steps_for_ai).not.toContain("ready steps");
   });
 });

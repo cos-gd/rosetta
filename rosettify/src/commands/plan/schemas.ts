@@ -1,5 +1,5 @@
-// Implements FR-HELP-0002 (per-subcommand input/output schema aggregation).
-// Aggregates per-subcommand declarations into a flat dictionary for help output.
+// Implements FR-HELP-0002 / FR-PLAN-0041 (schemas dict keyed by exported type name, SRP+DRY).
+// Aggregates per-subcommand declarations into dictionaries for help output and validation.
 
 import { createInputSchema, createOutputSchema } from "./create.js";
 import { upsertInputSchema, upsertOutputSchema } from "./upsert.js";
@@ -24,10 +24,14 @@ export const planSubcommandSchemas = {
   "list-templates": { input: listTemplatesInputSchema, output: listTemplatesOutputSchema },
 } as const;
 
-// Reusable shared shapes (part of the flat dict per FR-HELP-0002)
-const compressedTreeSchema = {
+// ---------------------------------------------------------------------------
+// Shared schemas defined once (SRP+DRY)
+// ---------------------------------------------------------------------------
+
+// PlanWriteResult — shared by all 4 write subcommands (create, upsert, create-with-template, upsert-with-template)
+const planWriteResultSchema = {
   type: "object" as const,
-  description: "FR-PLAN-0040 — compressed-tree shape returned by write subcommands",
+  description: "Compact plan snapshot returned by all write subcommands (create, upsert, create-with-template, upsert-with-template)",
   properties: {
     plan: {
       type: "object" as const,
@@ -62,9 +66,19 @@ const compressedTreeSchema = {
   },
 };
 
+// PlanTargetInput — shared by show_status and query (both accept plan_file + target_id)
+export const planTargetInputSchema = {
+  type: "object" as const,
+  properties: {
+    plan_file: { type: "string", description: "Path to the plan JSON file" },
+    target_id: { type: "string", description: "entire_plan | phase-id | step-id (default: entire_plan)" },
+  },
+  required: [],
+};
+
 const planSchema = {
   type: "object" as const,
-  description: "FR-PLAN-0017 — full plan JSON schema",
+  description: "Full plan JSON: name, description, status, timestamps, previous_version, phases",
   properties: {
     name: { type: "string" as const },
     description: { type: "string" as const },
@@ -78,7 +92,7 @@ const planSchema = {
 
 const phaseSchema = {
   type: "object" as const,
-  description: "FR-PLAN-0001 — phase fields",
+  description: "Phase fields: id, name, description, status, depends_on, subagent, role, model, steps",
   properties: {
     id: { type: "string" as const },
     name: { type: "string" as const },
@@ -94,7 +108,7 @@ const phaseSchema = {
 
 const stepSchema = {
   type: "object" as const,
-  description: "FR-PLAN-0001 — step fields",
+  description: "Step fields: id, name, prompt, status, depends_on, subagent, role, model",
   properties: {
     id: { type: "string" as const },
     name: { type: "string" as const },
@@ -108,34 +122,29 @@ const stepSchema = {
 };
 
 /**
- * FR-HELP-0002 — flat schemas dict: subcommand → input schema,
- * plus shared shapes (compressed-tree, plan, phase, step).
- * Output schemas live under <subcommand>-output keys.
+ * FR-HELP-0002 — flat schemas dict: keyed by exported type name.
+ * One entry per distinct named type — inputs, results, and shared data shapes.
+ * Used for help display (planSchemasDict).
  */
 export const planSchemasDict: Record<string, unknown> = {
-  // Input schemas keyed by subcommand name
-  create: createInputSchema,
-  next: nextInputSchema,
-  update_status: updateStatusInputSchema,
-  show_status: showStatusInputSchema,
-  query: queryInputSchema,
-  upsert: upsertInputSchema,
-  "create-with-template": createWithTemplateInputSchema,
-  "upsert-with-template": upsertWithTemplateInputSchema,
-  "list-templates": listTemplatesInputSchema,
-  // Output schemas under <subcommand>-output keys
-  "create-output": createOutputSchema,
-  "next-output": nextOutputSchema,
-  "update_status-output": updateStatusOutputSchema,
-  "show_status-output": showStatusOutputSchema,
-  "query-output": queryOutputSchema,
-  "upsert-output": upsertOutputSchema,
-  "create-with-template-output": createWithTemplateOutputSchema,
-  "upsert-with-template-output": upsertWithTemplateOutputSchema,
-  "list-templates-output": listTemplatesOutputSchema,
-  // Shared reusable shapes
-  "compressed-tree": compressedTreeSchema,
-  plan: planSchema,
-  phase: phaseSchema,
-  step: stepSchema,
+  // Input schemas keyed by exported type name
+  PlanCreateInput: createInputSchema,
+  PlanNextInput: nextInputSchema,
+  PlanUpdateStatusInput: updateStatusInputSchema,
+  PlanTargetInput: planTargetInputSchema,       // shared by show_status and query
+  PlanUpsertInput: upsertInputSchema,
+  PlanCreateWithTemplateInput: createWithTemplateInputSchema,
+  PlanUpsertWithTemplateInput: upsertWithTemplateInputSchema,
+  PlanListTemplatesInput: listTemplatesInputSchema,
+  // Result schemas keyed by exported type name
+  PlanWriteResult: planWriteResultSchema,       // shared by all 4 write subcommands
+  PlanNextResult: nextOutputSchema,
+  PlanUpdateStatusResult: updateStatusOutputSchema,
+  PlanShowStatusResult: showStatusOutputSchema,
+  PlanQueryResult: queryOutputSchema,
+  PlanTemplateCatalog: listTemplatesOutputSchema,
+  // Shared data shapes
+  Plan: planSchema,
+  Phase: phaseSchema,
+  Step: stepSchema,
 };

@@ -183,16 +183,16 @@ describe("CLI — plan next", () => {
     run(["plan", "create", file, data]);
   }
 
-  it("returns ready steps and exits 0", () => {
+  it("returns steps and exits 0", () => {
     const file = planFile();
     createPlan(file);
     const r = run(["plan", "next", file]);
     expect(r.status).toBe(0);
     // Success: r.json IS the result payload directly
     expect((r.json as any).ok).toBeUndefined();
-    const res = r.json as { ready: { id: string }[]; count: number };
-    expect(Array.isArray(res.ready)).toBe(true);
-    expect(res.ready[0]!.id).toBe("s1");
+    const res = r.json as { next: { id: string }[]; count: number };
+    expect(Array.isArray(res.next)).toBe(true);
+    expect(res.next[0]!.id).toBe("s1");
     expect(res.count).toBe(1);
   });
 

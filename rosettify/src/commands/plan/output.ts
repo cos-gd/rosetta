@@ -1,14 +1,14 @@
-// Implements FR-PLAN-0040 (compressed-tree output shape for write subcommands).
+// Implements FR-PLAN-0040 (PlanWriteResult output shape for write subcommands).
 
 import type { Plan, Status } from "./core.js";
 
 // ---------------------------------------------------------------------------
-// FR-PLAN-0040 — Compressed-Tree Output Shape
+// FR-PLAN-0040 — PlanWriteResult output shape for all write subcommands
 // ---------------------------------------------------------------------------
 
-export interface CompressedPlanTree {
+export interface PlanWriteResult {
   plan: { name: string; status: Status };
-  /** FR-PLAN-0040 — backup path from FR-PLAN-0024, or null on first create. */
+  /** FR-PLAN-0040 — backup path from write cycle (FR-PLAN-0024), or null on first create. */
   previous_version: string | null;
   phases: Array<{
     id: string;
@@ -19,10 +19,10 @@ export interface CompressedPlanTree {
 }
 
 /**
- * Builds the compressed-tree representation of a plan after a successful write.
+ * Builds the PlanWriteResult representation of a plan after a successful write.
  * FR-PLAN-0040 — contains only plan.name/status, previous_version, and phases with steps (id/name/status only).
  */
-export function buildCompressedTree(plan: Plan, previousVersion: string | null): CompressedPlanTree {
+export function buildPlanWriteResult(plan: Plan, previousVersion: string | null): PlanWriteResult {
   // FR-PLAN-0040 — only the specified fields, no extras
   return {
     plan: { name: plan.name, status: plan.status },

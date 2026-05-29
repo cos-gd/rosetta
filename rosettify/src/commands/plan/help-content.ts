@@ -1,5 +1,5 @@
-// Implements FR-PLAN-0016 (plan help content), FR-PLAN-0018 (limits and dual-form examples),
-// FR-HELP-0002 (schemas dict and notes from per-subcommand declarations).
+// Implements FR-PLAN-0016 (plan help content), FR-PLAN-0018 (limits/examples),
+// FR-PLAN-0041 (schemas), FR-PLAN-0042 (notes), FR-HELP-0002.
 
 import {
   PLAN_MAX_PHASES,
@@ -27,6 +27,14 @@ export const planNotes: string[] = [
   "templates have two kinds (create, upsert); a template of one kind cannot be used with the other kind",
   // FR-PLAN-0034 — placeholder syntax
   "placeholder syntax in templates is [placeholder-name]; provided params and declared placeholders must match exactly",
+  // Plan construction flow
+  "plan construction flow: build the plan from a create-kind template, then for each phase add the subagent's first steps with an upsert-kind template before delegating that phase to the subagent, which executes it step by step",
+  // Phase-scoped execution
+  "phase-scoped execution: a subagent running one phase calls next with --target <its phase id> so the batch and counts cover only that phase",
+  // What next returns
+  "what next returns: next lists steps in priority order — in_progress, then ready open, then blocked, then failed — and cuts the list off at limit (default 3). Because in_progress and open steps come first, when there is enough work to do the blocked and failed steps get cut off and won't appear in that call. The Overall*Count fields are a headcount of every status in scope (open, in_progress, blocked, failed, complete) — a reminder of what exists even when the limit hid some",
+  // Getting blocked/failed/in_progress steps
+  "getting blocked / failed / in_progress steps regardless of the limit: when a count is non-zero (or OverallInProgressCount does not drop across calls, signalling a stuck step), call show_status with --target <phase id> to list every step with its status — it has no limit, so it scales to any number of steps — find the ones whose status is blocked, failed, or in_progress, then call query <step_id> for full detail and update_status <step_id> <status> to fix or retry",
 ];
 
 export const planHelpContent = {
@@ -35,7 +43,7 @@ export const planHelpContent = {
   description:
     "The plan command manages two-level execution plans stored as JSON files. " +
     "Plans contain phases, phases contain steps. Status propagates bottom-up automatically. " +
-    "Write subcommands return a compressed-tree snapshot of the post-write plan.",
+    "Write subcommands return a PlanWriteResult snapshot of the post-write plan.",
 
   // FR-PLAN-0016 — plan_file convention
   plan_file: {
@@ -54,9 +62,6 @@ export const planHelpContent = {
       "any-blocked=blocked, any-in_progress/complete=in_progress, else open. " +
       "Plan root status is always derived — never set manually.",
     target_id: '"entire_plan" | phase-id | step-id (default: entire_plan)',
-    resume:
-      "next returns in_progress steps (resume:true) before open steps. " +
-      "Always check resume flag to avoid duplicate work on interrupted sessions.",
   },
 
   // FR-PLAN-0016 — subagent_fields
@@ -77,8 +82,7 @@ export const planHelpContent = {
       description:
         "Creates a new plan at plan_file. Defaults: name='Unnamed Plan', status='open', " +
         "depends_on=[], timestamps set. Validates unique IDs, dependencies, and size limits. " +
-        "Returns compressed-tree (FR-PLAN-0040) with previous_version=null.",
-      // FR-PLAN-0018 — dual-form examples
+        "Returns PlanWriteResult with previous_version=null.",
       examples: {
         tip: "rosettify plan create [plan_file] '[plan-json-with-name-phases]'",
         real: "rosettify plan create plans/feature-x/plan.json '{\"name\":\"Feature X\",\"phases\":[]}'",
@@ -89,13 +93,15 @@ export const planHelpContent = {
       brief: "Return steps ready for execution",
       usage: "rosettify plan next <plan_file> [limit] [--target <phase_id>]",
       args: {
-        limit: "max steps to return (default: 10)",
+        limit: "max steps to return (default: 3)",
         "--target": "scope to a specific phase",
       },
       description:
-        "Returns steps in priority order: (1) in_progress (resume:true), " +
-        "(2) open with deps satisfied, (3) blocked (previously_blocked:true), " +
-        "(4) failed (previously_failed:true). Loop until count:0 and plan_status:complete.",
+        "Returns steps in priority order: (1) in_progress, " +
+        "(2) open with deps satisfied, (3) blocked, " +
+        "(4) failed. Truncated to limit (default 3). Each step carries its status. " +
+        "Loop until count:0 and plan_status:complete. " +
+        "Overall*Count fields report counts for all statuses in scope regardless of the limit.",
       examples: {
         tip: "rosettify plan next [plan_file] [limit] --target [phase-id]",
         real: "rosettify plan next plans/feature-x/plan.json 5 --target ph-impl",
@@ -153,7 +159,7 @@ export const planHelpContent = {
       },
       description:
         "Creates or merge-patches plan/phase/step. Status fields in patch are silently stripped. " +
-        "Use update_status to change status after each task completion. Returns compressed-tree (FR-PLAN-0040).",
+        "Use update_status to change status after each task completion. Returns PlanWriteResult.",
       examples: {
         tip: "rosettify plan upsert [plan_file] [target-id] '[patch-json]'",
         real: "rosettify plan upsert plans/feature-x/plan.json ph-review '{\"kind\":\"phase\",\"name\":\"Review\"}'",
@@ -171,8 +177,7 @@ export const planHelpContent = {
       description:
         "Renders the named create-kind template with the provided placeholder values, " +
         "then creates the plan. All validations and write semantics are identical to create. " +
-        "Returns compressed-tree (FR-PLAN-0040).",
-      // FR-PLAN-0016 — concrete illustration from requirements
+        "Returns PlanWriteResult.",
       examples: {
         tip: "rosettify plan create-with-template plans/feature-x/plan.json for-orchestrator [plan-name] [user-request-description-one-sentence]",
         real: "rosettify plan create-with-template plans/feature-x/plan.json for-orchestrator \"Feature X\" \"User wants to add Y to Z\"",
@@ -191,7 +196,7 @@ export const planHelpContent = {
       description:
         "Renders the named upsert-kind template with the provided placeholder values, " +
         "then upserts the rendered phase into the plan. All upsert merge semantics apply. " +
-        "Returns compressed-tree (FR-PLAN-0040).",
+        "Returns PlanWriteResult.",
       examples: {
         tip: "rosettify plan upsert-with-template plans/feature-x/plan.json [phase-id] for-subagent [phase-name] [phase-description-one-sentence]",
         real: "rosettify plan upsert-with-template plans/feature-x/plan.json ph-impl for-subagent \"Implementation\" \"Implement the API endpoint\"",
@@ -239,7 +244,7 @@ export const planHelpContent = {
 
   // FR-PLAN-0016 — next_steps_for_ai
   next_steps_for_ai:
-    "1. Call 'plan next <plan_file>' to get ready steps. " +
+    "1. Call 'plan next <plan_file>' to get steps. " +
     "2. For each step: call 'plan update_status <plan_file> <step_id> in_progress', execute the work, " +
     "then call 'plan update_status <plan_file> <step_id> complete'. " +
     "3. Repeat until next returns count:0 and plan_status:complete.",

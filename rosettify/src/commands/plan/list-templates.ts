@@ -21,7 +21,7 @@ export const listTemplatesInputSchema = {
 
 export const listTemplatesOutputSchema = {
   type: "object" as const,
-  description: "FR-PLAN-0032 — catalog of registered templates grouped by kind",
+  description: "PlanTemplateCatalog — catalog of registered templates grouped by kind",
   properties: {
     create: { type: "array", items: { type: "object" } },
     upsert: { type: "array", items: { type: "object" } },

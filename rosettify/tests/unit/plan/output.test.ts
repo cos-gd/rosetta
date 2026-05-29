@@ -1,9 +1,9 @@
 /**
- * Unit tests for buildCompressedTree — FR-PLAN-0040.
+ * Unit tests for buildPlanWriteResult — PlanWriteResult output shape.
  * Verifies shape correctness: only allowed fields appear in the output.
  */
 import { describe, it, expect } from "vitest";
-import { buildCompressedTree } from "../../../src/commands/plan/output.js";
+import { buildPlanWriteResult } from "../../../src/commands/plan/output.js";
 import type { Plan } from "../../../src/commands/plan/core.js";
 
 // ---------------------------------------------------------------------------
@@ -24,14 +24,14 @@ function makePlan(overrides: Partial<Plan> = {}): Plan {
 }
 
 // ---------------------------------------------------------------------------
-// FR-PLAN-0040 — Compressed-Tree Output Shape
+// PlanWriteResult Output Shape
 // ---------------------------------------------------------------------------
 
-describe("buildCompressedTree — FR-PLAN-0040 shape correctness", () => {
-  // FR-PLAN-0040 — empty plan: verify root shape with no phases
+describe("buildPlanWriteResult — PlanWriteResult shape correctness", () => {
+  // Empty plan: verify root shape with no phases
   it("returns correct shape for empty plan (no phases)", () => {
     const plan = makePlan({ name: "Empty" });
-    const tree = buildCompressedTree(plan, null);
+    const tree = buildPlanWriteResult(plan, null);
 
     // Root fields only
     expect(Object.keys(tree)).toEqual(["plan", "previous_version", "phases"]);
@@ -45,7 +45,7 @@ describe("buildCompressedTree — FR-PLAN-0040 shape correctness", () => {
     expect(tree.phases).toEqual([]);
   });
 
-  // FR-PLAN-0040 — multi-phase plan: each phase/step carries only id, name, status
+  // Multi-phase plan: each phase/step carries only id, name, status
   it("returns correct shape for multi-phase plan", () => {
     const plan = makePlan({
       name: "Full Plan",
@@ -73,7 +73,7 @@ describe("buildCompressedTree — FR-PLAN-0040 shape correctness", () => {
       ],
     });
 
-    const tree = buildCompressedTree(plan, "/tmp/plan.json.bak000");
+    const tree = buildPlanWriteResult(plan, "/tmp/plan.json.bak000");
 
     // Root shape
     expect(Object.keys(tree).sort()).toEqual(["phases", "plan", "previous_version"]);
@@ -109,14 +109,14 @@ describe("buildCompressedTree — FR-PLAN-0040 shape correctness", () => {
     expect((tree.plan as Record<string, unknown>)["created_at"]).toBeUndefined();
   });
 
-  // FR-PLAN-0040 — non-null previous_version
+  // Non-null previous_version
   it("passes through non-null previous_version", () => {
     const plan = makePlan({ name: "Updated" });
-    const tree = buildCompressedTree(plan, "/path/to/plan.json.bak042");
+    const tree = buildPlanWriteResult(plan, "/path/to/plan.json.bak042");
     expect(tree.previous_version).toBe("/path/to/plan.json.bak042");
   });
 
-  // FR-PLAN-0040 — phase with no steps field handled safely (defaults to [])
+  // Phase with no steps field handled safely (defaults to [])
   it("handles phase with undefined steps (defaults to empty array)", () => {
     const plan = makePlan({
       phases: [
@@ -130,7 +130,7 @@ describe("buildCompressedTree — FR-PLAN-0040 shape correctness", () => {
         },
       ],
     });
-    const tree = buildCompressedTree(plan, null);
+    const tree = buildPlanWriteResult(plan, null);
     expect(tree.phases[0]!.steps).toEqual([]);
   });
 });

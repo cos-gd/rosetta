@@ -25,7 +25,7 @@ export const queryInputSchema = {
 
 export const queryOutputSchema = {
   type: "object" as const,
-  description: "FR-PLAN-0014 — full JSON of the target (plan, phase, or step)",
+  description: "PlanQueryResult — full JSON of the target (plan, phase, or step)",
 };
 
 export async function cmdQuery(
