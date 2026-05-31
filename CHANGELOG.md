@@ -54,3 +54,54 @@ Rosetta is a meta-prompting, context engineering, and centralized instructions m
 - **Windsurf adapter deny feedback.** `permissionDecisionReason` is surfaced as `additionalContext` so Windsurf agents receive actionable denial explanations.
 
 ## R3
+
+### Overview
+
+R3 advances Rosetta from governed assistance to deterministic, self-guarding execution. Where R2 made organization wide AI development consistent, R3 makes it reproducible and safe by default: a deterministic operation manager drives every workflow step, a cross IDE hooks runtime enforces guardrails and advisories at the moment of action, and the bootstrap that loads on every session is roughly half its former size. R3 ships dormant alongside R2 — R2 remains the default served release — so teams adopt the new model deliberately.
+
+### Highlights
+
+- Deterministic execution: every workflow runs as a tracked, resumable plan driven by the operation manager
+- Cross IDE hooks runtime with a two tier dangerous-actions safety gate and advisory nudges
+- GitNexus code graph integration for architecture aware navigation and automatic reindexing
+- Roughly 57% smaller bootstrap through skill extraction and de-duplication
+- Public OSS MCP and RAGFlow deployment plus GitHub authentication
+- Foundations for role specific workflows (IaC, discovery, mobile, automated QA)
+
+### Detailed Changes
+
+#### Deterministic Execution
+
+- **Operation manager.** Plan creation, tracking, and step by step execution are handled by `rosettify` — a local CLI and stdio MCP that stores execution plans as JSON. It replaces ad hoc planning with a deterministic, resumable, auditable loop (create → next → execute → update) with sequential phase gates and atomic writes.
+- **Bootstrap integrated planning.** Preparation steps, guardrails, HITL, documentation, and risk assessment are expressed as explicit plan phases and steps, so the agent commits to the process up front instead of improvising. Plan and act modes are supported directly.
+- **Graceful fallback.** When the operation manager is unavailable, a fallback rule routes the agent to built in todo tracking, so execution discipline never depends on a single tool.
+
+#### Cross IDE Hooks Runtime
+
+- **Common input adapter.** A single adapter normalizes the differing hook input schemas of Claude Code, Cursor, Copilot, Codex, and Windsurf into one canonical shape, so each hook is authored once and runs everywhere.
+- **Declarative hook framework.** Hooks declare their activation (event, tool kind, file predicates) and the runtime gates, throttles, and debounces them. Each hook is bundled per IDE with isolation guarantees so a bundle carries only its own adapter code.
+- **dangerous-actions safety gate (PreToolUse).** A deterministic, stateless last resort tripwire on destructive shell, file, and MCP operations, safe across worktrees and parallel sessions. Two tiers: `reconsider` (recoverable — the agent may self-approve with a `Rosetta-AI-reviewed` marker in a user visible field after a blast radius check) and `hard-deny` (catastrophic, for example `curl | sh` — human review required). A single traversal detection avoids policy divergence bypasses, and Windsurf agents receive the denial reason as actionable context.
+- **Advisory hooks.** `md-file-advisory` nudges on stray markdown placement, `lint-format-advisory` prompts a syntax/type/lint/format step after code edits, and `loose-files` flags `.py`/`.js` files created without a module marker (on file creation events only).
+- **GitNexus refresh hook.** Detects a stale code graph index after source mutations and asks the agent to reindex, with trailing edge debouncing so only the last edit in a burst triggers work.
+- **Authoring skill.** A `hooks-authoring` skill documents entry rules, tool kind registration, and pitfalls for contributors adding new hooks.
+
+#### GitNexus Integration
+
+- **Code graph navigation.** GitNexus is integrated as opt in skills (`gitnexus-setup`, `gitnexus-cli`, `gitnexus-tools`) and wired into workspace initialization, giving the agent architecture aware navigation. It works in ad hoc mode with Claude Code and ships in the plugins.
+
+#### Leaner Bootstrap and Modular Skills
+
+- **Roughly 57% smaller bootstrap.** Bootstrap rules were refactored — JSON schemas pulled into skills and templates, duplicated orchestration rules merged, and HITL questioning moved entirely into the on demand `hitl` skill. The per session `bootstrap-*.md` payload dropped from 31,711 to 13,510 bytes, a 57.4% reduction (the MCP mode `bootstrap.md` entry is excluded — still being optimized).
+- **Strengthened, self-initializing prep.** Preparation enforcement was tightened and workflow selection was folded into the orchestrator contract, so orchestrators and subagents self-initialize — load context, select the workflow, and commit to phases before acting.
+- **New bootstrap skills.** `load-context-instructions` and `load-workflow` make context loading and workflow selection explicit, reliable steps rather than implicit expectations.
+
+#### Release Model and Upcoming Work
+
+- **Rolling releases going forward.** R3 is the last large, version-branch style release. From here Rosetta moves to a rolling model — changes ship continuously in small, incremental releases rather than long-lived branches and major cutovers like v3.
+- **Incremental workflow delivery.** The v3 Workflows track has delivered an IaC workflow and SpecFlow integration. The remaining workflows — discovery, mobile apps, test harness engineering, and automated QA / test generation — will arrive through these smaller releases rather than a single shift.
+
+#### Platform and Deployment
+
+- **Public OSS deployment.** A public Rosetta MCP and RAGFlow deployment supports OSS and demo environments.
+- **GitHub authentication.** OAuth through GitHub is supported for MCP access.
+- **Analytics fix.** PostHog now reports the correct user identity.
