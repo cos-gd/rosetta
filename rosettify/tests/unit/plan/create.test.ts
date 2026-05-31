@@ -46,14 +46,21 @@ describe("cmdCreate — FR-PLAN-0010 / FR-PLAN-0040", () => {
     expect((tree as Record<string, unknown>)["status"]).toBeUndefined();
   });
 
-  // FR-PLAN-0017 — previous_version=null on first create
-  it("previous_version is null on first create", async () => {
+  // FR-PLAN-0040 — plan summary previous_version is null on first create (FR-PLAN-0010)
+  it("plan.previous_version is null on first create (FR-PLAN-0010)", async () => {
     const file = planFile();
     const result = await cmdCreate(file, { name: "My Plan" });
 
     expect(result.ok).toBe(true);
     const tree = result.result as PlanWriteResult;
-    expect(tree.previous_version).toBeNull();
+    // FR-PLAN-0040 — previous_version is null on first create, surfaced in plan summary
+    expect(tree.plan.previous_version).toBeNull();
+    // No previous_version at result root level
+    expect((tree as Record<string, unknown>)["previous_version"]).toBeUndefined();
+
+    // FR-PLAN-0017 — plan FILE on disk has previous_version=null on first create
+    const plan = loadPlan(file)!;
+    expect(plan.previous_version).toBeNull();
   });
 
   // FR-PLAN-0026 — plan file is pretty-formatted on disk

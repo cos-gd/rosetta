@@ -213,7 +213,6 @@ export const planToolDef: ToolDef<PlanInput, unknown> = {
         description: "Value for [phase-description] placeholder",
       },
     },
-    required: [],
   },
   outputSchema: {
     type: "object",

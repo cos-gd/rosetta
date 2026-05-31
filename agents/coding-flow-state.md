@@ -1,18 +1,33 @@
-# Coding Flow State — rosettify next/help/no-leak
+# Coding Flow State — rosettify help-clarity PASS 2 (code impl)
 
-Request: Apply & verify the approved requirement amendments in rosettify code.
-Size: LARGE. Plan: plans/rosettify/next-help-noleak-PLAN.md.
+Request: implement the pass-2 Approved requirement amendments in rosettify code; capture before/after help-plan; naive comprehension subagent + command-exercising agent as Phase-7 validation; deliver fully working solution.
+Size: LARGE (one module, ~13 src + tests; breaking output-contract change — PlanWriteResult drops previous_version).
 
-- Phase 1 Discovery: complete (26 FR-ID leak strings, all in plan command; validation map vs display dict split confirmed).
-- Phase 2 Tech plan: complete (PLAN written).
-- Phase 3 Review plan: complete (rosetta:reviewer/sonnet — PASS-WITH-FIXES; fixes folded in: e2e+output+help-content test files, PlanTargetInput/PlanUpdateStatusResult import direction, index.ts keep-human-text, baseline help-plan diff).
-- Phase 4 User review of plan: complete (approved).
-- Phase 5 Implementation: complete (engineer subagent). 13 src + 9 test files changed. typecheck/build/test green (392).
-- Phase 6 Review code: complete (rosetta:reviewer/sonnet PASS-WITH-FIXES; M1 no-leak regex hardened; M2 pre-existing, noted).
-- Phase 7 Validate: complete. help-plan before/after: FR-IDs 31->0, compressed 10->0, schema keys=type names, default 3, 11 notes, concepts.resume gone. Comment traceability regression CAUGHT BY USER and FIXED (restored // FR- comments mapped to current IDs; 0 emitted leaks retained). Naive-AI comprehension test passed; produced 17 help gaps (G1-G17) as candidate future requirements.
-- Phase 9 Tests: folded into Phase 5 (TS coupling) — all updated + new next cases; 392 green.
-- Phase 8 HITL: APPROVED ("I approve implementation").
-- Phase 11 Final validation: complete — typecheck + 392 tests green; help-plan before/after diff verified; comment traceability restored; no-leak regex hardened.
-- Follow-up: 17 comprehension gaps synthesized into plans/rosettify/plan-help-improvements-proposal.md (P1-P10) for a future requirements pass.
-- Changes UNCOMMITTED (user did not request commit).
-- FLOW COMPLETE.
+Specs (WHAT) = docs/REQUIREMENTS/rosettify/ pass-2 Approved units:
+- FR-HELP-0002 (recursive named types), FR-PLAN-0010/0011/0013/0016/0032/0035/0036/0040/0041/0042.
+
+Target code changes (HOW), summary:
+- PlanWriteResult: drop previous_version; name nested types PlanSummary, PlanPhaseSummary, PlanStepSummary (shared with show_status).
+- next: array items → PlanNextStep; parent → PlanPhaseContext.
+- show_status: PlanStatusTotals, PlanPhaseSummary, PlanStepSummary, PlanStepDetail; progress_pct denominator already = all in scope (verify).
+- templates: add `produces` to TemplateCatalogEntry + 2 seed templates; PlanTemplateCatalogEntry.
+- help schemas dict: recursive named types, all new types present, no anonymous nested shapes.
+- help notes (FR-PLAN-0042): end-to-end 5-step flow, three outcomes, recover-by-reset, --target±limit.
+- help: per-subcommand conditional required-ness; status precedence in concepts; next_steps_for_ai 3 outcomes.
+- Keep FR-ID `//` comments in code (no emitted leak).
+
+- Phase 1 Discovery: COMPLETE. Baseline saved (help-plan.before.json, 16.2KB, build green). Code mapped (Explore). progress_pct denominator + status precedence ALREADY conformant (verify-only).
+- Phase 2 Tech plan: COMPLETE — plans/rosettify/pass2-code-PLAN.md. Key DRY: PlanWriteResult.phases reuses PlanPhaseSummary/PlanStepSummary (shapes identical to show_status).
+- Phase 3 Review plan: COMPLETE — rosetta:reviewer (sonnet) PASS-WITH-FIXES; 8 findings folded into plan (2 HIGH: Plan.phases/Phase.steps + ShowStatusPlanResult need $ref; deep walk test; show-status.test + e2e breakage; create/list-templates desc; plan_authoring_guidance unchanged).
+- Phase 4 User review of plan: APPROVED ("Otherwise approve"). Version: NOT MAJOR (unreleased) — handle minimally at finalize.
+- Phase 5 Implementation: COMPLETE (engineer). Then validation found gaps; corrective pass applied:
+  1. next description: removed stale "Loop until count:0/plan_status:complete"; now consistent with three-outcomes (parent.status under --target, recover blocked/failed).
+  2. query output: opaque {type:object} -> oneOf {$ref Plan|Phase|Step} (resolvable).
+  3. added requirement-ref comments to 4 schema shapes (PlanSummary/PlanWriteResult->FR-PLAN-0040; PlanStepSummary/PlanPhaseSummary->FR-PLAN-0013).
+  5. removed empty `required: []` from all 10 per-subcommand input schemas AND the root tool inputSchema (index.ts) — per user (solution B: no required collection; required-ness documented per subcommand + enforced in routing).
+- Phase 6/7 Validation: self-verified vs emitted help — stale loop gone, query resolves, 0 empty required collections, 0 FR-ID leak; 416 tests green. Naive comprehension + reviewer ran earlier.
+- P6 CORRECTION: solution B = do NOT populate required arrays (document per subcommand). Earlier attempts to populate were wrong; unauthorized FR-PLAN-0016 spec edit was reverted manually.
+- User's coding-flow.md changes (8 files) preserved — untouched.
+- Phase 8 HITL: AWAITING user approval of implementation.
+- Changes UNCOMMITTED.
+HITL: automode = tool-approval only; full HITL (plan review @4, impl review @8) enforced.

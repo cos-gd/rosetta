@@ -9,8 +9,8 @@ import { ERR_PLAN_FILE_CORRUPTED } from "./errors.js";
 import {
   type Plan,
   type PlanNextResult,
-  type PlanNextParent,
-  type NextStep,
+  type PlanPhaseContext,
+  type PlanNextStep,
   type Phase,
   type Step,
   type Status,
@@ -25,27 +25,10 @@ export const nextInputSchema = {
     limit: { type: "integer", minimum: 0, description: "Max steps to return (default: 3)" },
     target_id: { type: "string", description: "Scope to a specific phase ID" },
   },
-  required: [],
 };
 
 export const nextOutputSchema = {
-  type: "object" as const,
-  name: "PlanNextResult",
-  description: "Steps actionable now, in priority order, plus scope-wide status counts",
-  properties: {
-    parent: {
-      type: "object" as const,
-      description: "Present only when target_id is provided — scalar fields of the targeted phase (no steps)",
-    },
-    next: { type: "array" as const, description: "Steps in priority order, truncated to limit" },
-    count: { type: "integer" as const, description: "Number of steps returned in next" },
-    plan_status: { type: "string" as const, description: "Derived status of the whole plan" },
-    OverallOpenCount: { type: "integer" as const },
-    OverallInProgressCount: { type: "integer" as const },
-    OverallBlockedCount: { type: "integer" as const },
-    OverallFailedCount: { type: "integer" as const },
-    OverallCompleteCount: { type: "integer" as const },
-  },
+  $ref: "PlanNextResult" as const,
 };
 
 export async function cmdNext(
@@ -88,10 +71,10 @@ export async function cmdNext(
       phasesToScan = activePhase ? [activePhase] : [];
     }
 
-    const inProgress: NextStep[] = [];
-    const openReady: NextStep[] = [];
-    const blocked: NextStep[] = [];
-    const failed: NextStep[] = [];
+    const inProgress: PlanNextStep[] = [];
+    const openReady: PlanNextStep[] = [];
+    const blocked: PlanNextStep[] = [];
+    const failed: PlanNextStep[] = [];
 
     for (const phase of phasesToScan) {
       for (const step of phase.steps ?? []) {
@@ -123,8 +106,8 @@ export async function cmdNext(
 
     const overallCounts = computeOverallCounts(countScope);
 
-    // Build parent block if target_id is given
-    let parent: PlanNextParent | undefined;
+    // Build parent block if target_id is given (FR-PLAN-0011 — PlanPhaseContext)
+    let parent: PlanPhaseContext | undefined;
     if (targetId && targetPhase) {
       parent = {
         id: targetPhase.id,
@@ -157,8 +140,8 @@ export async function cmdNext(
 function buildNextStep(
   step: Step,
   phase: Phase,
-): NextStep {
-  const result: NextStep = {
+): PlanNextStep {
+  const result: PlanNextStep = {
     id: step.id,
     name: step.name,
     prompt: step.prompt,

@@ -20,17 +20,10 @@ export const createWithTemplateInputSchema = {
     "plan-name": { type: "string", description: "Value for the [plan-name] placeholder" },
     "plan-description": { type: "string", description: "Value for the [plan-description] placeholder" },
   },
-  required: [],
 };
 
 export const createWithTemplateOutputSchema = {
-  type: "object" as const,
-  description: "PlanWriteResult — plan summary after create-with-template",
-  properties: {
-    plan: { type: "object" },
-    previous_version: { type: ["string", "null"] },
-    phases: { type: "array" },
-  },
+  $ref: "PlanWriteResult" as const,
 };
 
 export async function cmdCreateWithTemplate(

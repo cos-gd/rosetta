@@ -24,7 +24,6 @@ export const updateStatusInputSchema = {
     target_id: { type: "string", description: "Step ID to update" },
     new_status: { type: "string", description: "New status: open | in_progress | complete | blocked | failed" },
   },
-  required: [],
 };
 
 export const updateStatusOutputSchema = {

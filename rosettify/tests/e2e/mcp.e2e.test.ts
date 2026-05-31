@@ -246,10 +246,13 @@ describe("MCP — plan lifecycle", () => {
     expect(createRes.isError).toBe(false);
     // Success: payload IS the result directly (compressed-tree shape, no ok wrapper)
     expect((createRes.payload as any).ok).toBeUndefined();
-    const created = createRes.payload as { plan: { name: string; status: string }; previous_version: null; phases: unknown[] };
+    const created = createRes.payload as { plan: { name: string; status: string; previous_version: unknown }; phases: unknown[] };
     expect(created.plan.name).toBe("MCP E2E Plan");
     expect(created.plan.status).toBe("open");
-    expect(created.previous_version).toBeNull();
+    // FR-PLAN-0040 — previous_version=null on first create (FR-PLAN-0010)
+    expect(created.plan.previous_version).toBeNull();
+    // No previous_version at result root level
+    expect((created as Record<string, unknown>)["previous_version"]).toBeUndefined();
     expect(Array.isArray(created.phases)).toBe(true);
     expect(fs.existsSync(file)).toBe(true);
 
@@ -311,10 +314,13 @@ describe("MCP — plan lifecycle", () => {
       data: { description: "Updated via upsert" },
     });
     expect(upsertRes.isError).toBe(false);
-    // upsert returns compressed-tree: {plan:{name,status}, previous_version, phases}
-    const upsertResult = upsertRes.payload as { plan: { name: string; status: string }; previous_version: string; phases: unknown[] };
+    // upsert returns PlanWriteResult: {plan, phases}
+    const upsertResult = upsertRes.payload as { plan: { name: string; status: string; previous_version: unknown }; phases: unknown[] };
     expect(upsertResult.plan).toBeDefined();
-    expect(upsertResult.previous_version).toBeDefined();
+    // FR-PLAN-0040 — result.plan.previous_version is the backup path (non-null after write)
+    expect(upsertResult.plan.previous_version).not.toBeNull();
+    // No previous_version at result root level
+    expect((upsertResult as Record<string, unknown>)["previous_version"]).toBeUndefined();
   });
 });
 
@@ -433,11 +439,14 @@ describe("MCP — plan create-with-template (FR-PLAN-0030)", () => {
 
     expect(isError).toBe(false);
     expect((payload as any).ok).toBeUndefined();
-    // Result is compressed-tree
-    const tree = payload as { plan: { name: string; status: string }; previous_version: null; phases: unknown[] };
+    // Result is PlanWriteResult: {plan, phases}
+    const tree = payload as { plan: { name: string; status: string; previous_version: unknown }; phases: unknown[] };
     expect(tree.plan.name).toBe("MCP Template Plan");
     expect(tree.plan.status).toBe("open");
-    expect(tree.previous_version).toBeNull();
+    // FR-PLAN-0040 — previous_version=null on first create (FR-PLAN-0010)
+    expect(tree.plan.previous_version).toBeNull();
+    // No previous_version at result root level
+    expect((tree as Record<string, unknown>)["previous_version"]).toBeUndefined();
     expect(Array.isArray(tree.phases)).toBe(true);
     // Plan file exists on disk
     expect(fs.existsSync(file)).toBe(true);
@@ -488,10 +497,13 @@ describe("MCP — plan upsert-with-template (FR-PLAN-0031)", () => {
 
     expect(isError).toBe(false);
     expect((payload as any).ok).toBeUndefined();
-    // Result is compressed-tree
-    const tree = payload as { plan: { name: string }; previous_version: string; phases: unknown[] };
+    // Result is PlanWriteResult: {plan, phases}
+    const tree = payload as { plan: { name: string; previous_version: unknown }; phases: unknown[] };
     expect(tree.plan).toBeDefined();
-    expect(typeof tree.previous_version).toBe("string");
+    // FR-PLAN-0040 — result.plan.previous_version is the backup path (non-null after write)
+    expect(tree.plan.previous_version).not.toBeNull();
+    // No previous_version at result root level
+    expect((tree as Record<string, unknown>)["previous_version"]).toBeUndefined();
     expect(Array.isArray(tree.phases)).toBe(true);
     // .bak* file exists on disk (FR-PLAN-0031 atomic write cycle)
     const dir = path.dirname(file);

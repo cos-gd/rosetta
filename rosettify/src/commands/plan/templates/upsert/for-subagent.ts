@@ -11,6 +11,7 @@ export const forSubagent = {
   name: "for-subagent",
   brief: "Bootstrap a subagent preparation phase with standard Rosetta load-context steps.",
   placeholders: ["phase-id", "phase-name", "phase-description"] as const,
+  produces: "One phase seeded with 6 Rosetta subagent load-context bootstrap steps, step ids prefixed by the phase id.",
   content: {
     id: "[phase-id]",
     name: "[phase-name]",

@@ -66,7 +66,8 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 2. Input: approved specs + plan. Output: working code, build passing, update relevant documentation briefly (CONTEXT.md, ARCHITECTURE.md, etc).
 3. MUST follow approved scope. MUST stop and escalate if blocked.
 4. Recommended skills: `coding`, `debugging`, `coding-iac`, `sensitive-data`, `testing`, `dangerous-actions`
-5. Update `agents/coding-flow-state.md`
+5. If requirements are used code must contain comments refs to requirement identifiers
+6. Update `agents/coding-flow-state.md`
 
 </implementation>
 

@@ -55,28 +55,43 @@ describe("cmdUpsert — FR-PLAN-0040 compressed-tree result", () => {
     expect((tree as Record<string, unknown>)["message"]).toBeUndefined();
   });
 
+  // FR-PLAN-0040 — result.plan.previous_version is the backup path (FR-PLAN-0024)
   // FR-PLAN-0024 — .bakNNN file created after upsert on existing plan
-  it("creates .bak000 file after upsert on existing plan", async () => {
+  it("creates .bak000 file after upsert on existing plan; result.plan.previous_version equals backup path", async () => {
     const file = writePlan();
     const result = await cmdUpsert(file, "entire_plan", { description: "Updated" });
     expect(result.ok).toBe(true);
     const tree = result.result as PlanWriteResult;
 
-    // previous_version is non-null
-    expect(tree.previous_version).not.toBeNull();
-    expect(typeof tree.previous_version).toBe("string");
+    // FR-PLAN-0040 — previous_version surfaced inside plan summary
+    expect(tree.plan.previous_version).not.toBeNull();
+    expect(typeof tree.plan.previous_version).toBe("string");
+    expect(tree.plan.previous_version).toContain(".bak000");
+    // No previous_version at result root level
+    expect((tree as Record<string, unknown>)["previous_version"]).toBeUndefined();
 
-    // The backup file must exist
-    expect(fs.existsSync(tree.previous_version!)).toBe(true);
-    expect(tree.previous_version).toContain(".bak000");
+    // FR-PLAN-0024 — the plan FILE on disk has previous_version pointing to the same backup
+    const planOnDisk = loadPlan(file)!;
+    expect(planOnDisk.previous_version).not.toBeNull();
+    expect(typeof planOnDisk.previous_version).toBe("string");
+    expect(fs.existsSync(planOnDisk.previous_version!)).toBe(true);
+    expect(planOnDisk.previous_version).toContain(".bak000");
+    // result.plan.previous_version equals the plan file's own previous_version
+    expect(tree.plan.previous_version).toBe(planOnDisk.previous_version);
   });
 
-  // FR-PLAN-0017 — previous_version is non-null after upsert on existing file
-  it("previous_version is non-null after upsert on existing file", async () => {
+  // FR-PLAN-0017 — previous_version in result.plan equals plan FILE's previous_version
+  it("result.plan.previous_version equals plan file's previous_version after upsert", async () => {
     const file = writePlan();
     const result = await cmdUpsert(file, "entire_plan", { description: "x" });
     expect(result.ok).toBe(true);
-    expect((result.result as PlanWriteResult).previous_version).not.toBeNull();
+    const tree = result.result as PlanWriteResult;
+    // result.plan.previous_version is non-null
+    expect(tree.plan.previous_version).not.toBeNull();
+    // Plan file has same previous_version
+    const planOnDisk = loadPlan(file)!;
+    expect(planOnDisk.previous_version).not.toBeNull();
+    expect(tree.plan.previous_version).toBe(planOnDisk.previous_version);
   });
 });
 

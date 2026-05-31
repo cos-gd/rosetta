@@ -1,6 +1,7 @@
 /**
  * Unit tests for buildPlanWriteResult — PlanWriteResult output shape.
  * Verifies shape correctness: only allowed fields appear in the output.
+ * Updated per FR-PLAN-0040: result has plan (with previous_version) + phases.
  */
 import { describe, it, expect } from "vitest";
 import { buildPlanWriteResult } from "../../../src/commands/plan/output.js";
@@ -28,20 +29,22 @@ function makePlan(overrides: Partial<Plan> = {}): Plan {
 // ---------------------------------------------------------------------------
 
 describe("buildPlanWriteResult — PlanWriteResult shape correctness", () => {
-  // Empty plan: verify root shape with no phases
+  // Empty plan: verify root shape with no phases (FR-PLAN-0040 — plan + phases)
   it("returns correct shape for empty plan (no phases)", () => {
     const plan = makePlan({ name: "Empty" });
     const tree = buildPlanWriteResult(plan, null);
 
-    // Root fields only
-    expect(Object.keys(tree)).toEqual(["plan", "previous_version", "phases"]);
+    // Root fields only: plan and phases (no previous_version at root)
+    expect(Object.keys(tree).sort()).toEqual(["phases", "plan"]);
 
-    // plan sub-object: only name + status
-    expect(Object.keys(tree.plan)).toEqual(["name", "status"]);
+    // plan sub-object: name, previous_version, status (FR-PLAN-0040)
+    expect(Object.keys(tree.plan).sort()).toEqual(["name", "previous_version", "status"]);
     expect(tree.plan.name).toBe("Empty");
     expect(tree.plan.status).toBe("open");
+    expect(tree.plan.previous_version).toBeNull();
 
-    expect(tree.previous_version).toBeNull();
+    // No previous_version at result root (it lives inside plan sub-object)
+    expect((tree as Record<string, unknown>)["previous_version"]).toBeUndefined();
     expect(tree.phases).toEqual([]);
   });
 
@@ -73,13 +76,17 @@ describe("buildPlanWriteResult — PlanWriteResult shape correctness", () => {
       ],
     });
 
-    const tree = buildPlanWriteResult(plan, "/tmp/plan.json.bak000");
+    const tree = buildPlanWriteResult(plan, "/tmp/plan.json.bak007");
 
-    // Root shape
-    expect(Object.keys(tree).sort()).toEqual(["phases", "plan", "previous_version"]);
+    // Root shape: only plan and phases (no previous_version at root)
+    expect(Object.keys(tree).sort()).toEqual(["phases", "plan"]);
     expect(tree.plan.name).toBe("Full Plan");
     expect(tree.plan.status).toBe("in_progress");
-    expect(tree.previous_version).toBe("/tmp/plan.json.bak000");
+    // previous_version surfaced inside plan summary (FR-PLAN-0040)
+    expect(tree.plan.previous_version).toBe("/tmp/plan.json.bak007");
+
+    // No previous_version at result root
+    expect((tree as Record<string, unknown>)["previous_version"]).toBeUndefined();
 
     // Phase shape: only id, name, status, steps
     expect(tree.phases.length).toBe(2);
@@ -109,13 +116,6 @@ describe("buildPlanWriteResult — PlanWriteResult shape correctness", () => {
     expect((tree.plan as Record<string, unknown>)["created_at"]).toBeUndefined();
   });
 
-  // Non-null previous_version
-  it("passes through non-null previous_version", () => {
-    const plan = makePlan({ name: "Updated" });
-    const tree = buildPlanWriteResult(plan, "/path/to/plan.json.bak042");
-    expect(tree.previous_version).toBe("/path/to/plan.json.bak042");
-  });
-
   // Phase with no steps field handled safely (defaults to [])
   it("handles phase with undefined steps (defaults to empty array)", () => {
     const plan = makePlan({
@@ -132,5 +132,23 @@ describe("buildPlanWriteResult — PlanWriteResult shape correctness", () => {
     });
     const tree = buildPlanWriteResult(plan, null);
     expect(tree.phases[0]!.steps).toEqual([]);
+  });
+
+  // previous_version is null on first create (FR-PLAN-0010); a backup path on subsequent writes
+  it("plan summary previous_version is null when passed null (first create)", () => {
+    const plan = makePlan({ name: "First" });
+    const tree = buildPlanWriteResult(plan, null);
+    expect(tree.plan.previous_version).toBeNull();
+    expect((tree as Record<string, unknown>)["previous_version"]).toBeUndefined();
+    expect(Object.keys(tree).sort()).toEqual(["phases", "plan"]);
+  });
+
+  it("plan summary previous_version equals the passed backup path", () => {
+    const bak = "/path/to/plan.json.bak042";
+    const plan = makePlan({ name: "Updated" });
+    const tree = buildPlanWriteResult(plan, bak);
+    expect(tree.plan.previous_version).toBe(bak);
+    expect((tree as Record<string, unknown>)["previous_version"]).toBeUndefined();
+    expect(Object.keys(tree).sort()).toEqual(["phases", "plan"]);
   });
 });

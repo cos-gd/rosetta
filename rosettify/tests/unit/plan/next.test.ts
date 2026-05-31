@@ -8,7 +8,7 @@ import * as path from "path";
 import { cmdNext } from "../../../src/commands/plan/next.js";
 import { savePlan } from "../../../src/commands/plan/core.js";
 import { fullPlan, minimalPlan, completedPlan, singleStepPlan } from "../../fixtures/plans.js";
-import type { Plan } from "../../../src/commands/plan/core.js";
+import type { Plan, PlanNextStep, PlanPhaseContext } from "../../../src/commands/plan/core.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -576,5 +576,76 @@ describe("cmdNext — nullish status branches", () => {
     const result = await cmdNext(file);
     expect(result.ok).toBe(true);
     expect(result.result!.count).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PlanNextStep field-shape assertions (FR-PLAN-0011 / FR-HELP-0002)
+// ---------------------------------------------------------------------------
+
+describe("cmdNext — PlanNextStep field-shape assertions", () => {
+  it("every element in next is a PlanNextStep with required fields", async () => {
+    const plan = fullPlan();
+    const file = writePlan(plan);
+    const result = await cmdNext(file, undefined, 10);
+    expect(result.ok).toBe(true);
+    for (const step of result.result!.next as PlanNextStep[]) {
+      expect(typeof step.id).toBe("string");
+      expect(typeof step.name).toBe("string");
+      expect(typeof step.prompt).toBe("string");
+      expect(typeof step.status).toBe("string");
+      expect(Array.isArray(step.depends_on)).toBe(true);
+      expect(typeof step.phase_id).toBe("string");
+      expect(typeof step.phase_name).toBe("string");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PlanPhaseContext field-shape assertions (FR-PLAN-0011 / FR-HELP-0002)
+// ---------------------------------------------------------------------------
+
+describe("cmdNext — PlanPhaseContext (parent) field-shape assertions", () => {
+  it("parent is a PlanPhaseContext with required scalar fields and no steps", async () => {
+    const plan = fullPlan();
+    const file = writePlan(plan);
+    const result = await cmdNext(file, "p1", 10);
+    expect(result.ok).toBe(true);
+    const parent = result.result!.parent as PlanPhaseContext;
+    expect(parent).toBeDefined();
+    expect(typeof parent.id).toBe("string");
+    expect(typeof parent.name).toBe("string");
+    expect(typeof parent.description).toBe("string");
+    expect(typeof parent.status).toBe("string");
+    expect(Array.isArray(parent.depends_on)).toBe(true);
+    // PlanPhaseContext must NOT include steps
+    expect((parent as Record<string, unknown>)["steps"]).toBeUndefined();
+  });
+
+  // FR-PLAN-0011 — no-limit case with --target
+  it("next --target <phase-id> without explicit limit applies default limit (3) and returns phase-scoped result", async () => {
+    const plan = fullPlan();
+    const file = writePlan(plan);
+    // Default limit = 3; call with target but no explicit limit
+    const result = await cmdNext(file, "p1");
+    expect(result.ok).toBe(true);
+    // parent must be present (target_id given)
+    expect(result.result!.parent).toBeDefined();
+    expect(result.result!.parent!.id).toBe("p1");
+    // count <= 3 (default limit)
+    expect(result.result!.count).toBeLessThanOrEqual(3);
+  });
+
+  // FR-PLAN-0011 — count=0 and parent.status=complete when phase complete
+  it("count=0 and parent.status=complete when all phase steps are complete", async () => {
+    const plan = fullPlan();
+    // Complete all phase-1 steps
+    plan.phases[0]!.steps.forEach((s) => (s.status = "complete"));
+    plan.phases[0]!.status = "complete";
+    const file = writePlan(plan);
+    const result = await cmdNext(file, "p1");
+    expect(result.ok).toBe(true);
+    expect(result.result!.count).toBe(0);
+    expect(result.result!.parent!.status).toBe("complete");
   });
 });

@@ -21,17 +21,10 @@ export const upsertWithTemplateInputSchema = {
     "phase-name": { type: "string", description: "Value for the [phase-name] placeholder" },
     "phase-description": { type: "string", description: "Value for the [phase-description] placeholder" },
   },
-  required: [],
 };
 
 export const upsertWithTemplateOutputSchema = {
-  type: "object" as const,
-  description: "PlanWriteResult — plan summary after upsert-with-template",
-  properties: {
-    plan: { type: "object" },
-    previous_version: { type: ["string", "null"] },
-    phases: { type: "array" },
-  },
+  $ref: "PlanWriteResult" as const,
 };
 
 export async function cmdUpsertWithTemplate(
