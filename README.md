@@ -19,7 +19,7 @@
 
 ## What is Rosetta
 
-Rosetta is a meta-prompting, context engineering, and centralized knowledge management for AI coding agents. It provides structured context - rules, skills, workflows, and sub-agents - guiding AI systems to operate with a deep understanding of system architecture, domain constraints, and engineering standards. Rosetta also accelerates project onboarding by reverse-engineering architecture and domain context, improving the reliability and consistency of AI-generated code.
+Rosetta is a meta-prompting, context engineering, and centralized instructions management for AI coding agents. It provides structured context - rules, skills, workflows, and sub-agents - guiding AI systems to operate with a deep understanding of system architecture, domain constraints, and engineering standards. Rosetta also accelerates project onboarding by reverse-engineering architecture and domain context, improving the reliability and consistency of AI-generated code.
 
 Every AI interaction follows four phases: **Prepare** (load guardrails and context), **Research** (search the knowledge base), **Plan** (produce a reviewable plan), **Act** (execute with full context). Read more in the [Usage Guide](USAGE_GUIDE.md#workflows).
 
@@ -27,7 +27,27 @@ Every AI interaction follows four phases: **Prepare** (load guardrails and conte
 
 Cursor | Claude Code | VS Code / GitHub Copilot | JetBrains (Copilot, Junie) | Windsurf | Codex | Antigravity | OpenCode | Gemini CLI
 
-Works with any MCP-compatible tool.
+Works with any MCP-compatible coding agent, though plugins are recommended.
+
+## Quick Start
+
+1. [Plugins and standalone installation are supported for Claude Code, Github Copilot (VSCode/JetBrains IDEA), Cursor](PLUGINS.md)
+2. [MCP-based installation for the rest of coding agents](MCPs.md)
+
+## Documentation
+
+| I want to... | Read |
+|---|---|
+| Understand what Rosetta is and how to think about it | [OVERVIEW.md](OVERVIEW.md) |
+| Set up Rosetta | [QUICKSTART.md](QUICKSTART.md) |
+| Learn how to use Rosetta flows | [USAGE_GUIDE.md](USAGE_GUIDE.md) |
+| Deploy Rosetta for my organization | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) |
+| Understand the system architecture | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Navigate the codebase | [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) |
+| Contribute a change | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Debug a problem | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
+| See release history | [CHANGELOG.md](CHANGELOG.md) |
+| Security Policy | [SECURITY.md](SECURITY.md) |
 
 ## What Rosetta Adds to AI Coding Agents
 
@@ -133,21 +153,6 @@ codex mcp login Rosetta
 Complete the OAuth flow when prompted. Then ask: *"Initialize this repository using Rosetta"*
 
 STDIO transport is available for air-gapped environments. [All IDEs and detailed setup](INSTALLATION.md). Read more in the [Quickstart](QUICKSTART.md).
-
-## Documentation
-
-| I want to... | Read |
-|---|---|
-| Understand what Rosetta is and how to think about it | [OVERVIEW.md](OVERVIEW.md) |
-| Set up Rosetta | [QUICKSTART.md](QUICKSTART.md) |
-| Learn how to use Rosetta flows | [USAGE_GUIDE.md](USAGE_GUIDE.md) |
-| Deploy Rosetta for my organization | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) |
-| Understand the system architecture | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| Navigate the codebase | [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) |
-| Contribute a change | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| Debug a problem | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) |
-| See release history | [CHANGELOG.md](CHANGELOG.md) |
-| Security Policy | [SECURITY.md](SECURITY.md) |
 
 ## Contributing
 

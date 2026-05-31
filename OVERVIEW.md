@@ -51,7 +51,7 @@ These terms are defined here and referenced everywhere else.
 | **Guardrails**     | Safety measures: scope limits, data protection, transparency rules, approval gates, risk assessment.                                        |
 | **HITL**           | Human-in-the-loop. Approval gates at critical decision points (specs, plans, risky actions).                                                |
 | **Meta-prompting** | Rosetta MCP consults the AI agent on what should be done and how using meta-prompts.                                                        |
-| **Rosetta**        | MCP and CLI of Instruction and Knowledge Management System.                                                                                 |
+| **Rosetta**        | MCP and CLI of Instruction and Instructions Management System.                                                                                 |
 | **Prompt**         | Skill, Rule, Workflow, Command, Subagent, Agent, Template, or any generic prompt. **Rosetta prompt** prompt for Rosetta.                    |
 | **Shells**         | Small prompt proxies with proper fronmatters created during onboarding so that coding agents are aware of skill, agents, commands.          |
 

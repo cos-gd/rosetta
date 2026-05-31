@@ -4,7 +4,7 @@
 
 ### Overview
 
-Rosetta is a meta-prompting, context engineering, and centralized knowledge management for AI coding agents. R2 is the production release that moves teams from individual developer prompting to governed, organization wide AI assisted development.
+Rosetta is a meta-prompting, context engineering, and centralized instructions management for AI coding agents. R2 is the production release that moves teams from individual developer prompting to governed, organization wide AI assisted development.
 
 ### Highlights
 
@@ -52,3 +52,5 @@ Rosetta is a meta-prompting, context engineering, and centralized knowledge mana
 - **Single-traversal pattern evaluation.** Pattern matching and policy lookup now share one traversal (`detectDanger`), eliminating the structural divergence risk where a hard-deny pattern could slip through if the two parallel scans returned different results.
 - **Stateless hook design.** Cooldown store and audit log removed. The hook is safe across worktrees, CI runners, and parallel sessions without shared state.
 - **Windsurf adapter deny feedback.** `permissionDecisionReason` is surfaced as `additionalContext` so Windsurf agents receive actionable denial explanations.
+
+## R3
