@@ -90,6 +90,40 @@ List the patterns the agent should reuse so generated code stays consistent — 
 - Install and configure plugins and extensions.
 - Install and configure AI coding agent CLIs (Copilot CLI, Claude, Codex, and so on).
 
+#### Recommended CLIs
+
+Prefer a CLI over the matching MCP when one exists — it costs no context.
+
+- `gh` — GitHub CLI: pull requests, issues, releases, and CI checks.
+- `acli` — Atlassian CLI: Jira and Confluence from the terminal.
+- `rtk` ([github.com/rtk-ai/rtk](https://github.com/rtk-ai/rtk)) — CLI proxy that reduces LLM token consumption by 60–90% on common dev commands.
+
+#### Useful MCPs
+
+MCPs are the eyes and hands of the AI — add them, but keep it balanced. Enable only what the task needs.
+
+**Essential**
+
+| MCP | URL | Use it for |
+|---|---|---|
+| Context7 | <https://github.com/upstash/context7> | Up-to-date library documentation. |
+| Playwright MCP | <https://github.com/microsoft/playwright-mcp> | Drive web pages via accessibility snapshots — no screenshots or vision models needed. |
+| Fetch | <https://github.com/modelcontextprotocol/servers/tree/main/src/fetch> | Retrieve and process content from web pages and APIs. |
+| Chrome DevTools | <https://github.com/ChromeDevTools/chrome-devtools-mcp> | Full browser control: console, network tab, snapshots. |
+| GitNexus | <https://github.com/abhigyanpatwari/GitNexus> | Index a large codebase into a knowledge graph. |
+
+Use **either Playwright or Chrome DevTools, not both.**
+
+**Recommended**
+
+| MCP | URL | Use it for |
+|---|---|---|
+| Figma MCP | <https://github.com/GLips/Figma-Context-MCP> | Read designs directly from Figma. |
+| Jira & Confluence MCP | <https://www.atlassian.com/platform/remote-mcp-server> | Tickets, comments, and documentation. |
+| Repomix MCP | <https://repomix.com/guide/mcp-server> | Docs for using existing client libraries. |
+| DeepWiki | <https://docs.devin.ai/work-with-devin/deepwiki-mcp> | Up-to-date documentation. |
+| Database MCPs | <https://glama.ai/mcp/servers?attributes=category%3Adatabases> | Read schema and data. |
+
 ---
 
 ## 3. Modernization Additional Setup
