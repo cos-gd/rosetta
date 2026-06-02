@@ -7,6 +7,9 @@ Content: brief, grep-friendly, MECE across sections. Style: one-liner per entry,
 
 ## Preventive Rules
 
+### Verify Third-Party SDK Signatures Before Injecting kwargs Via A Wrapper [ACTIVE]
+Confirm the real method signature of any third-party SDK method before injecting kwargs through a monkey-patch wrapper. SDK methods that do NOT declare a kwarg (e.g. RAGFlow `get/post/...` do not accept `timeout`) will raise `TypeError` at runtime when an injected kwarg is forwarded. mypy cannot catch this when the wrapper uses `**kwargs` passthrough. Always read the actual installed source (site-packages or refsrc) and quote the line — do not rely on docs or assumptions. If the kwarg is unsupported by the SDK method, inject it at the underlying transport layer instead (e.g. `requests.sessions.Session.request` for any requests-based SDK).
+
 ### Do Not Manufacture Approval Questions For Unrequested, Unchanged Details [ACTIVE]
 Only surface decisions the user actually owns. Pre-existing behavior the user did not ask to change (e.g. existing `next` step flags resume/previously_blocked/previously_failed) must be left untouched and NOT raised as "needs your nod." Re-raising settled or out-of-scope items reads as churn and erodes trust. Before listing an item as open, check: did the user ask to change THIS? If no, leave it as-is and stay silent.
 
