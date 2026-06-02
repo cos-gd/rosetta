@@ -125,10 +125,11 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 <final_validation phase="11" applies="MEDIUM,LARGE" subagent="validator" role="Final end-to-end verification">
 
 1. Systematic by-dependency validation: databases, APIs, web, mobile. Check logs, clean up.
-2. Input: full delivery (code + tests + specs + review findings). Output: final validation report.
-3. SMALL: orchestrator confirms build + tests pass.
-4. Recommended skills: `coding`, `debugging`, `coding-iac`, `sensitive-data`, `testing`, `dangerous-actions`
-5. Update `agents/coding-flow-state.md`
+2. Additionally systematic "manual QA" by yourself.
+3. Input: full delivery (code + tests + specs + review findings). Output: final validation report.
+4. SMALL: orchestrator confirms build + tests pass.
+5. Recommended skills: `coding`, `debugging`, `coding-iac`, `sensitive-data`, `testing`, `dangerous-actions`
+6. Update `agents/coding-flow-state.md`
 
 </final_validation>
 
