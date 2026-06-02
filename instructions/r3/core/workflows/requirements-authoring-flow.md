@@ -20,6 +20,7 @@ Prevents premature drafting by enforcing HITL gates where every `<req>` unit rec
 3. Every phase MUST update `requirements-authoring-flow-state.md` in FEATURE TEMP with: phase name, status, artifact produced, and open questions.
 4. Orchestrator and subagents MUST USE SKILL `requirements-authoring`.
 5. If task is to reverse engineer orchestrator MUST USE SKILL `reverse-engineering`.
+6. Keep requirement identifiers in code comments only, must not be user facing.
 
 IMPORTANT! If the task is to reverse engineer requirements, spawn MULTIPLE subagents with each handling one unit of analysis (one screen, one page, one controller, one endpoint, etc) to effectively prevent hallucinations by narrow scoping for phases intent_capture, outline, draft, validate.
 
