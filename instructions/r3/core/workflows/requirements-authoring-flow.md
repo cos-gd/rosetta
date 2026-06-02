@@ -129,6 +129,7 @@ Done when: artifacts are stored in target location and state file is complete.
 3. ACQUIRE `requirements-authoring/assets/ra-change-log.md` FROM KB and update change log
 4. Mark state as complete
 5. Required skills: `requirements-authoring`
+6. Coding must be performed using `coding-flow` (ask, recommend, switch)
 
 </finalization>
 
