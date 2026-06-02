@@ -1,107 +1,164 @@
-# Workspace Configuration Instructions
+# Workspace Configuration
 
-## Overview
+**Who is this for?** Engineers setting up a workspace (in the VS Code sense) for the first time, so AI coding agents work well in it.
 
-This guides tell how to configure environment for the best success with AI.
+**When should I read this?** After you connect Rosetta (see [Quick Start](QUICKSTART.md)), and before you start real coding or modernization work.
 
-## 1. Rosetta Installation and Onboarding
+---
 
-See [Quick Start](QUICKSTART.md)
+## Why this matters
 
-## 2. Repository Activities
+AI agents do not see your source code or your business. They only know what the workspace tells them. Good setup gives the agent three things: business context, technical context, and reference code it can read. With these, the agent makes fewer wrong guesses and produces more consistent, correct code. This page is the checklist to provide them.
 
-Prerequisite: Onboard the repository to Rosetta.
+If you are migrating or modernizing a codebase, do the steps below first, then read [Modernization Additional Setup](#3-modernization-additional-setup) for the extra steps.
 
-**Modernization**: Onboard both the old and the new repositories. If everything is in one repository, clearly state what is where in CONTEXT.md.
+---
 
-1. Verify and document processes to follow in CONTEXT.md (without technical details):
-    - What is the source
-    - What is the target
-    - What issue tracker used
-    - How story gets implemented
-    - What is the goal
-    - Add what this project does overall in clients ecosystem
-    - **Modernization**: state the modernization/migration goals and processes, state that old code in refsrc contains its own docs/CONTEXT.md
-2. Verify and document technical aspects to follow in ARCHITECTURE.md:
-    - When/where integration tests created
-    - When/where e2e tests created
-    - Any harnesses to use
-    - How to start an application(s) locally
-    - Are there any technical dependencies on external or private libraries
-    - Technical and architectural targets
-    - Any issues or technical gaps in current project
-    - Explain authentication / authorization / routing setup for the deployed application
-    - Briefly describe deployment infrastructure and environments
-    - **Modernization**: state the target for modernization/migration, state how new application will be introduced and patterns followed (ex: component replacements, limitations of modernization, strangler fig pattern, use api gateway for routing old/new, etc.), reference target architecture document (which should be a separate doc and define how new app should be structured, organized, etc.), what stays, what changes, how changes (examples: old state management to new), tips on modernization (examples: copy css then adapt, skip onboarding UI, data generation), address how unit and e2e test to be handled (copy + fix or full regeneration), state that old code in refsrc contains its own docs/CONTEXT.md
-3. Provide source code for reference:
-    - Backend code for frontend repositories
-    - Custom or corporate libraries/packages
-    - New or refreshed public framework with the major or breaking update that was done in the last 365 days
-    - **Modernization**: original "old" source code
-    - Ensure repository root .gitignore contains Rosetta exceptions (and add if not):
-      ```
-      agents/TEMP/
-      refsrc/
-      !refsrc/INDEX.md
-      ```
-    - Clone all such code base to `refsrc` as subfolders. Example: `refsrc/fastmcp-3.3.1` or `refsrc/private-ui-lib`.
-    - Create or update INDEX.md using md headers: `## "refsrc/fastmcp-3.3.1" - main framework for MCP handling` and `## "refsrc/private-ui-lib" - must use corporate styles for TailwindCSS`.
-4. Verify and define reusable patterns. **Modernization**: additionally mapping old -> to be
-    - Components
-    - State Management
-    - Databases
-    - API protocols
-    - Messaging
-    - Controllers
-    - CRUD verticals
-    - etc.
-5. Configure ecosystem:
-    - Install and configure MCPs and CLIs, keep up to 3 MCPs enabled at a time, prefer CLIs since those are always readily available and do not consume context
-    - Install and configure plugins / extensions
-    - Install and configure AI coding agent CLIs (copilot cli, claude, codex, etc)
-6. **Modernization**: use /requirements-authoring-flow or allium to generate specs of existing old code.
-7. **Modernization**: use /coding-flow for unit tests and /aqa-flow for e2e tests to cover old code.
+## 1. Install and Onboard
 
-## 3. Modernization Workspace Setup
+1. Connect Rosetta to your IDE — follow the [Quick Start](QUICKSTART.md).
+2. Onboard the repository to Rosetta (Quick Start, Step 3). This is required before the steps below.
 
-Two options:
-1. Reference Source: workspace is just the new repository, uses refsrc to include old code base.
-   Easiest and fast-forward.
-   Disadvantage is that changes can only be applied on one repository => multiple windows for multiple repositories. 
+---
 
-   Structure:
-   ```
-   <new git repo root>
-   |- docs/ARCHITECTURE.md      # Contains new application definition, modernization target, references refsrc/<old code>/docs/ARCHITECTURE.md for old code.
-   |- docs/CONTEXT.md           # Contains new application definition, modernization processes, references refsrc/<old code>/docs/CONTEXT.md for old code.
-   |- refsrc/<old code>
-   |  |- docs/ARCHITECTURE.md
-   |  |- docs/CONTEXT.md
-   |  |- <old code>
-   |- <new code>
-   ```
+## 2. Set Up the Repository
 
-2. Composite Workspaces: top level folder includes both old and new repos, and other repositories.
-   Useful for cross multi-service workflows.
-   Disadvantages: workspace itself must be added to git as well, .gitignore to be properly defined, docs routing, overall complexity.
+Work through these five steps once per repository.
 
-   Structure:
-   ```
-   <workspace git repo>
-   |- docs/ARCHITECTURE.md      # Contains very small documentation, mostly index to all sub-repos. Technical information on what each repository is for. Requires use of large-workspace-handling skill
-   |- docs/CONTEXT.md           # Contains very small documentation, mostly index to all sub-repos. Business information on what each repository is for.
-   |- <1st old code repository>
-   |  |- docs/ARCHITECTURE.md
-   |  |- docs/CONTEXT.md
-   |  |- <old code 1>
-   |- <2nd old code repository>
-   |  |- docs/ARCHITECTURE.md
-   |  |- docs/CONTEXT.md
-   |  |- <old code 2>
-   |- <new code repository>
-   |  |- docs/ARCHITECTURE.md
-   |  |- docs/CONTEXT.md
-   |  |- <new code>
-   |- <etc>
-   |- .gitignore                # Excludes all those cloned repository folders: 1st old, 2nd old, new
-   ```
+### Step 1 — Capture business context in `CONTEXT.md`
+
+Record the non-technical facts about the project:
+
+- Its overall goal.
+- What it does in the client's wider ecosystem.
+- The source and the target of the work.
+- The issue tracker you use.
+- How a story goes from ticket to implemented.
+- Who the users and key stakeholders are.
+- Core business rules and domain constraints.
+- Any compliance or regulatory requirements.
+- References to documentation and ways to access it (example, acli or mcp for atlassian).
+
+### Step 2 — Capture technical context in `ARCHITECTURE.md`
+
+Record how the project is built and run:
+
+- How to start the application(s) locally.
+- Where and when integration tests and e2e tests are created.
+- Any AI agentic harnesses to use.
+- Dependencies on external or private libraries.
+- Technical and architectural targets.
+- Known issues or technical gaps.
+- Service dependencies.
+- Authentication, authorization, and routing for the deployed application.
+- A brief description of the deployment infrastructure and environments.
+- The build and CI/CD pipeline.
+- Name standards for coding, linting, formatting (e.g. Google Java Style, Microsoft .NET code style) — name them, not the rules.
+
+### Step 3 — Provide reference source code
+
+Give the agent read-only code it cannot otherwise see. Clone each codebase into `refsrc/` as its own subfolder (for example, `refsrc/fastmcp-3.3.1` or `refsrc/private-ui-lib`).
+
+Provide code such as:
+
+- Backend code, when this is a frontend repository.
+- Custom or corporate libraries and packages.
+- A new or refreshed public framework that had a major or breaking update in the last 365 days.
+
+Then add these Rosetta exceptions to the repository root `.gitignore` if they are missing:
+
+```
+agents/TEMP/
+refsrc/
+!refsrc/INDEX.md
+```
+
+Finally, create or update `refsrc/INDEX.md`, using a Markdown header per entry to say what each folder is for:
+
+```
+## "refsrc/fastmcp-3.3.1" - main framework for MCP handling
+## "refsrc/private-ui-lib" - must use corporate styles for TailwindCSS
+```
+
+### Step 4 — Define reusable patterns
+
+List the patterns the agent should reuse so generated code stays consistent — for example: components, state management, databases, API protocols, messaging, controllers, and CRUD verticals.
+
+### Step 5 — Configure the ecosystem
+
+- Install and configure MCPs and CLIs. Keep at most three MCPs enabled at a time, and prefer CLIs — they are always available and do not consume context.
+- Install and configure plugins and extensions.
+- Install and configure AI coding agent CLIs (Copilot CLI, Claude, Codex, and so on).
+
+---
+
+## 3. Modernization Additional Setup
+
+Read this section only if you are converting, migrating, upgrading, or re-architecting a codebase. These steps are **in addition to** Section 2 — do those first.
+
+### Onboard both repositories
+
+Onboard the old repository and the new repository. If everything lives in one repository, state clearly in `CONTEXT.md` what is old and what is new.
+
+The old code in `refsrc/` keeps its own `docs/CONTEXT.md` and `docs/ARCHITECTURE.md` — reference them rather than copying their content.
+
+### Add to each setup step
+
+- **`CONTEXT.md` (Step 1):** state the modernization or migration goals and the processes you follow.
+- **`ARCHITECTURE.md` (Step 2):** state the modernization target and how the new application is introduced, including:
+  - The patterns you follow (for example: component replacement, the strangler fig pattern, or an API gateway that routes between old and new).
+  - The limits of the modernization.
+  - A reference to a separate target architecture document that defines how the new app is structured and organized.
+  - What stays, what changes, and how it changes (for example: old state management → new state management).
+  - Practical tips (for example: copy the CSS and then adapt it, skip onboarding UI, use data generation).
+  - How unit and e2e tests are handled: copied and fixed, or fully regenerated.
+  - How modernized application will be introduced and deployed.
+  - Will modernized application work side-by-side or big bang deployment? Routing?
+- **Reference source (Step 3):** provide the original old source code.
+- **Patterns (Step 4):** also map old patterns to their new ("to be") equivalents.
+
+### Generate specs and test coverage for the old code
+
+- Use `/requirements-authoring-flow` or `Allium` to generate specs from the existing old code.
+- Use `/coding-flow` for unit tests and `/aqa-flow` for e2e tests to cover the old code before you change it.
+
+### Choose a workspace layout
+
+Pick one of two layouts.
+
+**Option 1 — Reference Source.** The workspace is just the new repository; it pulls in the old code through `refsrc/`. This is the easiest and fastest option. The downside: you can only edit one repository, so you need a separate window per repository.
+
+```
+<new git repo root>
+├── docs/
+│   ├── ARCHITECTURE.md   # new app + modernization target; references the old code's docs/ARCHITECTURE.md
+│   └── CONTEXT.md        # new app + modernization process; references the old code's docs/CONTEXT.md
+├── refsrc/
+│   └── <old code>/
+│       ├── docs/ARCHITECTURE.md
+│       ├── docs/CONTEXT.md
+│       └── <source files>
+└── <new code>
+```
+
+**Option 2 — Composite Workspace.** A top-level folder holds the old and new repositories together, plus any others. This is useful for cross-service work. The downsides: the workspace itself must be tracked in git, the `.gitignore` and doc routing need care, and overall complexity is higher. This layout needs the `large-workspace-handling` skill.
+
+```
+<workspace git repo>
+├── docs/
+│   ├── ARCHITECTURE.md   # short index: technical purpose of each sub-repo, modernization processes, etc.
+│   └── CONTEXT.md        # short index: business purpose of each sub-repo, modernization target, etc.
+├── <old repo 1>/
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+├── <old repo 2>/
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+├── <new repo>/
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+└── .gitignore            # excludes the cloned repo folders (old 1, old 2, new)
+```
