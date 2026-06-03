@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import subprocess
-from typing import Any, cast
+from typing import Any
 
 from cachetools import TTLCache
 
@@ -95,7 +95,7 @@ async def get_repository_from_context(ctx: Any) -> str:
     cache_key = _repository_cache_key(ctx)
     cached = _repository_cache.get(cache_key)
     if cached is not None:
-        return cast(str, cached)
+        return cached
 
     result = "unknown"
     try:

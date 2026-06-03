@@ -337,7 +337,7 @@ _FEEDBACK = FeedbackService()
 # on the asyncio event loop thread.  The worst-case race between
 # concurrent .get() and []= for the same key is a harmless duplicate
 # computation — no data corruption or loss is possible.
-_TOOL_CACHE: TTLCache[tuple, str] = TTLCache(maxsize=256, ttl=DOC_CACHE_TTL_SECONDS)
+_TOOL_CACHE: TTLCache[tuple[Any, ...], str] = TTLCache(maxsize=256, ttl=DOC_CACHE_TTL_SECONDS)
 _CONFIG_FINGERPRINT = (_CONFIG.server_url, _CONFIG.instruction_dataset)
 
 

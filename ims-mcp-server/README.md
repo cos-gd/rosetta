@@ -484,6 +484,31 @@ Or for the latest development version, install from source if you have the code 
 pip install -e .
 ```
 
+### FastMCP import errors after `pip upgrade`
+
+ims-mcp depends on the full **`fastmcp`** package (server + client). FastMCP 3.3+ ships importable code via **`fastmcp-slim`**; a `pip` upgrade from 3.2 or earlier can leave a half-removed install where `from fastmcp import Context, FastMCP` fails even though `fastmcp` appears installed.
+
+This matches the upstream [Installation troubleshooting](https://gofastmcp.com/getting-started/installation#troubleshooting) guidance:
+
+```bash
+pip install --force-reinstall fastmcp
+```
+
+If imports still fail:
+
+```bash
+pip uninstall -y fastmcp fastmcp-slim
+pip install fastmcp
+```
+
+Fresh installs and **`uv`** upgrades are unaffected. For repo development, prefer reinstalling from the root venv:
+
+```bash
+pip install -r requirements.txt
+# or
+pip install --force-reinstall -e ./ims-mcp-server
+```
+
 ### Running Tests
 
 ```bash

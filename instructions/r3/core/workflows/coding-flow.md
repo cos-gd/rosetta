@@ -89,7 +89,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 <implementation phase="7" applies="ALL" subagent="engineer" role="Senior engineer executing approved plan">
 
 1. Implement approved plan. Build MUST succeed. Tests excluded.
-2. Input: approved specs + plan. Output: working code, build passing, update relevant documentation briefly (CONTEXT.md, ARCHITECTURE.md, etc).
+2. Input: approved specs + plan. Demand subagent to read and execute it fully. Do not repeat contents => reference instead. Output: working code, build passing, update relevant documentation briefly (CONTEXT.md, ARCHITECTURE.md, etc).
 3. MUST follow approved scope. MUST stop and escalate if blocked.
 4. Required skills: `coding`
 5. Recommended skills: `debugging`, `coding-iac`, `sensitive-data`, `testing`, `dangerous-actions`
@@ -111,8 +111,8 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 <impl_validation phase="9" applies="MEDIUM,LARGE" subagent="validator" role="Validation specialist">
 
 1. Validate implementation against specs: git changes, spec coverage, gaps, perform search and MCP fact-checking.
-2. Locally execute code and check it works
-3. Input: implementation diff, specs, plan, review findings. Output: validation findings.
+2. Additionally locally execute code and check it works
+3. Input: implementation diff, specs, plan, review findings. Demand subagent to read and verify specs/plan fully. Do not repeat contents => reference instead. Output: validation findings.
 4. SMALL: orchestrator performs quick inline check.
 5. Recommended skills: `reverse-engineering`, `debugging`, `sensitive-data`, `testing`, `dangerous-actions`
 6. Update `agents/coding-flow-state.md`
@@ -130,7 +130,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 <tests phase="11" applies="ALL" subagent="engineer" role="Senior engineer writing and running tests">
 
 1. Write and execute tests. All MUST succeed, isolated, idempotent.
-2. Input: implementation, specs. Output: passing tests with coverage.
+2. Input: implementation, specs. Demand subagent to read specs fully. Do not repeat contents => reference instead. Output: passing tests with coverage.
 3. Required skills: `testing`, `coding`
 4. Recommended skills: `debugging`, `coding-iac`, `sensitive-data`, `dangerous-actions`
 5. Update `agents/coding-flow-state.md`
@@ -151,7 +151,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 
 1. Systematic by-dependency validation: databases, APIs, web, mobile. Check logs, clean up.
 2. Additionally systematic "manual QA" by yourself.
-3. Input: full delivery (code + tests + specs + review findings). Output: final validation report.
+3. Input: full delivery (code + tests + specs + review findings). Demand subagent to read specs fully. Do not repeat contents => reference instead. Output: final validation report.
 4. SMALL: orchestrator confirms build + tests pass.
 5. Recommended skills: `coding`, `debugging`, `coding-iac`, `sensitive-data`, `testing`, `dangerous-actions`
 6. Update `agents/coding-flow-state.md`
