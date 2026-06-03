@@ -5,19 +5,22 @@
 
 ---
 
-## Step 1: Connect Rosetta MCP
-
 > [!CAUTION]
 > You must receive a prior approval from your manager and company to use it.
 
 > [!WARNING]
-> Use **Sonnet 4.6**, **Gpt-5.4-medium**, **gemini-3.1-pro** or better models. Avoid Auto model selection.
+> Use **Sonnet 4.6**, **GPT-5.4-medium**, **gemini-3.1-pro** or better models. Avoid Auto model selection.
 
 > [!NOTE]
 > Rosetta is designed to never use or see data or IP.
 > Instead it uses inversion of control, by providing a "menu" to AI coding agents.
 
-Rosetta uses HTTP MCP transport with OAuth. Pick your IDE and add the configuration.
+## Step 1: Connect Rosetta MCP
+
+Rosetta uses HTTP MCP transport with OAuth. 
+
+1. Pick your IDE and add the configuration.
+2. Authenticate to MCP using GitHub account according to IDE.
 
 <details>
 <summary><b>Cursor</b></summary>
@@ -42,8 +45,6 @@ Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
 ```sh
 claude mcp add --transport http Rosetta https://mcp.rosetta.griddynamics.net/mcp
 ```
-
-Authenticate inside a claude session with `/mcp`, select Rosetta, Authenticate, and complete the OAuth flow.
 
 </details>
 
@@ -163,46 +164,7 @@ Add to `opencode.json`:
 
 </details>
 
-Any MCP client that supports HTTP transport can connect using the endpoint URL. Complete the OAuth flow when prompted.
-
-STDIO transport is available for air-gapped environments. See [INSTALLATION.md](INSTALLATION.md).
-
-## Step 2: Verify
-
-Ask the agent:
-
-```
-What can you do, Rosetta?
-```
-
-It should use Rosetta MCP to retrieve agents, guardrails, and instructions:
-
-<img src="docs/images/Rosetta-ProperResponse1.png" alt="Rosetta proper response" width="355"/> <img src="docs/images/Rosetta-ProperResponse2.png" alt="Rosetta proper response" width="300"/>
-
-## Step 3: Initialize (once per repository)
-
-Ask the agent:
-
-```
-Initialize this repository using Rosetta
-```
-
-The agent will analyze your tech stack, generate documentation (TECHSTACK.md, CODEMAP.md, DEPENDENCIES.md, ARCHITECTURE.md, CONTEXT.md), and ask clarifying questions. Read more about [workspace files](INSTALLATION.md#workspace-files-created) and [all workflows](USAGE_GUIDE.md#workflows).
-
-> [!NOTE]
-> **Prefer medium models:** High reasoning and Opus models consume too much token on reasoning.
-> **Composite workspaces:** init each repository separately, then init at the workspace level with "This is composite workspace" appended.
-> **Dead code or existing specs:** mention their location in the prompt to save time.
-
-## Common Issues
-
-- **OAuth prompt does not appear:** restart your IDE and retry the connection. Read more in [Troubleshooting — Connection & Authentication](TROUBLESHOOTING.md#connection--authentication).
-- **Agent ignores Rosetta tools:** confirm the MCP server shows as connected in your IDE's MCP settings. Add a [bootstrap rule](INSTALLATION.md) if the agent still skips Rosetta. Read more in [Troubleshooting — Agent Not Using Rosetta](TROUBLESHOOTING.md#agent-not-using-rosetta).
-- **Slow or empty responses:** check your network can reach your Rosetta MCP host. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#slow-or-empty-responses).
-
-## Step 4: Add Bootstrap Rule (optional)
-
-If something does not work.
+## Step 2: Add Bootstrap Rule
 
 Download [bootstrap.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/rules/bootstrap.md?plain=1) and add it to your IDE's instruction file (keep entire contents, including YAML frontmatter):
 
@@ -217,7 +179,32 @@ Download [bootstrap.md](https://github.com/griddynamics/rosetta/blob/main/instru
 | Antigravity                | `.agent/rules/bootstrap.md`       |
 | OpenCode/Cursor            | `AGENTS.md`                       |
 
+## Step 3: Verify
+
+Ask the agent:
+
+```
+What can you do, Rosetta?
+```
+
+It should use Rosetta MCP to retrieve agents, guardrails, and instructions:
+
+<img src="docs/images/Rosetta-ProperResponse1.png" alt="Rosetta proper response" width="355"/> <img src="docs/images/Rosetta-ProperResponse2.png" alt="Rosetta proper response" width="300"/>
+
+## Common Issues
+
+- **OAuth prompt does not appear:** restart your IDE and retry the connection. Read more in [Troubleshooting — Connection & Authentication](TROUBLESHOOTING.md#connection--authentication).
+- **Agent ignores Rosetta tools:** confirm the MCP server shows as connected in your IDE's MCP settings. Add a [bootstrap rule](INSTALLATION.md) if the agent still skips Rosetta. Read more in [Troubleshooting — Agent Not Using Rosetta](TROUBLESHOOTING.md#agent-not-using-rosetta).
+- **Slow or empty responses:** check your network can reach your Rosetta MCP host. See [TROUBLESHOOTING.md](TROUBLESHOOTING.md#slow-or-empty-responses).
+
 ## Next Steps
+
+Once the MCP is verified:
+
+- **Run your first session and initialize the repo** — see [QUICKSTART.md](QUICKSTART.md).
+- **Explore the workflows** (coding, requirements authoring, modernization, and more) — see [USAGE_GUIDE.md — Workflows](USAGE_GUIDE.md#workflows).
+
+## Links
 
 - [Usage Guide](USAGE_GUIDE.md) — how to use Rosetta flows
 - [Overview](OVERVIEW.md) — mental model and terminology
