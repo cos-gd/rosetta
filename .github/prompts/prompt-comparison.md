@@ -81,6 +81,7 @@ The user provides a structured prompt with semicolon-separated fields:
 - **Changed count** — number of changed files
 - **Output file** — workspace-relative path where the final JSON array must be written
 - **Diff file** — workspace-relative path to a pre-generated `git diff` containing all instruction changes
+- **PR content path** — optional directory containing the checked-out candidate PR content (for example `pr`). When present, changed file paths are still reported without this prefix, but NEW file reads and git comparisons must use this directory.
 
 **Diff direction is BASE → NEW.** Content present in BASE but absent in NEW was **deleted** by the PR. Content present in NEW but absent in BASE was **added** by the PR. This is not negotiable — even if the new file looks "simpler" or "cleaner", content that existed in BASE and is gone from NEW is a deletion.
 
@@ -89,9 +90,9 @@ Steps:
 2. Read the diff file to understand all changes at once.
 3. **Rosetta Context Review (mandatory)**: Read the context files to understand Rosetta structure, load order, and file responsibilities (see `pa-rosetta.md`).
 4. For each changed file, determine its change type and retrieve content:
-   - **Modified file** (exists on disk AND in base ref): Read the NEW version from disk (Read tool). Get the BASE version via `git show <base_ref>:<file_path>` (Bash tool). Compare both.
-   - **Deleted file** (not on disk, exists in base ref): Get the BASE version via `git show <base_ref>:<file_path>`. Evaluate what was lost — deleted prompts may remove critical agent capabilities, safety guardrails, or workflow steps. This is essential regression signal.
-   - **New file** (exists on disk, not in base ref): Read the NEW version from disk. If a similar file existed in a previous release, compare against that predecessor. Otherwise evaluate the new prompt against all quality gates from scratch — new prompts must meet the same standards as existing ones — and for comparison scoring use the baseline of the file not existing: compare each gate against what a reasonable prompt architect would assume if the file did not exist (e.g., if a new safety skill is added, the comparison baseline is "no safety skill existed"). Avoid bias from having already read the file — score the delta between "not having it" and "having it."
+   - **Modified file** (exists on disk AND in base ref): Read the NEW version from disk (Read tool). If `PR content path` is present, read `<PR content path>/<file_path>` but keep `file` in output as `<file_path>`. Get the BASE version via `git show <base_ref>:<file_path>` or `git -C <PR content path> show <base_ref>:<file_path>` when `PR content path` is present. Compare both.
+   - **Deleted file** (not on disk, exists in base ref): Get the BASE version via `git show <base_ref>:<file_path>` or `git -C <PR content path> show <base_ref>:<file_path>` when `PR content path` is present. Evaluate what was lost — deleted prompts may remove critical agent capabilities, safety guardrails, or workflow steps. This is essential regression signal.
+   - **New file** (exists on disk, not in base ref): Read the NEW version from disk. If `PR content path` is present, read `<PR content path>/<file_path>` but keep `file` in output as `<file_path>`. If a similar file existed in a previous release, compare against that predecessor. Otherwise evaluate the new prompt against all quality gates from scratch — new prompts must meet the same standards as existing ones — and for comparison scoring use the baseline of the file not existing: compare each gate against what a reasonable prompt architect would assume if the file did not exist (e.g., if a new safety skill is added, the comparison baseline is "no safety skill existed"). Avoid bias from having already read the file — score the delta between "not having it" and "having it."
 5. Use workspace-relative paths in all output (e.g., `instructions/r2/core/rules/example.md`).
 
 ## Success Criteria

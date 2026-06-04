@@ -10,11 +10,9 @@ name: Rosetta GitHub Triage
 #   - JIRA_API_KEY
 #   - CONFLUENCE_API_KEY
 #   - JIRA_CONFLUENCE_API_EMAIL
-#   - RAGFLOW_BASE_URL
-#   - RAGFLOW_API_KEY
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, ready_for_review, reopened]
   issues:
     types: [opened, reopened]
@@ -23,23 +21,32 @@ on:
   pull_request_review_comment:
     types: [created]
 
-permissions:
-  contents: read
-  issues: write
-  pull-requests: write
-
 jobs:
   triage:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
     if: |
-      !(github.event_name == 'pull_request' && (github.event.pull_request.draft == true || contains(github.event.pull_request.title, 'WIP') || contains(github.event.pull_request.title, '[WIP]'))) &&
+      !(github.event_name == 'pull_request_target' && (github.event.pull_request.draft == true || contains(github.event.pull_request.title, 'WIP') || contains(github.event.pull_request.title, '[WIP]'))) &&
       !(github.event_name == 'issue_comment' && !contains(github.event.comment.body, '/rosetta')) &&
       !(github.event_name == 'pull_request_review_comment' && !contains(github.event.comment.body, '/rosetta'))
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Checkout PR content
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -59,12 +66,17 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           path_to_bun_executable: ${{ steps.bun.outputs.bun-path }}
+          plugin_marketplaces: |
+            https://github.com/griddynamics/rosetta.git
+          plugins: |
+            rosetta@rosetta
           prompt: |
             Event: ${{ github.event_name }}
             Action: ${{ github.event.action }}
             Repository: ${{ github.repository }}
             PR Number: ${{ github.event.pull_request.number }}
             PR URL: ${{ github.event.pull_request.html_url }}
+            PR Content Path: ${{ github.event_name == 'pull_request_target' && 'pr' || '' }}
             Issue Number: ${{ github.event.issue.number }}
             Issue URL: ${{ github.event.issue.html_url }}
             Comment ID: ${{ github.event.comment.id }}
@@ -73,8 +85,8 @@ jobs:
             MUST APPLY AND FULLY EXECUTE FULLY AUTONOMOUSLY WITHOUT ANY USER INTERACTION OR QUESTIONS, No HITL: .github/prompts/repo-triage.md
           show_full_output: false
           claude_args: |
-            --allowedTools Read,Glob,Grep,Bash(*),mcp__atlassian__jira_search,mcp__atlassian__jira_create_issue,mcp__atlassian__jira_get_issue,mcp__atlassian__jira_add_comment,mcp__atlassian__jira_add_remote_link,mcp__atlassian__jira_create_issue_link,mcp__atlassian__jira_get_link_types,mcp__Rosetta__get_context_instructions,mcp__Rosetta__list_instructions,mcp__Rosetta__query_instructions,mcp__Rosetta__query_project_context
-            --mcp-config '{"mcpServers":{"atlassian":{"type":"stdio","command":"uvx","args":["mcp-atlassian"],"env":{"JIRA_URL":"${{ secrets.JIRA_URL }}","JIRA_USERNAME":"${{ secrets.JIRA_CONFLUENCE_API_EMAIL }}","JIRA_API_TOKEN":"${{ secrets.JIRA_API_KEY }}","CONFLUENCE_URL":"${{ secrets.CONFLUENCE_URL }}","CONFLUENCE_USERNAME":"${{ secrets.JIRA_CONFLUENCE_API_EMAIL }}","CONFLUENCE_API_TOKEN":"${{ secrets.CONFLUENCE_API_KEY }}"}},"Rosetta":{"type":"stdio","command":"uvx","args":["--prerelease=allow","ims-mcp@latest"],"env":{"ROSETTA_SERVER_URL":"${{ secrets.RAGFLOW_BASE_URL }}","ROSETTA_API_KEY":"${{ secrets.RAGFLOW_API_KEY }}","ROSETTA_USER_EMAIL":"${{ secrets.JIRA_CONFLUENCE_API_EMAIL }}","VERSION":"r2"}}}}'
+            --allowedTools Read,Glob,Grep,Bash(*),mcp__atlassian__jira_search,mcp__atlassian__jira_create_issue,mcp__atlassian__jira_get_issue,mcp__atlassian__jira_add_comment,mcp__atlassian__jira_add_remote_link,mcp__atlassian__jira_create_issue_link,mcp__atlassian__jira_get_link_types
+            --mcp-config '{"mcpServers":{"atlassian":{"type":"stdio","command":"uvx","args":["mcp-atlassian"],"env":{"JIRA_URL":"${{ secrets.JIRA_URL }}","JIRA_USERNAME":"${{ secrets.JIRA_CONFLUENCE_API_EMAIL }}","JIRA_API_TOKEN":"${{ secrets.JIRA_API_KEY }}","CONFLUENCE_URL":"${{ secrets.CONFLUENCE_URL }}","CONFLUENCE_USERNAME":"${{ secrets.JIRA_CONFLUENCE_API_EMAIL }}","CONFLUENCE_API_TOKEN":"${{ secrets.CONFLUENCE_API_KEY }}"}}}}'
             --model claude-sonnet-4-6
 
       - name: Upload Claude execution trace

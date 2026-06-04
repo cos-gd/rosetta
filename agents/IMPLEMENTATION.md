@@ -154,6 +154,8 @@ For detailed change history, use git history and PRs instead of expanding this f
 ### Workflows and Automation
 
 - GitHub Actions were updated to remove most deprecated Node 20-era dependencies and align with newer action runtimes where upstream allowed it.
+- `repo-triage` and `validate-prompts` use `pull_request_target` for PR automation so workflow definitions come from the base branch (`main`). Both explicitly check out candidate PR content under `pr/` when PR files must be inspected.
+- `repo-triage` has an explicit instruction-quality path for `instructions/r*/**` and instruction-related issues/comments: use `orchestrator-contract`, dispatch a `coding-agents-prompt-authoring` subagent, and load Rosetta intro/patterns/hardening/schemas references.
 - Init-workspace instructions now treat `rosetta@rosetta` as the MCP connector path rather than plugin mode, while any other plugin type is handled as plugin mode.
 - Workflow maintenance included:
   - Bun runtime override for Claude workflows

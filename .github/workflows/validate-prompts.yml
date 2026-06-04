@@ -15,7 +15,7 @@ name: Validate Prompts
 # - Creates a PR comment with all issues by severity
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "instructions/r*/**"
@@ -23,14 +23,13 @@ on:
       - ".github/prompts/prompt-comparison.md"
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pull-requests: write # Required for creating PR comments
-
 jobs:
   validate:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft != true
+    if: github.event_name != 'pull_request_target' || github.event.pull_request.draft != true
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # Required for creating PR comments
 
     env:
       TMP_DIR: .tmp
@@ -38,12 +37,24 @@ jobs:
       PR_COMMENT_FILE: .tmp/pr-comment.md
       DIFF_FILE: .tmp/instructions.diff
       MODEL: opus
+      TARGET_PR_NUMBER: ${{ github.event.pull_request.number }}
+      TARGET_BASE_REF: ${{ github.event.pull_request.base.ref }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
+          ref: main
           fetch-depth: 0 # Fetch all history to compare with base branch
+
+      - name: Checkout PR content
+        if: github.event_name == 'pull_request_target'
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+          fetch-depth: 0
 
       - name: Install Claude Code CLI
         run: |
@@ -59,10 +70,11 @@ jobs:
         run: |
           echo "Detecting changed files in instructions/ folder..."
 
-          if [ -n "${{ github.event.pull_request.base.ref }}" ]; then
-            BASE_BRANCH="${{ github.event.pull_request.base.ref }}"
-            git fetch origin "$BASE_BRANCH"
-            BASE_REF="origin/$BASE_BRANCH"
+          if [ -n "$TARGET_BASE_REF" ]; then
+            BASE_BRANCH="$TARGET_BASE_REF"
+            git -C pr remote add base "https://github.com/$GITHUB_REPOSITORY.git"
+            git -C pr fetch base "$BASE_BRANCH"
+            BASE_REF="base/$BASE_BRANCH"
           else
             BASE_REF="HEAD^"
           fi
@@ -70,7 +82,7 @@ jobs:
           echo "Base ref: $BASE_REF"
 
           # Get changed files in instructions/ folder
-          CHANGED_FILES=$(git diff --name-only "$BASE_REF"...HEAD -- 'instructions/r*/**' 2>/dev/null | tr '\n' ' ' || true)
+          CHANGED_FILES=$(git -C pr diff --name-only "$BASE_REF"...HEAD -- 'instructions/r*/**' 2>/dev/null | tr '\n' ' ' || true)
 
           echo "Changed files: $CHANGED_FILES"
           echo "files=$CHANGED_FILES" >> $GITHUB_OUTPUT
@@ -90,7 +102,7 @@ jobs:
           BASE_REF: ${{ steps.changed-files.outputs.base_ref }}
         run: |
           mkdir -p $TMP_DIR
-          git diff "$BASE_REF"...HEAD -- 'instructions/r*/**' > $DIFF_FILE 2>/dev/null || true
+          git -C pr diff "$BASE_REF"...HEAD -- 'instructions/r*/**' > $DIFF_FILE 2>/dev/null || true
           echo "::notice::Diff generated: $(wc -l < $DIFF_FILE) lines"
 
       - name: Validate prompts
@@ -106,11 +118,11 @@ jobs:
           COUNT="${{ steps.changed-files.outputs.count }}"
           mkdir -p $TMP_DIR/agents
 
-          PROMPT="Changed files: $CHANGED_FILES ; Git base ref=$BASE_REF ; Changed count=$COUNT ; Output file=$ALL_RESULTS_FILE ; Diff file=$DIFF_FILE"
+          PROMPT="Changed files: $CHANGED_FILES ; Git base ref=$BASE_REF ; Changed count=$COUNT ; Output file=$ALL_RESULTS_FILE ; Diff file=$DIFF_FILE ; PR content path=pr"
           echo "Prompt: $PROMPT"
 
           claude --model $MODEL \
-            --allowedTools "Write(.tmp/**), Edit(.tmp/**), Read(.tmp/**), Read(instructions/**), Read(docs/**), Read(agents/**), Bash, Task" \
+            --allowedTools "Write(.tmp/**), Edit(.tmp/**), Read(.tmp/**), Read(instructions/**), Read(docs/**), Read(agents/**), Read(pr/**), Bash, Task" \
             --system-prompt-file ./.github/prompts/prompt-comparison.md \
             -p "$PROMPT"
 
@@ -127,7 +139,7 @@ jobs:
           echo "::notice::No high/critical issues found"
 
       - name: Generate PR comment
-        if: always() && github.event_name == 'pull_request' && steps.changed-files.outputs.count > 0
+        if: always() && env.TARGET_PR_NUMBER != '' && steps.changed-files.outputs.count > 0
         run: |
           cat > $PR_COMMENT_FILE <<EOF
           ## :clipboard: Prompt Quality Validation Report
@@ -235,14 +247,14 @@ jobs:
           done
 
       - name: Post PR comment
-        if: always() && github.event_name == 'pull_request' && steps.changed-files.outputs.count > 0
+        if: always() && env.TARGET_PR_NUMBER != '' && steps.changed-files.outputs.count > 0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Posting PR comment..."
 
           # Use gh CLI to create PR comment
-          gh pr comment ${{ github.event.pull_request.number }} \
+          gh pr comment "$TARGET_PR_NUMBER" \
             --body-file $PR_COMMENT_FILE
 
           echo "::notice::PR comment posted"
