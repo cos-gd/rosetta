@@ -479,21 +479,10 @@ Use `ACQUIRE FROM KB` to load.
 - workflow `requirements-flow`
 - rule `rules/requirements-best-practices.md`
 - asset `requirements-authoring/assets/ra-intent-capture.md`
-- asset `requirements-authoring/assets/ra-requirement-unit.xml`
+- asset `requirements-authoring/assets/ra-requirement-unit.md`
 - asset `requirements-authoring/assets/ra-validation-rubric.md`
 - asset `requirements-authoring/assets/ra-change-log.md`
 
 </resources>
-
-<templates>
-
-Use `ACQUIRE FROM KB` to load.
-
-- `requirements-authoring/assets/ra-intent-capture.md`
-- `requirements-authoring/assets/ra-requirement-unit.xml`
-- `requirements-authoring/assets/ra-validation-rubric.md`
-- `requirements-authoring/assets/ra-change-log.md`
-
-</templates>
 
 </requirements-authoring>

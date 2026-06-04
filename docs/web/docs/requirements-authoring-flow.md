@@ -285,6 +285,6 @@ Main failure modes to catch before approval:
 - [workflows/requirements-authoring-flow.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/workflows/requirements-authoring-flow.md)
 - [skills/requirements-authoring/SKILL.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/skills/requirements-authoring/SKILL.md)
 - [rules/requirements-best-practices.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/rules/requirements-best-practices.md)
-- [requirements-authoring/assets/ra-requirement-unit.xml](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/skills/requirements-authoring/assets/ra-requirement-unit.xml)
+- [requirements-authoring/assets/ra-requirement-unit.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/skills/requirements-authoring/assets/ra-requirement-unit.md)
 - [requirements-authoring/assets/ra-validation-rubric.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/skills/requirements-authoring/assets/ra-validation-rubric.md)
 - [requirements-authoring/assets/ra-change-log.md](https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/skills/requirements-authoring/assets/ra-change-log.md)

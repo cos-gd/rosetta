@@ -188,33 +188,37 @@ HITL gates (use when):
 
 <resources>
 
-<req ...>
-  ...
-  <implementation>NotStarted|Implemented|Planned|ToBeModified|ToBeRemoved</implementation>
-  <implementationNotes>[CONCISE: Implemented: aggregated files affected, NotStarted/Planned/ToBeRemoved: nothing, ToBeModified: what was originally documented but now dropped]</implementationNotes>
-</req>
-
 Use `ACQUIRE FROM KB` to load.
-
 - workflow `requirements-use-flow`
-- rule `rules/requirements-use-best-practices.mdc`
-- asset `requirements-use/assets/ru-scope-capture.md`
 - asset `requirements-use/assets/ru-traceability-matrix.md`
-- asset `requirements-use/assets/ru-validation-rubric.md`
 - asset `requirements-use/assets/ru-change-log.md`
-- skill `requirements-authoring` for schema and IDs
 
 </resources>
 
-<templates>
+<requirement_unit_template>
 
-Use `ACQUIRE FROM KB` to load.
+```xml
+<req id="FR-AREA-0001" type="FR" level="System" ticketId="JIRA-0000" classification="business|technical">
+  <title>...</title>
+  <statement>...</statement>
+  <rationale>...</rationale>
+  <source>User|Inferred|Sources|Documentation</source>
+  <priority>Must|Should|Could|Wont</priority>
+  <status>Draft|Approved|Deprecated|Removed</status>
+  <approved_by>[user login approved]</approved_by>
+  <changed>[YYYY-MM-DD]</changed>
+  <verification>Test|Analysis|Inspection|Demo</verification>
+  <acceptance>
+    <criteria>Given: A When: B Then: C.</criteria>
+    <criteria>Given: X When: Y Then: Z.</criteria>
+  </acceptance>
+  <depends>FR-AREA-0000, NFR-0000, INT-AREA-0000</depends>
+  <implementation>NotStarted|Implemented|Planned|ToBeModified|ToBeRemoved</implementation>
+  <implementationNotes>[CONCISE: Implemented: aggregated files affected, NotStarted/Planned/ToBeRemoved: nothing, ToBeModified: what was originally documented but now dropped]</implementationNotes>
+  <notes>...</notes>
+</req>
+```
 
-- `requirements-use/assets/ru-scope-capture.md`
-- `requirements-use/assets/ru-traceability-matrix.md`
-- `requirements-use/assets/ru-validation-rubric.md`
-- `requirements-use/assets/ru-change-log.md`
-
-</templates>
+</requirement_unit_template>
 
 </requirements-use>

@@ -23,7 +23,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 2. MUST USE OPERATION_MANAGER for deterministic execution
 3. Phases are sequential; module analysis in LARGE codebases runs in parallel via SKILL `large-workspace-handling`.
 4. Orchestrator trusts skills to own execution internals; coordinates sequence, artifacts, state, and approvals only.
-5. State file: `agents/code-analysis-flow-state.md` updated after each phase.
+5. State file: `agents/TEMP/code-analysis-flow-state.md` updated after each phase.
 6. Documentation principle: ground with links; no code generation, no suggestions, no speculation. See `best_practices` for sizing and diagram rules.
 7. If task is to extract/document/reverse engineer requirements or specifications from existing app/code:
    - This is much more intense per subagent: reclassify SMALL if < 10 source files, otherwise LARGE and MUST USE `large-workspace-handling`.
@@ -37,7 +37,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 1. Read all lines of `docs/CONTEXT.md`, `docs/ARCHITECTURE.md`, `agents/IMPLEMENTATION.md`; grep headers of `docs/CODEMAP.md`, `docs/TECHSTACK.md`, `docs/DEPENDENCIES.md` if present.
 2. Input: user analysis request. Output: loaded project context + entry points (APIs, webhooks, CLIs, cron jobs).
 3. Recommended skills: `load-context`
-4. Update `agents/code-analysis-flow-state.md`.
+4. Update `code-analysis-flow-state.md`.
 
 </context_load>
 
@@ -47,7 +47,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 2. Identify target scope (repo, module, feature, path glob). Record boundaries and non-goals.
 3. Input: user request + loaded context. Output: `scope` (paths), `size` (SMALL|LARGE), `module-list` (LARGE only).
 4. Required skills: `reasoning`
-5. Update `agents/code-analysis-flow-state.md`.
+5. Update `code-analysis-flow-state.md`.
 
 </scope_and_classify>
 
@@ -57,7 +57,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 2. Ask up to 10 targeted, MECE, one-decision-per-question batch. Include safe default per question.
 3. Record resolved answers and unresolved items as assumptions; both are persisted in final output.
 4. Required skills: `questioning`
-5. Update `agents/code-analysis-flow-state.md`.
+5. Update `code-analysis-flow-state.md`.
 
 </clarify_unknowns>
 
@@ -67,7 +67,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 2. Use `reverse-engineering` skill to distill intent, then `requirements-authoring` skill to produce atomic, testable functional and non-functional requirements with SMART, MECE, acceptance criteria, EARS phrasing, priority (MoSCoW), and predecessors.
 3. Input: scope + context. Output: `docs/REQUIREMENTS/` per `requirements-authoring` layout, with HITL per-unit approval owned by that skill.
 4. Required skills: `reverse-engineering`, `requirements-authoring`
-5. Update `agents/code-analysis-flow-state.md`.
+5. Update `code-analysis-flow-state.md`.
 6. Partition workspace USING SKILL `large-workspace-handling` (Summarization & Indexing strategy): every file belongs to exactly one scope; subagents analyze per-module in parallel.
 
 </requirements_branch>
@@ -78,7 +78,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 2. Reference specific files and line ranges; keep code snippets ≤3 lines.
 3. Input: approved scope + context + resolved questions. Output: `docs/<feature>/analysis.md`.
 4. Required skills: `reverse-engineering`
-5. Update `agents/code-analysis-flow-state.md`.
+5. Update `code-analysis-flow-state.md`.
 
 </analyze_small>
 
@@ -88,7 +88,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 2. Per module produce: business logic overview, architecture overview, component analysis (with subcomponents, interface definitions, and major features), identified design patterns and anti-patterns, data architecture with exact contracts (fields, types, purpose), integration patterns, quality observations, engineering insights. Aim 100–200 lines; diagrams in Mermaid with explicit light/dark colors.
 3. Input: `module-list` + scope + context. Output: `docs/<feature>/module-<module>.md` per module.
 4. Required skills: `large-workspace-handling`, `reverse-engineering`
-5. Update `agents/code-analysis-flow-state.md`.
+5. Update `code-analysis-flow-state.md`.
 
 </analyze_large_parallel>
 
@@ -99,7 +99,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 3. Flag components where information is missing.
 4. Input: all `module-<module>.md` documents. Output: `docs/<feature>/summary.md`.
 5. Required skills: `reverse-engineering`
-6. Update `agents/code-analysis-flow-state.md`.
+6. Update `code-analysis-flow-state.md`.
 
 </summarize>
 
@@ -108,7 +108,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 1. Inspect outputs for groundedness (every claim linked), accuracy, coverage of scope, absence of generated/suggested code, assumption/unknown documentation, and Mermaid diagram legibility in light and dark themes.
 2. Input: analysis artifacts + scope + context. Output: review findings and recommendations.
 3. Recommended skills: `reasoning`
-4. Update `agents/code-analysis-flow-state.md`.
+4. Update `code-analysis-flow-state.md`.
 5. If reverse engineering: MUST validate there are NO hallucinations or made-up requirements - this is a contract!
 
 </review>
@@ -123,7 +123,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 <finalize phase="10" applies="ALL" subagent="architect" role="Analysis finalizer">
 
 1. Update `IMPLEMENTATION.md` with a brief pointer to produced analysis artifacts.
-2. Mark `agents/code-analysis-flow-state.md` complete with phase evidence and artifact paths.
+2. Mark `code-analysis-flow-state.md` complete with phase evidence and artifact paths.
 
 </finalize>
 
@@ -158,7 +158,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 - Critical/high assumptions and unknowns are documented (resolved and unresolved).
 - Mermaid diagrams render in both themes (explicit colors set).
 - Per-module docs stay within 100–200 lines target; code snippets ≤3 lines.
-- `agents/code-analysis-flow-state.md` has artifact evidence for every executed phase.
+- `code-analysis-flow-state.md` has artifact evidence for every executed phase.
 - Requirements branch produced `docs/REQUIREMENTS/` artifacts only when the user requested it.
 - `docs/REQUIREMENTS/INDEX.md` is greppable by headers, which provides automatic ToC for all requirement files with short description.
 - Outputs map to original user scope with traceable coverage.
