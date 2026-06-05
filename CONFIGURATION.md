@@ -163,7 +163,7 @@ The old code in `refsrc/` keeps its own `docs/CONTEXT.md` and `docs/ARCHITECTURE
 
 Pick one of two layouts.
 
-**Option 1 — Reference Source.** The workspace is just the new repository; it pulls in the old code through `refsrc/`. This is the easiest and fastest option. The downside: you can only edit one repository, so you need a separate window per repository.
+**Option 1 — Single Repo with Reference Source.** The workspace is just the new repository; it pulls in the old code through `refsrc/`. This is the easiest and fastest option. The downside: you can only edit one repository, so you need a separate window per repository.
 
 ```
 <new git repo root>
