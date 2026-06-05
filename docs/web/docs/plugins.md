@@ -25,7 +25,7 @@ Every plugin supports two installation methods:
 
 ## Step 1: Install Plugin
 
-<details>
+<details markdown="1">
 <summary><b>Claude Code</b></summary>
 
 ### Claude Code
@@ -38,7 +38,7 @@ claude plugin install rosetta@rosetta
 ```
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Cursor</b></summary>
 
 ### Cursor
@@ -67,7 +67,7 @@ For detailed setup instructions, see the Cursor documentation:
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>GitHub Copilot</b></summary>
 
 ### GitHub Copilot
@@ -98,7 +98,7 @@ For JetBrains IDEs, use the standalone installation package.
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Codex</b></summary>
 
 ### Codex

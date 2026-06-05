@@ -28,7 +28,7 @@ Rosetta uses HTTP MCP transport with OAuth.
 1. Pick your IDE and add the configuration.
 2. Authenticate to MCP using GitHub account according to IDE.
 
-<details>
+<details markdown="1">
 <summary><b>Cursor</b></summary>
 
 Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
@@ -45,7 +45,7 @@ Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Claude Code</b></summary>
 
 ```sh
@@ -54,7 +54,7 @@ claude mcp add --transport http Rosetta https://mcp.rosetta.griddynamics.net/mcp
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Codex</b></summary>
 
 ```sh
@@ -64,7 +64,7 @@ codex mcp login Rosetta
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>VS Code / GitHub Copilot</b></summary>
 
 Add to `.vscode/mcp.json` or `~/.mcp.json`:
@@ -81,7 +81,7 @@ Add to `.vscode/mcp.json` or `~/.mcp.json`:
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>GitHub Copilot (JetBrains)</b></summary>
 
 `Settings` > `Tools` > `GitHub Copilot` > `MCP Settings`. Add to `~/.config/github-copilot/intellij/mcp.json`:
@@ -100,7 +100,7 @@ Restart IDE after changes.
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>JetBrains Junie</b></summary>
 
 `Settings` > `Tools` > `Junie` > `MCP Settings` > `+ Add` > `As JSON`:
@@ -117,7 +117,7 @@ Restart IDE after changes.
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Windsurf</b></summary>
 
 Add to your Windsurf MCP config:
@@ -134,7 +134,7 @@ Add to your Windsurf MCP config:
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>Antigravity</b></summary>
 
 Add to your Antigravity MCP config:
@@ -151,7 +151,7 @@ Add to your Antigravity MCP config:
 
 </details>
 
-<details>
+<details markdown="1">
 <summary><b>OpenCode</b></summary>
 
 Add to `opencode.json`:
