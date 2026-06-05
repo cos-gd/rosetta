@@ -96,7 +96,10 @@ Prefer a CLI over the matching MCP when one exists — it costs no context.
 
 - `gh` — GitHub CLI: pull requests, issues, releases, and CI checks.
 - `acli` — Atlassian CLI: Jira and Confluence from the terminal.
-- `rtk` ([github.com/rtk-ai/rtk](https://github.com/rtk-ai/rtk)) — CLI proxy that reduces LLM token consumption by 60–90% on common dev commands.
+
+#### Available CLIs
+
+- `rtk` ([github.com/rtk-ai/rtk](https://github.com/rtk-ai/rtk)) — CLI proxy that reduces LLM token consumption by 60–90% on common dev commands. **MUST** review with client! This can see the actual client IP!
 
 #### Useful MCPs
 
