@@ -4,12 +4,12 @@
 
 <req id="FR-GEN-0001" type="FR" level="System" ticketId="" classification="technical">
   <title>Generate folder index</title>
-  <statement>Where a target declares generated indexes for a folder, the generator shall produce an `INDEX.md` in that folder listing each document with its description.</statement>
-  <rationale>Agents use the index as a table of contents to discover available rules and workflows.</rationale>
+  <statement>Where a target declares generated indexes for a folder, the `pluginGenerateIndexes()` processor (FR-ARCH-0047) shall produce an `INDEX.md` `VirtualFile` in that folder listing each document with its description, built from the final post-`fileRename()` target paths (FR-ARCH-0038) so the listing already carries correct paths and requires no reference rewriting.</statement>
+  <rationale>Agents use the index as a table of contents to discover available rules and workflows. The index is a generated artifact with its own pipeline stage, not an out-of-band write; generating it against final paths means it never lists a pre-rename path that would need fixing.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -26,8 +26,8 @@
   <rationale>Descriptions let agents understand a document's purpose from the index alone.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -40,19 +40,21 @@
 
 <req id="FR-GEN-0003" type="FR" level="System" ticketId="" classification="technical">
   <title>Tag-filtered index membership</title>
-  <statement>Where an index requires a tag, the generator shall include only documents whose frontmatter tags contain that tag.</statement>
-  <rationale>The workflow index must list only workflow entry documents, excluding per-phase files.</rationale>
+  <statement>Where an index requires a tag, the generator shall include a document when that tag is an exact member of the document's parsed frontmatter tag set (exact matching, FR-ARCH-0037).</statement>
+  <rationale>The workflow index must list only workflow entry documents, excluding per-phase files. Exact membership prevents a required tag `workflow` from spuriously matching a tag like `workflow-helper`.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
     <criteria>Given: a workflows folder containing entry and phase files When: indexed with required tag `workflow` Then: only entry files appear.</criteria>
+    <criteria>Given: a document tagged `workflow-helper` and required tag `workflow` When: membership is tested Then: it is excluded (exact membership, not substring).</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-ARCH-0037</depends>
 </req>
 
 <req id="FR-GEN-0004" type="FR" level="System" ticketId="" classification="technical">
@@ -61,8 +63,8 @@
   <rationale>The workflow index must read identically regardless of the IDE-specific physical folder name.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -76,12 +78,12 @@
 
 <req id="FR-GEN-0010" type="FR" level="System" ticketId="" classification="technical">
   <title>Render Handlebars templates</title>
-  <statement>Where a target declares templates, the generator shall render each Handlebars template file to a sibling output file with the template suffix removed, using a context of release variables plus per-target bootstrap payload values.</statement>
-  <rationale>Hook configuration is generated from templates parameterized by release and per-target bootstrap content.</rationale>
+  <statement>Where a target declares templates, the `pluginRenderTemplates()` processor (FR-ARCH-0048) shall render each Handlebars template `VirtualFile` to its sibling output `VirtualFile` with the template suffix removed, using a context of release variables plus per-target bootstrap payload values.</statement>
+  <rationale>Hook configuration is generated from templates parameterized by release and per-target bootstrap content. Rendering is a distinct pipeline stage, not an out-of-band step.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -98,8 +100,8 @@
   <rationale>Bootstrap payloads are pre-escaped JSON fragments; advisory hook blocks appear only for deterministic-hook releases.</rationale>
   <source>Documentation</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>

@@ -4,20 +4,21 @@
 
 <req id="FR-HOOK-0001" type="FR" level="System" ticketId="" classification="technical">
   <title>Assemble per-target bootstrap context entries</title>
-  <statement>For each target, the generator shall build session-start context entries from the target's present bootstrap files, reading each file from the target's own output, and shall make these entries available to template rendering.</statement>
-  <rationale>Each plugin injects the bootstrap rules into the agent's context at session start, in the IDE's hook format.</rationale>
+  <statement>For each target, the `pluginAssembleBootstrap()` processor (FR-ARCH-0055) shall build session-start context entries from the target's present bootstrap files, taken in the order of the bootstrap-file manifest (FR-HOOK-0009), reading each file's body from the target's own `frames` (the per-file `FileProcessingFrame`s), and shall make these entries available to template rendering. Absent variants are skipped (but logged), not reordered.</statement>
+  <rationale>Each plugin injects the bootstrap rules into the agent's context at session start, in the IDE's hook format. The manifest order is what fixes the payload sequence and the prefix placement.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: a target containing a subset of bootstrap files When: assembled Then: only present files yield entries; absent variants are skipped.</criteria>
+    <criteria>Given: a target containing a subset of bootstrap files When: assembled Then: only present files yield entries, in manifest order; absent variants are skipped.</criteria>
     <criteria>Given: the assembled entries When: rendering Then: they are exposed as per-target payload values.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-HOOK-0009</depends>
 </req>
 
 <req id="FR-HOOK-0002" type="FR" level="System" ticketId="" classification="technical">
@@ -26,8 +27,8 @@
   <rationale>Frontmatter is authoring metadata, not agent context.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -38,20 +39,22 @@
 </req>
 
 <req id="FR-HOOK-0003" type="FR" level="System" ticketId="" classification="technical">
-  <title>Bootstrap prefix on the lead document</title>
-  <statement>The generator shall prepend the fixed bootstrap prefix to exactly one designated bootstrap document per target.</statement>
-  <rationale>The prefix instructs the agent to read the full bootstrap context first.</rationale>
+  <title>Bootstrap prefix on the designated lead document</title>
+  <statement>The generator shall prepend the fixed bootstrap prefix to exactly one designated lead bootstrap document per target — the first bootstrap-classified entry in the ordered bootstrap-file manifest (FR-HOOK-0009) — and the designation shall be explicit, not an accident of list position.</statement>
+  <rationale>The prefix instructs the agent to read the full bootstrap context first. The designated lead must be deterministic and explicit (resolving the former order-sensitivity quirk QF-1).</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
     <criteria>Given: a target's bootstrap files When: assembled Then: the prefix appears once, on the designated lead document.</criteria>
+    <criteria>Given: the manifest When: inspected Then: the lead document is explicitly designated (e.g. `plugin-files-mode` first), not inferred from incidental ordering.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-HOOK-0009</depends>
 </req>
 
 <req id="FR-HOOK-0004" type="FR" level="System" ticketId="" classification="technical">
@@ -60,8 +63,8 @@
   <rationale>Some targets deliver bootstrap via copied rules/instructions instead of hook context.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -77,8 +80,8 @@
   <rationale>Each IDE expects a different hook schema and quoting; the exact schema is owned by the IDE guide, not duplicated here.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -96,8 +99,8 @@
   <rationale>Repeated bootstrap injection wastes context; Copilot fires hooks twice.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -114,8 +117,8 @@
   <rationale>Agents need the plugin root to resolve instruction file paths at runtime.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -127,19 +130,41 @@
 
 <req id="FR-HOOK-0008" type="FR" level="System" ticketId="" classification="technical">
   <title>Reference rewriting of payload paths</title>
-  <statement>The generator shall apply the target's path renames to the bootstrap payload string values before template rendering.</statement>
-  <rationale>Bootstrap text references instruction folders that may be renamed for the target.</rationale>
+  <statement>The generator shall apply `pluginRewriteReferences()` semantics (FR-ARCH-0049) — the target's reference-rename map — to the bootstrap payload string values before template rendering, and only to those string values (never to the release template variables).</statement>
+  <rationale>Bootstrap text references instruction folders that may be renamed for the target; the same content-only reference rewriting used in document bodies applies to the embedded payload strings. Release variables (release name, deterministic-hooks flag) must not pass through string rewriting.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
     <criteria>Given: a Cursor target renaming `workflows`→`commands` When: payloads are rendered Then: payload references read `commands/…`.</criteria>
+    <criteria>Given: the release template variables When: rendered Then: they are not subjected to reference rewriting.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-ARCH-0049</depends>
+</req>
+
+<req id="FR-HOOK-0009" type="FR" level="System" ticketId="" classification="technical">
+  <title>Explicit, deterministic bootstrap-file order</title>
+  <statement>The generator shall assemble bootstrap context from an explicit ordered bootstrap-file manifest, and that order shall be significant and stable: it determines both the sequence of entries in the emitted payload and which document is the designated lead receiving the bootstrap prefix (FR-HOOK-0003). The `plugin-files-mode` document shall lead the manifest, followed by the `bootstrap-*` rule documents, followed by the index documents. The order shall not depend on filesystem enumeration.</statement>
+  <rationale>The agent must receive bootstrap context in a deliberate sequence (mode first, then policies, then indexes), and the prefix must land on the intended lead. The original relied on the position of the first match in an in-code list (`_BOOTSTRAP_FILES`), which silently moved the prefix if reordered — a fragility (QF-1) this unit removes by making the order an explicit, required contract.</rationale>
+  <source>User</source>
+  <priority>Must</priority>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
+  <changed>2026-06-04</changed>
+  <verification>Test</verification>
+  <acceptance>
+    <criteria>Given: a target's present bootstrap files When: the payload is assembled Then: entries appear in manifest order with `plugin-files-mode` first.</criteria>
+    <criteria>Given: two runs over the same inputs When: compared Then: the entry order is identical and independent of directory listing order.</criteria>
+    <criteria>Given: the designated lead document When: assembled Then: it is the one that carries the bootstrap prefix.</criteria>
+  </acceptance>
+  <implementation>NotStarted</implementation>
+  <implementationNotes></implementationNotes>
+  <depends>NFR-0002</depends>
 </req>
 
 ## Hook bundle synchronization
@@ -150,8 +175,8 @@
   <rationale>Only deterministic-hook releases ship runtime advisory hook code; other releases must stay lean.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -169,8 +194,8 @@
   <rationale>Hooks must be built before generation; a clear error guides the operator.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -187,8 +212,8 @@
   <rationale>Generated hook configuration and manifests coexist with bundle code in the same folder.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>

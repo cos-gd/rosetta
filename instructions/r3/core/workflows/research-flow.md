@@ -20,6 +20,7 @@ Orchestrates deep research via meta-prompting: craft an optimized research promp
 3. Orchestrator trusts the system and skills; coordinates sequence, artifacts, state, and approvals only.
 4. Execute phases sequentially.
 5. Agent state tracker file `research-flow-state.md` is stored in FEATURE TEMP folder.
+6. If `/goal` is set repeat phases 3-4 until goal is met.
 
 </prerequisites>
 

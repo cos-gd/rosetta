@@ -17,8 +17,8 @@ This is why some targets carry full bootstrap hook payloads and others deliver t
   <rationale>Avoids double-delivery and matches each IDE's documented capability; the strategy, not the mechanics, is the requirement.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -36,8 +36,8 @@ This is why some targets carry full bootstrap hook payloads and others deliver t
   <rationale>Marketplace install and in-repo extraction resolve hook paths from different roots; one template form cannot serve both.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -50,12 +50,12 @@ This is why some targets carry full bootstrap hook payloads and others deliver t
 
 <req id="FR-VAR-0072" type="FR" level="System" ticketId="" classification="technical">
   <title>Standalone index/instruction injection rationale</title>
-  <statement>Where a standalone target delivers bootstrap through native rules or auto-loaded instructions, the generator shall ensure the workflow index and the plugin-root instructions are present in that natively-loaded file.</statement>
-  <rationale>A standalone carries no session-start hook to convey the workflow catalog or the plugin-root path, so that information must travel in the rule/instruction file the IDE auto-loads.</rationale>
+  <statement>Where a standalone target delivers bootstrap through native rules or auto-loaded instructions, the generator shall ensure the workflow index and the plugin-root instructions are present in that natively-loaded file, inserted via the `pluginInjectSections()` processor (FR-ARCH-0051).</statement>
+  <rationale>A standalone carries no session-start hook to convey the workflow catalog or the plugin-root path, so that information must travel in the rule/instruction file the IDE auto-loads. The insertion is an explicit content-only processor, not an in-place edit bolted onto a derivation pass.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -64,7 +64,7 @@ This is why some targets carry full bootstrap hook payloads and others deliver t
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
-  <depends>FR-VAR-0070</depends>
+  <depends>FR-VAR-0070, FR-ARCH-0051</depends>
 </req>
 
 ## Claude (`core-claude`) — marketplace
@@ -77,8 +77,8 @@ Native folder names, short model names, hooks, `.claude-plugin` manifest. Bootst
   <rationale>Claude Code consumes native folder names, short model names, and a plugin manifest.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -100,8 +100,8 @@ Native folder names, short model names, hooks, `.claude-plugin` manifest. Bootst
   <rationale>Cursor expects `commands/`, `.mdc` rules, mapped model identifiers, and two hook template forms.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -119,12 +119,12 @@ Native folder names, short model names, hooks, `.claude-plugin` manifest. Bootst
 
 <req id="FR-VAR-0030" type="FR" level="System" ticketId="" classification="technical">
   <title>Copilot output</title>
-  <statement>The Copilot variant shall rename `workflows` to `commands`, rename agent files to `*.agent.md`, use Copilot model vocabulary, generate `rules` and `commands` indexes, render hook templates, place runtime configuration at the plugin root, and preserve a `.github` config folder.</statement>
-  <rationale>Copilot expects `*.agent.md` agents, mapped model names, and root-level runtime config.</rationale>
+  <statement>The Copilot variant shall rename `workflows` to `commands`, rename agent files to `*.agent.md`, use Copilot model vocabulary, generate `rules` and `commands` indexes, render hook templates, place runtime configuration at the plugin root (the root copy expressed as a `SpecEntry`/`fileRename()` target, not a bespoke layout step), and preserve a `.github` config folder.</statement>
+  <rationale>Copilot expects `*.agent.md` agents, mapped model names, and root-level runtime config. The root placement of the runtime config is a declared output path, not an imperative `generate_copilot_runtime_layout` move.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -145,8 +145,8 @@ Agents → TOML subagents; instruction folders under the Codex agent-config root
   <rationale>Codex consumes subagents in its own format with a sandbox mode, not markdown; the exact format is owned by the Codex guide.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -160,12 +160,12 @@ Agents → TOML subagents; instruction folders under the Codex agent-config root
 
 <req id="FR-VAR-0041" type="FR" level="System" ticketId="" classification="technical">
   <title>Codex directory layout</title>
-  <statement>The Codex variant shall place instruction folders under the Codex agent-config root, mirror hook configuration to the Codex runtime location, generate `rules` and `workflows` indexes, and preserve a `.codex-plugin` config folder.</statement>
-  <rationale>Codex resolves instructions and hooks from specific reserved directories.</rationale>
+  <statement>The Codex variant shall place instruction folders under the Codex agent-config root (`.agents/…`) by `SpecEntry` `target` placement (with `fileRename()` where filenames also change) rather than a post-hoc move pass, mirror hook configuration to the Codex runtime location, generate `rules` and `workflows` indexes, and preserve a `.codex-plugin` config folder.</statement>
+  <rationale>Codex resolves instructions and hooks from specific reserved directories. Expressing the layout as each file's `fileRename()` target keeps it within the uniform pipeline (no `generate_codex_runtime_layout`-style imperative move of whole folders).</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -181,21 +181,22 @@ All content under `.cursor/`; bootstrap delivered via **native Cursor rules** (`
 
 <req id="FR-VAR-0050" type="FR" level="System" ticketId="" classification="technical">
   <title>Cursor standalone output</title>
-  <statement>The Cursor-standalone variant shall be generated from the instruction source with Cursor adaptations laid out entirely under `.cursor/`: a standalone-form hook configuration, the commands index and plugin-root instructions injected into the plugin-files-mode rule, no plugin-marketplace-only templates or config, and a generated plugin manifest.</statement>
-  <rationale>In-repo extraction needs IDE-rooted paths and rule-delivered bootstrap.</rationale>
+  <statement>The Cursor-standalone variant shall be generated from the instruction source by the same uniform pipeline as every other target (not derived from `core-cursor`'s output), with Cursor adaptations laid out entirely under `.cursor/`: a standalone-form hook configuration, the commands index and plugin-root instructions injected (via `pluginInjectSections()`) into the plugin-files-mode rule, no plugin-marketplace-only templates or config (simply not emitted — no cleanup pass), and a generated plugin manifest.</statement>
+  <rationale>In-repo extraction needs IDE-rooted paths and rule-delivered bootstrap. Generating directly from source — rather than deriving from the main plugin — removes the coupling AC-1 identifies as the root of repeated standalone defects (and the `.cursor/.cursor/` self-nesting guard, QF-4).</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
     <criteria>Given: the Cursor-standalone variant When: generated Then: all content sits under the IDE subfolder with a top-level standalone hook config and no marketplace-only template files.</criteria>
     <criteria>Given: the Cursor-standalone target generated in isolation When: complete Then: its output is complete and correct.</criteria>
+    <criteria>Given: the generation design When: inspected Then: the standalone is produced from the instruction source, not by reading `core-cursor`'s output.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
-  <depends>FR-CLI-0040, FR-VAR-0070, FR-VAR-0072</depends>
+  <depends>FR-CLI-0040, FR-SEED-0002, FR-VAR-0070, FR-VAR-0072, FR-ARCH-0051</depends>
 </req>
 
 ## Copilot standalone (`core-copilot-standalone`) — in-repo extraction
@@ -204,38 +205,40 @@ All content under `.github/`; bootstrap delivered via **auto-loaded instructions
 
 <req id="FR-VAR-0051" type="FR" level="System" ticketId="" classification="technical">
   <title>Copilot standalone output</title>
-  <statement>The Copilot-standalone variant shall be generated from the instruction source with Copilot adaptations laid out entirely under `.github/`: bootstrap rules relocated to auto-loaded instruction files, workflow content under `prompts` with `*.prompt.md` names, nested standalone hook configuration, regenerated indexes, injected plugin instructions, no plugin-marketplace-only config, and a generated plugin manifest.</statement>
-  <rationale>Copilot in-repo extraction auto-loads instructions and expects `prompts/*.prompt.md`.</rationale>
+  <statement>The Copilot-standalone variant shall be generated from the instruction source by the same uniform pipeline as every other target (not derived from `core-copilot`'s output), with Copilot adaptations laid out entirely under `.github/`: bootstrap rules relocated (via a relocation `SpecEntry` `target` and `fileRename()`) to auto-loaded instruction files, workflow content under `prompts` with `*.prompt.md` names, nested standalone hook configuration, regenerated indexes, plugin instructions injected (via `pluginInjectSections()`), no plugin-marketplace-only config (simply not emitted — no cleanup pass), and a generated plugin manifest.</statement>
+  <rationale>Copilot in-repo extraction auto-loads instructions and expects `prompts/*.prompt.md`. Generating directly from source removes the derive-from-main coupling (AC-1); relocation is `fileRename()` and injection is `pluginInjectSections()`, not pre/post-cleanup passes.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
     <criteria>Given: the Copilot-standalone variant When: generated Then: bootstrap rules appear as `instructions/*.instructions.md`, workflows appear as `prompts/*.prompt.md`, and nested standalone hook config exists.</criteria>
     <criteria>Given: the Copilot-standalone target generated in isolation When: complete Then: its output is complete and correct.</criteria>
+    <criteria>Given: the generation design When: inspected Then: the standalone is produced from the instruction source, not by reading `core-copilot`'s output.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
-  <depends>FR-CLI-0040, FR-VAR-0070, FR-VAR-0072</depends>
+  <depends>FR-CLI-0040, FR-SEED-0002, FR-VAR-0070, FR-VAR-0072, FR-ARCH-0043, FR-ARCH-0051</depends>
 </req>
 
 ## All standalones
 
 <req id="FR-VAR-0060" type="FR" level="System" ticketId="" classification="technical">
   <title>Standalone plugin manifest</title>
-  <statement>Each standalone variant shall carry a plugin manifest naming the variant and the version taken from the source plugin manifest.</statement>
-  <rationale>Distribution requires a manifest with a consistent version.</rationale>
+  <statement>Each standalone variant shall carry a plugin manifest naming the variant and the version taken from the parent target's preserved manifest.</statement>
+  <rationale>Distribution requires a manifest with a consistent version, drawn from the parent target's committed manifest.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: a standalone variant When: generated Then: its manifest version equals the source plugin's version.</criteria>
+    <criteria>Given: a standalone variant When: generated Then: its manifest version equals the parent target's manifest version.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-SEED-0002</depends>
 </req>

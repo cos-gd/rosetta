@@ -1,36 +1,85 @@
-# plugin-generator — FR: Tree Reset, Copy, Normalization, Renames
+# plugin-generator — FR: Preserved-File Seeding, Tree Reset, Copy, Normalization, Renames
+
+> These units are the as-is behaviors carried over from the original `plugin_generator.py`, re-expressed on the unified two-tier target architecture (FR-ARCH). The **how** is normative in FR-ARCH's VFS + processor model: copy = `fileRead()`→`pluginWrite()`; model normalization = `fileNormalizeModels()`; path changes = `fileRename()` (path only); in-body reference rewriting = `pluginRewriteReferences()` (content only, FR-ARCH-0049); the output wipe and preserved-file seeding are the `pluginCleanup()` and `pluginCopy()` plugin processors at the head of the pipeline (FR-ARCH-0035/0052/0053). There are no `pre-copy`/`pre-move` passes: a duplicated folder is an additional `SpecEntry`, a relocation is a `SpecEntry` `target` and/or `fileRename()`.
+
+## Preserved-file seeding
+
+The files a target keeps but never generates — the IDE manifest, hook templates, IDE config-folder contents, any `.mcp.json` — have a committed source under `src/plugin-generator/plugins/<target>/` (DATA-CFG-0005). The `pluginCopy()` processor (FR-ARCH-0053) copies that source into the output before generating instruction-derived content on top, so a target can be produced into a clean or empty output directory.
+
+<req id="FR-SEED-0001" type="FR" level="System" ticketId="" classification="technical">
+  <title>Seed preserved files before generation</title>
+  <statement>When generating a target, the `pluginCopy()` processor (FR-ARCH-0053) shall copy that target's preserved-file source from `src/plugin-generator/plugins/<target>/` into the target output at the mirrored output-relative paths, before any instruction-derived content is produced for that target.</statement>
+  <rationale>The preserved files are an input with no instruction-source derivation; copying them first makes generation self-contained and reproducible into a clean output directory instead of depending on files already committed in the output tree.</rationale>
+  <source>User</source>
+  <priority>Must</priority>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
+  <changed>2026-06-04</changed>
+  <verification>Test</verification>
+  <acceptance>
+    <criteria>Given: an empty target output directory When: the target is generated Then: every preserved file from `src/plugin-generator/plugins/<target>/` is present at its output-relative path and the generated content is present on top.</criteria>
+    <criteria>Given: the seeding step When: it runs Then: it completes before any instruction-derived content is written for that target.</criteria>
+    <criteria>Given: a clean environment with only the instruction source and `src/plugin-generator/plugins/` present When: the generator runs Then: each target output is complete with no pre-existing files required in the output tree.</criteria>
+  </acceptance>
+  <implementation>NotStarted</implementation>
+  <implementationNotes></implementationNotes>
+  <depends>DATA-CFG-0005, FR-COPY-0001, FR-COPY-0010</depends>
+  <notes>Resolves the previously implicit precondition that manifests and `*.tmpl` templates were already committed in the output tree (former ASSUMPTIONS AC-3 scope; see AC-3a). Hook templates seeded here are rendered in place by FR-GEN template rendering; hook bundles are synced separately by FR-HOOK.</notes>
+</req>
+
+<req id="FR-SEED-0002" type="FR" level="System" ticketId="" classification="technical">
+  <title>Standalone preserved-file derivation</title>
+  <statement>A standalone target shall source its preserved files from its parent target's preserved-file source (`src/plugin-generator/plugins/<parent>/`) rather than from an independent config folder, taking the standalone-form hook template and the parent manifest version, and shall not retain the parent's marketplace-only preserved files.</statement>
+  <rationale>A standalone has no independent IDE config folder; its only preserved inputs are the standalone-form template and the version, both owned by the parent, consistent with the standalone transform chain.</rationale>
+  <source>User</source>
+  <priority>Must</priority>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
+  <changed>2026-06-04</changed>
+  <verification>Test</verification>
+  <acceptance>
+    <criteria>Given: core-cursor-standalone When: generated Then: its standalone-form hook configuration derives from the parent `core-cursor` standalone-form template and its manifest version equals the parent manifest version.</criteria>
+    <criteria>Given: core-copilot-standalone When: generated Then: it carries no parent marketplace-only preserved config folder and its manifest version equals the parent manifest version.</criteria>
+    <criteria>Given: a standalone target When: generated Then: no independent `src/plugin-generator/plugins/<standalone>/` config folder is required.</criteria>
+  </acceptance>
+  <implementation>NotStarted</implementation>
+  <implementationNotes></implementationNotes>
+  <depends>DATA-CFG-0005, FR-SEED-0001, FR-VAR-0071</depends>
+  <notes>Reconciles with the standalone output units FR-VAR-0050/0051/0060, which depend on this unit (one-way: those units consume this seeding behavior). Parent mapping: core-cursor-standalone ← core-cursor; core-copilot-standalone ← core-copilot. Standalone-form hook template for cursor is the parent's root `hooks.json.tmpl`; copilot-standalone's nested hooks derive from the parent copilot hook template. Manifest version per FR-VAR-0060.</notes>
+</req>
 
 ## Reset
 
 <req id="FR-COPY-0001" type="FR" level="System" ticketId="" classification="technical">
-  <title>Reset generated content, preserve config</title>
-  <statement>Before generating a target, the generator shall remove all content in the target's output except its preserved config folder and preserved files, and shall create the output directory if absent.</statement>
-  <rationale>Each run starts from a clean state while keeping the IDE manifest and other non-generated config.</rationale>
+  <title>Reset output (pluginCleanup)</title>
+  <statement>Before generating a target's content, the `pluginCleanup()` processor (FR-ARCH-0052) shall empty the target's output location entirely and create it if absent. Nothing is kept across the wipe; the preserved files are re-established immediately afterward by `pluginCopy()` (FR-COPY/FR-ARCH-0053). Removal of an individual prospective output during generation is expressed instead by a processor setting `target_contents` to `null` (FR-ARCH-0036).</statement>
+  <rationale>Each run starts from a clean slate, made reproducible by wipe-then-seed. Because `pluginCopy()` re-seeds the preserved files every run from their committed source, there is no need for anything to "survive" the wipe — which removes the old dependency on preserved files already sitting in the output tree.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: a populated target output When: reset Then: only the preserved config folder and preserved files remain.</criteria>
-    <criteria>Given: a non-existent output When: reset Then: the directory is created and the run proceeds.</criteria>
+    <criteria>Given: a populated target output When: `pluginCleanup()` runs Then: the output is emptied.</criteria>
+    <criteria>Given: a non-existent output When: `pluginCleanup()` runs Then: the directory is created and the run proceeds.</criteria>
+    <criteria>Given: cleanup followed by `pluginCopy()` When: the run continues Then: the preserved files are present (re-seeded), not surviving from a prior run.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
-  <depends>DATA-CFG-0002</depends>
+  <depends>DATA-CFG-0002, DATA-CFG-0005, FR-ARCH-0052, FR-ARCH-0053</depends>
 </req>
 
 ## Copy and content adaptation
 
 <req id="FR-COPY-0010" type="FR" level="System" ticketId="" classification="technical">
   <title>Copy instruction source into target</title>
-  <statement>The generator shall copy every file from the resolved instruction source into the target output, preserving relative structure except where renames apply, and shall skip operating-system artifact files.</statement>
-  <rationale>The instruction content is the payload of every plugin.</rationale>
+  <statement>The generator shall materialize every file from the resolved instruction source into the target output via the pipeline's `fileRead()`→`pluginWrite()` content I/O (FR-ARCH-0033) — binary files passing through unchanged — preserving relative structure except where `fileRename()` applies, and shall skip operating-system artifact files.</statement>
+  <rationale>The instruction content is the payload of every plugin. "Copy" is just `fileRead()` then `pluginWrite()`; there is no separate bulk-copy routine that also mutates content.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -42,20 +91,22 @@
 </req>
 
 <req id="FR-COPY-0011" type="FR" level="System" ticketId="" classification="technical">
-  <title>Exclude designated rule files</title>
-  <statement>The generator shall not copy instruction source files on the excluded-rule list into any target.</statement>
-  <rationale>Certain bootstrap rule files are delivered via hooks, not as copied files.</rationale>
+  <title>Exclude designated source files</title>
+  <statement>The generator shall not emit source files named in a `SpecEntry`'s `exclude` list (an array of VFS paths) into the target — `pluginProcessSpecEntries()` creates no frame for them (FR-ARCH-0054). The legacy MCP-mode rules `rules/bootstrap.md` and `rules/local-files-mode.md` are excluded this way. Exclusion is data on the entry (composing with `--domain` overlays) and requires no source rename — the source files remain unchanged because MCP and other instructions still reference them.</statement>
+  <rationale>Certain rule files are delivered via hooks (or are legacy) and must not ship in plugins, but the source files cannot be renamed or removed because MCP serves them and instruction text references them. A data `exclude` list omits them at generation without touching the source.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: `rules/bootstrap.md` or `rules/local-files-mode.md` in source When: copied Then: it is absent from the target.</criteria>
+    <criteria>Given: `rules/bootstrap.md` or `rules/local-files-mode.md` listed in `exclude` When: generated Then: it is absent from the target and the source file is unchanged.</criteria>
+    <criteria>Given: an overlay domain adding a path to `exclude` When: generated Then: that path is omitted for that target.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-ARCH-0002, FR-ARCH-0054</depends>
 </req>
 
 <req id="FR-COPY-0012" type="FR" level="System" ticketId="" classification="technical">
@@ -64,8 +115,8 @@
   <rationale>Stable metadata supports change detection downstream.</rationale>
   <source>Sources</source>
   <priority>Could</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -79,12 +130,12 @@
 
 <req id="FR-COPY-0020" type="FR" level="System" ticketId="" classification="technical">
   <title>Normalize model identifiers per IDE</title>
-  <statement>Where a target requires model normalization, the generator shall rewrite each markdown document's frontmatter `model:` value into that target's model vocabulary, selecting the first model from a comma-separated list.</statement>
-  <rationale>Each IDE accepts only its own model identifier format; the first listed model is the intended primary.</rationale>
+  <statement>Where a target requires model normalization, the `fileNormalizeModels()` processor (FR-ARCH-0046) shall rewrite each markdown document's frontmatter `model:` value into that target's `ModelVocabulary`, selecting the first model from a comma-separated list, and leaving content without a model value unchanged.</statement>
+  <rationale>Each IDE accepts only its own model identifier format; the first listed model is the intended primary. Normalization is one explicit pipeline stage, not a side effect hidden inside copying.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -93,7 +144,7 @@
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
-  <depends>DATA-CFG-0004</depends>
+  <depends>DATA-CFG-0004, FR-ARCH-0046</depends>
 </req>
 
 <req id="FR-COPY-0021" type="FR" level="System" ticketId="" classification="technical">
@@ -102,8 +153,8 @@
   <rationale>Claude Code accepts only `opus`/`sonnet`/`haiku`/`inherit`.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -120,8 +171,8 @@
   <rationale>Codex requires an OpenAI model and a separate reasoning-effort field.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -136,12 +187,12 @@
 
 <req id="FR-COPY-0030" type="FR" level="System" ticketId="" classification="technical">
   <title>Folder renames</title>
-  <statement>Where a target declares folder renames, the generator shall place affected files under the renamed top-level folder in the output.</statement>
-  <rationale>IDEs expect workflow content under IDE-specific folder names (e.g. `commands`, `prompts`).</rationale>
+  <statement>Where a target declares folder renames, the `fileRename()` processor (FR-ARCH-0043) shall place affected files under the renamed top-level folder in the output by changing the target path only.</statement>
+  <rationale>IDEs expect workflow content under IDE-specific folder names (e.g. `commands`, `prompts`). The path change is `fileRename()`'s sole responsibility; the matching in-body reference updates are `pluginRewriteReferences()` (FR-COPY-0032).</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -149,16 +200,17 @@
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-ARCH-0043</depends>
 </req>
 
 <req id="FR-COPY-0031" type="FR" level="System" ticketId="" classification="technical">
   <title>Pattern-based file renames</title>
-  <statement>Where a target declares file-rename patterns, the generator shall rename matching files in the output according to the pattern's replacement.</statement>
-  <rationale>IDEs require specific file suffixes (e.g. `.mdc`, `.prompt.md`, `.agent.md`).</rationale>
+  <statement>Where a target declares file-rename patterns (including the agent-file suffix rename), the `fileRename()` processor (FR-ARCH-0043) shall set the matching file's target path according to the pattern's replacement, changing the path only.</statement>
+  <rationale>IDEs require specific file suffixes (e.g. `.mdc`, `.prompt.md`, `.agent.md`). The agent rename (`agents/x.md`→`agents/x.agent.md`) is one such pattern, not a separate special case.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -167,57 +219,65 @@
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-ARCH-0043</depends>
 </req>
 
 <req id="FR-COPY-0032" type="FR" level="System" ticketId="" classification="technical">
-  <title>Precise content reference rewriting</title>
-  <statement>When folder or file renames apply, the generator shall rewrite cross-references inside copied markdown using exact full-path replacement so that only renamed paths change, and shall also update bare folder references for renamed folders.</statement>
-  <rationale>Instruction text references other instruction files by path; references must follow the rename without corrupting partial-word matches.</rationale>
-  <source>Sources</source>
+  <title>Precise content reference rewriting (separate from rename)</title>
+  <statement>When a target renames folders or files, the `pluginRewriteReferences()` processor (FR-ARCH-0049) — a content-only stage distinct from `fileRename()` — updates the hand-authored cross-references in a document body to the renamed paths, using the target's rename map (the `fileRename()` decisions over the whole VFS, FR-ARCH-0049) and exact complete-token matching (FR-ARCH-0037). It updates complete path references, including bounded bare-folder references (`<from>/`→`<to>/`), and changes content only; the document's own path is set by `fileRename()`. Generated content needs no such update — it is produced against final paths (FR-ARCH-0038).</statement>
+  <rationale>Instruction text references other instruction files by path; those references follow the file to its renamed location. This is a **separate processor from `fileRename()`**: setting a file's path and updating another file's body are two responsibilities. Fusing them (as the original `copy_core_tree` did) is the SRP violation this split removes.</rationale>
+  <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: a reference `workflows/coding-flow.md` and rename to `commands` When: rewritten Then: it becomes `commands/coding-flow.md`.</criteria>
+    <criteria>Given: a reference `workflows/coding-flow.md` and rename to `commands` When: rewritten Then: it becomes `commands/coding-flow.md` and the document's own target path is unaffected by this processor.</criteria>
     <criteria>Given: a bare reference `workflows/` When: rewritten Then: it becomes `commands/`.</criteria>
+    <criteria>Given: a reference to an excluded, renamed source path When: rewritten Then: it follows the rename.</criteria>
     <criteria>Given: an unrelated word containing the folder name as a substring When: rewritten Then: it is unchanged.</criteria>
+    <criteria>Given: the prose word "agents" with an `agents`→`.codex/agents` rename in effect When: rewritten Then: the word is unchanged; only complete `agents/<path>` references change.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-ARCH-0049, FR-ARCH-0037, FR-COPY-0030, FR-COPY-0031</depends>
 </req>
 
 <req id="FR-COPY-0033" type="FR" level="System" ticketId="" classification="technical">
-  <title>Pre-copied alternate-name folders</title>
-  <statement>Where a target declares pre-copied folders, the generator shall copy the named source folders under their alternate output names with model normalization applied and without content reference rewriting or file renames.</statement>
-  <rationale>Some targets need a duplicate of a source folder under a different name before the main rename pass.</rationale>
+  <title>Alternate-name folder duplication (as a SpecEntry, not a pre-pass)</title>
+  <statement>Where a target needs a duplicate of a source folder under an alternate output name, the generator shall express it as an additional `SpecEntry` (source glob → alternate target folder) whose `FileProcessor` pipeline applies `fileNormalizeModels` only (with `fileRead` ingress / `pluginWrite` egress) — no `fileRename()` and, since it is generated content with no hand-authored cross-references to fix, no involvement of `pluginRewriteReferences()`. There shall be no separate "pre-copy" pass.</statement>
+  <rationale>A second source→target mapping is exactly a `SpecEntry`; modeling it as a one-off imperative pre-pass (the original `pre_copy_folders`) broke uniformity. The pipeline omitting `pluginRewriteReferences()`/`fileRename()` reproduces the original's "model normalization only" behavior for these copies.</rationale>
   <source>Sources</source>
   <priority>Could</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: a pre-copy mapping When: generated Then: the alternate-named folder exists with frontmatter models normalized.</criteria>
+    <criteria>Given: an alternate-name `SpecEntry` When: generated Then: the alternate-named folder exists with frontmatter models normalized and no reference rewriting applied.</criteria>
+    <criteria>Given: the generation design When: inspected Then: this duplication is a `SpecEntry`, not a pre-pass.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-ARCH-0002, FR-ARCH-0035</depends>
 </req>
 
 <req id="FR-COPY-0034" type="FR" level="System" ticketId="" classification="technical">
-  <title>Pre-move files</title>
-  <statement>Where a target declares pre-move rules, the generator shall move matching files into a destination subfolder under a renamed filename.</statement>
-  <rationale>Some IDEs require certain rule files relocated into a dedicated folder.</rationale>
+  <title>File relocation (as a rename, not a pre-move pass)</title>
+  <statement>Where a target relocates matching files into a destination subfolder under a renamed filename, it shall do so with the `fileRename()` processor (FR-ARCH-0043) setting the target path (folder + filename) of the affected `VirtualFile`s. There shall be no separate "pre-move" pass.</statement>
+  <rationale>Relocating a file is a path change — exactly `fileRename()`. The original `pre_move_files` (e.g. `rules/bootstrap-*.md`→`instructions/*.instructions.md` for Copilot-standalone) was an out-of-band move; as a `fileRename()` it composes with the rest of the pipeline and its reference updates flow through `pluginRewriteReferences()`.</rationale>
   <source>Sources</source>
   <priority>Should</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: a pre-move mapping `rules/bootstrap-*.md`→`instructions/*.instructions.md` When: applied Then: matching files move and are renamed accordingly.</criteria>
+    <criteria>Given: relocation `rules/bootstrap-*.md`→`instructions/*.instructions.md` When: generated Then: matching files land at the new folder and filename via `fileRename()`.</criteria>
+    <criteria>Given: the generation design When: inspected Then: this relocation is a `fileRename()`, not a pre-move pass.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
+  <depends>FR-ARCH-0043, FR-ARCH-0035</depends>
 </req>

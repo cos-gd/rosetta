@@ -78,6 +78,7 @@ Compose these into plan phases/steps to build any execution workflow.
 2. MUST USE OPERATION_MANAGER for deterministic execution
 3. Use available skills and agents.
 4. You will FOR SURE run out of LLM context, leading to loss of information, delegate to subagents!
+5. If `/goal` is set repeat phases 4-5 until goal is met.
 
 </prerequisites>
 
@@ -109,7 +110,8 @@ Compose these into plan phases/steps to build any execution workflow.
 <review_and_summarize phase="5">
 
 1. Final review - validate against original intent.
-2. Summarize to user if completed.
+2. Repeat execution if not met original intent.
+3. Summarize to user if completed.
 
 </review_and_summarize>
 

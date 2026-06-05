@@ -10,8 +10,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Operators and the pre-commit step invoke it as a command.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -28,8 +28,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Allows invocation as a library (e.g. from pre-commit) without the CLI.</rationale>
   <source>Sources</source>
   <priority>Should</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -47,8 +47,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Releases coexist; the stable release is the default.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -66,8 +66,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Fail clearly on misconfiguration.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -85,8 +85,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Decouples the source layer from a hardcoded `core`, enabling organization overlays. Replaces the hardcoded `core`.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -105,8 +105,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Lets an organization layer extend the base layer at generation time, mirroring the server Bundler's layered customization, which bundles same-path documents.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -129,8 +129,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>All input/output paths are relative to the repo root.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -146,8 +146,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Allows isolated output (e.g. for diffing) without touching the committed tree.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -166,8 +166,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Preview the complete generation without side effects.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -175,7 +175,6 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
-  <depends>FR-ARCH-0045</depends>
 </req>
 
 <req id="FR-CLI-0051" type="FR" level="System" ticketId="" classification="technical">
@@ -184,8 +183,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Operators need granular traceability when diagnosing generation.</rationale>
   <source>User</source>
   <priority>Should</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -193,7 +192,6 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
-  <depends>FR-ARCH-0050</depends>
 </req>
 
 <req id="FR-CLI-0060" type="FR" level="System" ticketId="" classification="technical">
@@ -202,8 +200,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>The tool's behavior is configuration-driven; a user cannot operate or extend it without the source layout, directive/override/bundling rules, processor catalog, and spec model in the help itself.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -223,8 +221,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>All targets are the same kind of output and must be producible independently.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Analysis</verification>
   <acceptance>
@@ -241,8 +239,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Surface all problems in one run rather than aborting on the first.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
@@ -260,8 +258,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
   <rationale>Operators run it in pre-commit and CI and must see what happened.</rationale>
   <source>Sources</source>
   <priority>Should</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>

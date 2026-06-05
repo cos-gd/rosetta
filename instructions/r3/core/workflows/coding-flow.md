@@ -26,6 +26,9 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 5. When debugging is needed, INVOKE SUBAGENT `engineer` and USE SKILL `debugging` to isolate debugging context from implementation.
 6. Use INVOKE SUBAGENT `executor` for building, running tests, installing packages, and similar mechanical actions.
 7. MUST load each phase's skills when entering that phase (just-in-time) when subagents are not used.
+8. If workflow is executed to implement requirements and those exists in REQUIREMENTS folder, MUST USE SKILL `requirements-use` and load all affected requirements (after skill is loaded). After that subagents must be given pointers to those requirements and skill.
+9. If `/goal` is set repeat phases 7-12 postponing user_review_impl and final_validation until goal is met.
+10. Coding workflow state is saved to AGENTS TEMP FEATURE folder as `coding-flow-state.md` file. 
 
 </prerequisites>
 
@@ -34,8 +37,10 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 1. Gather project context, affected areas, dependencies, constraints, requirements. SMALL: orchestrator handles inline.
 2. Input: user request + `CONTEXT.md` + `ARCHITECTURE.md` + `IMPLEMENTATION.md`. Output: discovery-notes.md in FEATURE PLAN folder.
 3. Required skills: `load-context`
-4. Update `agents/coding-flow-state.md`
-5. Do not stop until 100% clear
+4. If REQUIREMENTS in use: `requirements-use` skill is required.
+5. Additionally request to discover existing libraries, packages, search web for similar problems/tasks (if this make sense)
+6. Update `coding-flow-state.md`
+7. Do not stop until 100% clear
 
 </discovery>
 
@@ -45,8 +50,9 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 2. Second: design 3 best architecture solutions with pro/cons analysis.
 3. Third: select the best solution.
 4. Input: user request + `CONTEXT.md` + `ARCHITECTURE.md` + `IMPLEMENTATION.md`. Output: concise architecture-notes.md in FEATURE PLAN folder.
-5. Recommended skills: `reasoning`, `questioning`
-6. Update `agents/coding-flow-state.md`
+5. Required skills: `reasoning`
+6. Recommended skills: `questioning`
+7. Update `coding-flow-state.md`
 
 </design>
 
@@ -64,9 +70,11 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 1. MUST USE SKILL `tech-specs` and `planning` together. Split: specs own WHAT, plan owns HOW. Target: 100% clarity.
 2. Input: discovery notes, user request, `ARCHITECTURE.md`. Output: `<FEATURE>-SPECS.md` + `<FEATURE>-PLAN.md` in FEATURE PLAN folder.
 3. SMALL: output as message, no files. MEDIUM: concise. LARGE: full.
-4. Required skills: `tech-specs`, `planning`, `reasoning`
-5. Recommended skills: `questioning`
-6. Update `agents/coding-flow-state.md`
+4. Required skills: `tech-specs`, `planning`
+5. If medium/large `reasoning` skill is required
+6. If REQUIREMENTS in use: `requirements-use` skill is required. Plan/Specs must have pointers to requirements identifiers.
+7. Recommended skills: `questioning`
+8. Update `coding-flow-state.md`
 
 </tech_plan>
 
@@ -74,8 +82,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 
 1. Review specs and plan against user request and discovery notes, do not assume user is in context, give him full information with TLDR.
 2. Input: specs, plan, user request. Output: review findings and recommendations.
-3. Required skills: `reasoning`
-4. Update `agents/coding-flow-state.md`
+3. Update `coding-flow-state.md`
 
 </review_plan>
 
@@ -93,8 +100,8 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 3. MUST follow approved scope. MUST stop and escalate if blocked.
 4. Required skills: `coding`
 5. Recommended skills: `debugging`, `coding-iac`, `sensitive-data`, `testing`, `dangerous-actions`
-6. If requirements are used code must contain comments refs to requirement identifiers
-7. Update `agents/coding-flow-state.md`
+6. If requirements are used code must contain comments refs to requirements identifiers
+7. Update `coding-flow-state.md`
 
 </implementation>
 
@@ -104,7 +111,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 2. Input: implementation diff, specs, plan, check if documentation is updated, brief, and matches the file intent. Output: review findings and recommendations.
 3. Required skills: `coding`
 4. Recommended skills: `reasoning`, `debugging`, `coding-iac`, `sensitive-data`, `testing`, `dangerous-actions`
-5. Update `agents/coding-flow-state.md`
+5. Update `coding-flow-state.md`
 
 </review_code>
 
@@ -115,7 +122,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 3. Input: implementation diff, specs, plan, review findings. Demand subagent to read and verify specs/plan fully. Do not repeat contents => reference instead. Output: validation findings.
 4. SMALL: orchestrator performs quick inline check.
 5. Recommended skills: `reverse-engineering`, `debugging`, `sensitive-data`, `testing`, `dangerous-actions`
-6. Update `agents/coding-flow-state.md`
+6. Update `coding-flow-state.md`
 
 </impl_validation>
 
@@ -133,7 +140,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 2. Input: implementation, specs. Demand subagent to read specs fully. Do not repeat contents => reference instead. Output: passing tests with coverage.
 3. Required skills: `testing`, `coding`
 4. Recommended skills: `debugging`, `coding-iac`, `sensitive-data`, `dangerous-actions`
-5. Update `agents/coding-flow-state.md`
+5. Update `coding-flow-state.md`
 
 </tests>
 
@@ -143,7 +150,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 2. Input: tests, specs, implementation. Output: review findings and recommendations.
 3. Required skills: `testing`, `coding`
 4. Recommended skills: `debugging`, `coding-iac`, `sensitive-data`, `dangerous-actions`
-5. Update `agents/coding-flow-state.md`
+5. Update `coding-flow-state.md`
 
 </review_tests>
 
@@ -154,7 +161,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 3. Input: full delivery (code + tests + specs + review findings). Demand subagent to read specs fully. Do not repeat contents => reference instead. Output: final validation report.
 4. SMALL: orchestrator confirms build + tests pass.
 5. Recommended skills: `coding`, `debugging`, `coding-iac`, `sensitive-data`, `testing`, `dangerous-actions`
-6. Update `agents/coding-flow-state.md`
+6. Update `coding-flow-state.md`
 
 </final_validation>
 

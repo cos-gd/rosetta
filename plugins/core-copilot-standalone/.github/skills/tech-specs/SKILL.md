@@ -22,7 +22,6 @@ Use when requirements need translation into specs, architecture needs documentat
 - All Rosetta prep steps MUST be FULLY completed, load-context skill loaded and fully executed
 - Discovery MUST be completed before writing specs
 - MCPs and external sources MUST be used to acquire context (DeepWiki, Context7, Web Search)
-- ULTRATHINK
 
 Tech specs define target state; plan defines steps to reach it.
 Split with companion `planning` skill: specs own WHAT, plan owns HOW. Do NOT repeat across both. Keep consistent. When one changes, verify the other.

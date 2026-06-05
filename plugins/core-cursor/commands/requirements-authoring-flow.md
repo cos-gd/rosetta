@@ -18,6 +18,7 @@ Prevents premature drafting by enforcing HITL gates where every `<req>` unit rec
 - Orchestrator and subagents MUST USE SKILL `requirements-authoring`.
 - If task is to reverse engineer orchestrator MUST USE SKILL `reverse-engineering`.
 - Keep requirement identifiers in code comments only, must not be user facing.
+- If `/goal` is set repeat phases 5-6 until goal is met, then continue with the rest of phases.
 
 IMPORTANT! If the task is to reverse engineer requirements, spawn MULTIPLE subagents with each handling one unit of analysis (one screen, one page, one controller, one endpoint, etc) to effectively prevent hallucinations by narrow scoping for phases intent_capture, outline, draft, validate.
 
@@ -85,6 +86,7 @@ Done when: every in-scope requirement has schema-complete draft and explicit use
 4. Modify files directly, do not show to user
 5. Update `<req>` schema if older/missing fields
 6. Required skills: `requirements-authoring`
+7. If reverse engineering - it must be possible to rewrite using requirements only completely from scratch without old code present.
 
 </draft>
 
@@ -111,6 +113,7 @@ Done when: checklist passes and unresolved issues are either fixed or explicitly
 4. Review story-by-story with user for approval, provide referenced content, examples, etc
 5. The narrative must still be very specific so that it allows to fully approve every aspect of requirements
 6. Do not assume user has a context, explain like user sees this first time
+7. Must review all assumptions and quirks
 
 </user_review>
 

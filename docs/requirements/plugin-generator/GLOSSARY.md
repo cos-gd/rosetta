@@ -8,12 +8,13 @@ One meaning per term. Used consistently across all requirement files.
 - **Layer merge** — Combining a base domain with one or more overlay domains so overlay files override or extend base files at the same relative path, mirroring the server-side Bundler. (New capability.)
 - **Plugin variant / Target** — One generated distribution for one IDE delivery mode: `core-claude`, `core-cursor`, `core-copilot`, `core-codex`, `core-cursor-standalone`, `core-copilot-standalone`.
 - **Standalone** — A target whose output is laid out under the IDE's in-repo subfolder (`.cursor/`, `.github/`) for direct extraction into a project, as opposed to marketplace installation. Differs from a "main" target only by its transform spec and output layout, not by how it is generated.
-- **Preserved path** — A folder or file inside a target's output that survives the pre-generation wipe (the IDE manifest/config folder and, where applicable, the `hooks` folder) (`scripts/plugin_generator.py:107`, `:135`).
+- **Preserved file** — A file a target keeps but does not generate from the instruction source: the IDE manifest (`plugin.json`), hook templates (`*.tmpl`), IDE config-folder contents, and any `.mcp.json`. It does not "survive" the wipe; `pluginCleanup` empties the output and `pluginCopy` re-seeds it each run from the preserved-file source.
+- **Preserved-file source** — The committed input under `src/plugin-generator/plugins/<target>/`, mirroring the output-relative layout, that holds all of a target's preserved files. It is the authority for those files and is copied into the target output before generation so a target can be built into a clean or empty output directory (DATA-CFG-0005, FR-SEED-0001).
 - **Model normalization** — Rewriting a source document's frontmatter `model:` value into the target IDE's model vocabulary (`scripts/plugin_generator.py:175`–`:217`).
 - **Agent file** — A document under `agents/<name>.md` describing a subagent (`scripts/plugin_generator.py:840`).
-- **Bootstrap files** — The ordered set of rule/index documents whose stripped bodies are embedded into a target's session-start context (`scripts/plugin_generator.py:501`).
-- **Bootstrap context payload** — The per-target, IDE-shaped session-start hook entries that inject bootstrap file bodies into the agent's context (`scripts/plugin_generator.py:561`).
-- **Bootstrap prefix** — A fixed lead-in string attached to the first bootstrap document of each target (`scripts/plugin_generator.py:21`).
+- **Bootstrap files** — The **ordered** set of rule/index documents whose stripped bodies are embedded into a target's session-start context, declared as an explicit ordered manifest (the `Bootstrap file manifest`). Order is significant and `plugin-files-mode` leads (`scripts/plugin_generator.py:501`).
+- **Bootstrap context payload** — The per-target, IDE-shaped session-start hook entries that inject bootstrap file bodies into the agent's context, emitted in the bootstrap-file-manifest order (`scripts/plugin_generator.py:561`).
+- **Bootstrap prefix** — A fixed lead-in string attached to the one designated lead bootstrap document of each target (the first bootstrap-classified entry in the manifest) (`scripts/plugin_generator.py:21`).
 - **Template** — A Handlebars source file (`*.tmpl`) rendered to a sibling file with the `.tmpl` suffix removed, using release variables plus bootstrap payload values (`scripts/plugin_generator.py:671`).
 - **Hook bundle** — A pre-compiled per-IDE runtime hook artifact consumed from `hooks/dist/` and copied into a target's hook folder (`scripts/plugin_generator.py:1184`).
 - **Deterministic hooks** — A per-release flag selecting whether advisory runtime hooks (and their bundles) are included (`r2`: off; `r3`: on) (`scripts/plugin_generator.py:72`–`:81`).
@@ -21,21 +22,26 @@ One meaning per term. Used consistently across all requirement files.
 - **Transform spec** — The declarative per-target description of all adaptations (renames, normalizations, generated indexes, templates, layouts) applied to produce that target. See `MODEL.md`.
 - **VirtualFile** — One entry in the VFS: a single prospective output file at a VFS path, holding an ordered collection of `SourceFile`s plus, during processing, its resolved target path, binary flag, and target contents. Class name: `VirtualFile`. (Rewrite term; use instead of the bare word "file".)
 - **SourceFile** — One physical source file contributing to a `VirtualFile`: carries its absolute origin path, frontmatter, order key, and conditions. Class name: `SourceFile`. (Rewrite term.)
-- **target_contents** — The resolved content a `write()` would emit for a `VirtualFile`, with three distinct states: `null` = content removed (no file is written); `""` = file is written with empty main content (optional frontmatter only); a string or byte array = file is written with that content.
+- **target_contents** — The resolved content a `pluginWrite()` would emit for a `VirtualFile`, with three distinct states: `null` = content removed (no file is written); `""` = file is written with empty main content (optional frontmatter only); a string or byte array = file is written with that content.
 
 ## Canonical type names (rewrite)
 
 Precise terminology applies to **every** concept, not only files (FR-ARCH-0003). Each concept below maps to one named type:
 
 - **PluginTarget** — one generated distribution (the six variants). Use instead of bare "plugin"/"target".
-- **PluginSpec** — a `PluginTarget`'s full specification: an ordered list of `SpecEntry`.
-- **SpecEntry** — `{source: glob, target: folder, processors: ProcessorPipeline}`.
-- **Processor** — one pure pipeline stage operating on a `ProcessingFrame` (`read`, `apply_overrides`, `bundle`, `normalize_models`, `rename`, `generate_index`, `render_template`, `codex_agent_format`, `write`).
-- **ProcessorPipeline** — an ordered list of `Processor`s.
-- **ProcessingFrame** — the mutable working object passed through a `ProcessorPipeline`: `{path, target, isBinary, target_contents, source: SourceFile[]}`. Distinct from the immutable `VirtualFile`.
+- **PluginSpec** — a `PluginTarget`'s full specification: the per-target descriptor fields (identity, output location and base subfolder, preserved-file seed source, `ModelVocabulary`, bootstrap manifest, hook config, index and injection declarations) plus an ordered list of `SpecEntry` and an ordered `PluginProcessor` pipeline.
+- **SpecEntry** — `{source: glob, target: path, exclude: string[], processors: FileProcessor[]}`. The `target` is the destination folder (folder placement, e.g. `workflows`→`commands`); a filename/suffix change is a `fileRename()` `FileProcessor` in the entry; `exclude` lists VFS paths matched by `source` that must not be emitted (no source rename needed — the source files stay as-is for MCP and instruction references).
+- **FileProcessor** — one pure, single-responsibility **file-tier** stage operating on a `FileProcessingFrame` (`fileRead`, `fileApplyOverrides`, `fileBundle`, `fileNormalizeModels`, `fileRename`, `fileCodexAgentFormat`). `fileRename` changes only the path; `fileRead` is the only content ingress.
+- **PluginProcessor** — one pure **plugin-tier** stage operating on a `PluginProcessingFrame` with whole-plugin visibility (`pluginCleanup`, `pluginCopy`, `pluginProcessSpecEntries`, `pluginRewriteReferences`, `pluginGenerateIndexes`, `pluginInjectSections`, `pluginAssembleBootstrap`, `pluginRenderTemplates`, `pluginWrite`). `pluginRewriteReferences` changes only content; `pluginWrite` is the only content egress.
+- **FileProcessorPipeline / PluginPipeline** — ordered lists of `FileProcessor`s (within a `SpecEntry`) and `PluginProcessor`s (the `PluginSpec` pipeline) respectively.
+- **pluginCleanup (output wipe)** — the head `PluginProcessor` that empties a target output before seeding. Per-file removal of a prospective output is expressed by a processor setting `target_contents` to `null` so `pluginWrite()` produces no file. Nothing "survives the wipe": preserved files are re-established each run by `pluginCopy`.
+- **pluginCopy (preserved-file seeding)** — the `PluginProcessor` that copies a target's committed preserved files from `src/plugin-generator/plugins/<target>/` into the output before instruction-derived content is produced; the seed source is the sole authority for them.
+- **Bootstrap file manifest** — the ordered list of bootstrap/index documents whose bodies feed a target's session-start context. Its order is significant (see below): it fixes both the payload entry sequence and which document receives the bootstrap prefix.
+- **FileProcessingFrame** — the per-file mutable working object passed through a `FileProcessorPipeline`: `{sourcePath, target, isBinary, target_contents, source: SourceFile[]}`. Distinct from the immutable `VirtualFile`.
+- **PluginProcessingFrame** — the whole-plugin working object passed through the `PluginPipeline`: `{spec: PluginSpec, vfs: VirtualFile[], frames: FileProcessingFrame[], templateContext}`. A `PluginProcessor` reads across all `frames`; `templateContext` carries the render placeholders (release variables + assembled bootstrap payload values) from `pluginAssembleBootstrap` to `pluginRenderTemplates`.
 - **VirtualFile** — an immutable VFS entry `{path, sourceFiles: SourceFile[]}` (defined above).
 - **SourceFile** — a contributing physical source file (defined above).
-- **FilenameDirective** — the bracketed `[…]` segment in a source filename.
+- **FilenameDirective** — the tilde-fenced `~…~` segment (comma-separated tokens) in a source filename, e.g. `name.~1a,claude-only,overwrite~.ext`.
 - **DirectiveToken** — one token inside a `FilenameDirective`; kinds: `OrderToken`, `TargetOnlyToken`, `OverwriteToken`.
 - **SourceFileConditions** — the resolved conditions on a `SourceFile` (e.g. overwrite, target scoping) derived from its `DirectiveToken`s.
 - **ModelVocabulary** — a per-IDE map from logical model key to that IDE's model identifier.

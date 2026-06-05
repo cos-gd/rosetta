@@ -72,6 +72,7 @@ Compose these into plan phases/steps to build any execution workflow.
 - All Rosetta prep steps MUST be FULLY completed, load-context skill loaded and fully executed.
 - Use available skills and agents.
 - You will FOR SURE run out of LLM context, leading to loss of information, delegate to subagents!
+- If `/goal` is set repeat phases 4-5 until goal is met.
 
 <build_plan phase="2">
 
@@ -101,7 +102,8 @@ Compose these into plan phases/steps to build any execution workflow.
 <review_and_summarize phase="5">
 
 1. Final review - validate against original intent.
-2. Summarize to user if completed.
+2. Repeat execution if not met original intent.
+3. Summarize to user if completed.
 
 </review_and_summarize>
 

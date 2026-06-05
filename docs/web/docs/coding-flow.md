@@ -163,7 +163,7 @@ The request itself plus any constraints or source requirements the agent must no
 For medium and large tasks, a `discoverer` subagent gathers project context, affected areas, dependencies, constraints, and requirements from the request, `CONTEXT.md`, `ARCHITECTURE.md`, and `IMPLEMENTATION.md`. Small tasks keep this inline with the orchestrating agent.
 
 **Produced artifacts**  
-`discovery-notes.md` in the feature plan folder for medium and large tasks. The workflow also updates `agents/coding-flow-state.md`.
+`discovery-notes.md` in the feature plan folder for medium and large tasks. The workflow also updates `coding-flow-state.md`.
 
 **Review and approval expectations**  
 No user gate here, but bad discovery leaks into every later phase. Watch for missing constraints, missing affected systems, or a request that still sounds ambiguous.
@@ -180,7 +180,7 @@ The request, discovery notes when they exist, and architecture constraints that 
 An `architect` subagent uses the `tech-specs` and `planning` skills together. The specs own what must be built. The plan owns how the work will be executed.
 
 **Produced artifacts**  
-`<FEATURE>-SPECS.md` and `<FEATURE>-PLAN.md` in the feature plan folder for medium and large tasks. For small tasks, the workflow says the result may stay in chat instead of files. The workflow also updates `agents/coding-flow-state.md`.
+`<FEATURE>-SPECS.md` and `<FEATURE>-PLAN.md` in the feature plan folder for medium and large tasks. For small tasks, the workflow says the result may stay in chat instead of files. The workflow also updates `coding-flow-state.md`.
 
 **Review and approval expectations**  
 No user approval yet, but this phase defines the package you will later approve. If the spec does not state boundaries, acceptance logic, and constraints clearly, do not approve phase 4.
@@ -197,7 +197,7 @@ None beyond the existing request and artifacts.
 For medium and large tasks, a `reviewer` subagent checks the specs and plan against the request and discovery notes.
 
 **Produced artifacts**  
-Review findings and recommendations. The workflow also updates `agents/coding-flow-state.md`.
+Review findings and recommendations. The workflow also updates `coding-flow-state.md`.
 
 **Review and approval expectations**  
 This is a reviewer gate, not a user gate. You should expect findings that call out missing constraints, unclear sequencing, or scope drift before the package reaches you.
@@ -233,7 +233,7 @@ Approved specs and plan.
 An `engineer` subagent implements the plan. Build must succeed in this phase. Tests are excluded here. The workflow says the agent must update relevant documentation briefly when the change affects those docs.
 
 **Produced artifacts**  
-Working code, successful build, brief updates to relevant documentation, and an update to `agents/coding-flow-state.md`.
+Working code, successful build, brief updates to relevant documentation, and an update to `coding-flow-state.md`.
 
 **Review and approval expectations**  
 No user gate yet. If the work hits a blocker or needs extra scope, the agent is supposed to stop and escalate instead of improvising.
@@ -250,7 +250,7 @@ None beyond the approved artifacts.
 A `reviewer` subagent checks the implementation diff against the approved specs and plan. The workflow also tells the reviewer to check whether documentation updates are present, brief, and aligned with each file's purpose.
 
 **Produced artifacts**  
-Review findings and recommendations. The workflow also updates `agents/coding-flow-state.md`.
+Review findings and recommendations. The workflow also updates `coding-flow-state.md`.
 
 **Review and approval expectations**  
 This is a reviewer gate. If findings show hidden scope growth, unresolved mismatches, or missing doc updates, phase 8 should not be approved unchanged.
@@ -267,7 +267,7 @@ None beyond the approved artifacts and current diff.
 For medium and large tasks, a `validator` subagent checks git changes, spec coverage, gaps, and performs search and MCP fact-checking. Small tasks use a lighter inline check by the orchestrating agent.
 
 **Produced artifacts**  
-Validation findings and an update to `agents/coding-flow-state.md`.
+Validation findings and an update to `coding-flow-state.md`.
 
 **Review and approval expectations**  
 This is a validator gate. Watch for uncovered spec items, implementation gaps, or claims that have no supporting evidence.
@@ -301,7 +301,7 @@ Approved implementation and the specs that define expected behavior.
 An `engineer` subagent writes and runs tests. The workflow requires them to be isolated, idempotent, and passing.
 
 **Produced artifacts**  
-Passing tests with coverage evidence and an update to `agents/coding-flow-state.md`.
+Passing tests with coverage evidence and an update to `coding-flow-state.md`.
 
 **Review and approval expectations**  
 No direct user gate here. If tests are broad but weak, phase 10 should expose that before final validation.
@@ -318,7 +318,7 @@ None beyond the approved artifacts.
 For medium and large tasks, a `reviewer` subagent checks coverage, scenarios, edge cases, and mocking correctness against the specs.
 
 **Produced artifacts**  
-Review findings and recommendations. The workflow also updates `agents/coding-flow-state.md`.
+Review findings and recommendations. The workflow also updates `coding-flow-state.md`.
 
 **Review and approval expectations**  
 This is a reviewer gate. Watch for missing edge cases, shallow assertions, or mocks that bypass the real behavior the workflow was meant to prove.
@@ -335,7 +335,7 @@ None beyond the full delivery set.
 For medium and large tasks, a `validator` subagent performs by-dependency validation across relevant surfaces such as databases, APIs, web, or mobile, then checks logs and cleanup. Small tasks use a lighter final confirmation that build and tests passed.
 
 **Produced artifacts**  
-Final validation report and an update to `agents/coding-flow-state.md`.
+Final validation report and an update to `coding-flow-state.md`.
 
 **Review and approval expectations**  
 This is the last validator gate. If the report does not match the real dependency surface of the change, the workflow is not done.
@@ -365,7 +365,7 @@ This is the last validator gate. If the report does not match the real dependenc
 - `discovery-notes.md` for medium and large tasks.
 - `<FEATURE>-SPECS.md`.
 - `<FEATURE>-PLAN.md`.
-- `agents/coding-flow-state.md`.
+- `coding-flow-state.md`.
 - Review findings and recommendations from plan, code, and test review phases when those phases run.
 - Validation findings from implementation validation when that phase runs.
 - Passing tests with coverage evidence.

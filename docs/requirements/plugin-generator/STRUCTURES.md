@@ -2,7 +2,7 @@
 
 Generalized, compressed example of each target's output tree, with provenance. These are the structures the generator must produce. Trees are illustrative (file counts/names abbreviated); exact per-IDE format is owned by the guides (INT-IDE-0002).
 
-**Legend** — `[P]` preserved (committed input, not generated; survives the wipe) · `[G]` generated from the instruction source · `← x` = derived from x · `after y` = produced after step y.
+**Legend** — `[P]` preserved (committed input, not generated; seeded each run by `pluginCopy`) · `[G]` generated from the instruction source · `← x` = logical provenance (derived from x) · `after y` = produced after step y. All `[G]` outputs are produced by the two-tier processor pipeline (FR-ARCH); provenance notes denote *what feeds what*, not imperative passes — folder moves are a `SpecEntry` `target`, suffix renames are `fileRename()`, in-body reference updates are `pluginRewriteReferences()`, and section insertions are `pluginInjectSections()`. Standalone trees are generated directly from the instruction source (not derived from a main plugin's output).
 
 ## core-claude — marketplace (bootstrap: session-start hooks)
 ```
@@ -86,8 +86,8 @@ core-copilot-standalone/
   <rationale>The per-IDE on-disk layout is what each IDE loads; it is the concrete acceptance surface for generation.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -104,8 +104,8 @@ core-copilot-standalone/
   <rationale>In-repo extraction requires IDE-rooted paths and the IDE's native bootstrap-delivery layout.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>

@@ -25,8 +25,8 @@ The generator currently produces targets for a subset (Claude, Cursor, Copilot, 
   <rationale>IDE conventions change and are owned by those guides; deriving target behavior from them prevents drift and incorrect formats.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -43,8 +43,8 @@ The generator currently produces targets for a subset (Claude, Cursor, Copilot, 
   <rationale>The bootstrap-delivery strategy and structural shape of each target derive directly from each IDE's documented capabilities.</rationale>
   <source>User</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -62,8 +62,8 @@ The generator currently produces targets for a subset (Claude, Cursor, Copilot, 
   <rationale>Keeps the configuration-driven design grounded: a target is defined by documented IDE conventions, not ad-hoc assumptions.</rationale>
   <source>User</source>
   <priority>Should</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>

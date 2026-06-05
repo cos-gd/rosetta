@@ -22,6 +22,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 - Orchestrator trusts skills to own execution internals; coordinates sequence, artifacts, state, and approvals only.
 - State file: `agents/TEMP/code-analysis-flow-state.md` updated after each phase.
 - Documentation principle: ground with links; no code generation, no suggestions, no speculation. See `best_practices` for sizing and diagram rules.
+- If `/goal` is set repeat phases 4-8 until goal is met.
 - If task is to extract/document/reverse engineer requirements or specifications from existing app/code:
   - This is much more intense per subagent: reclassify SMALL if < 10 source files, otherwise LARGE and MUST USE `large-workspace-handling`.
   - Both orchestrator and subagents MUST USE SKILL `requirements-authoring`
@@ -64,6 +65,7 @@ Validation: Output files exist under `docs/<feature>/`; every claim traces to co
 4. Required skills: `reverse-engineering`, `requirements-authoring`
 5. Update `code-analysis-flow-state.md`.
 6. Partition workspace USING SKILL `large-workspace-handling` (Summarization & Indexing strategy): every file belongs to exactly one scope; subagents analyze per-module in parallel.
+7. Ensure it is possible to rewrite using requirements only completely from scratch without old code present.
 
 </requirements_branch>
 

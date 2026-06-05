@@ -8,8 +8,8 @@ The generator is data-driven: a future release, domain, or IDE is added by editi
   <rationale>Adding a release must be one descriptor entry; generator code stays release-agnostic.</rationale>
   <source>Documentation</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -23,12 +23,12 @@ The generator is data-driven: a future release, domain, or IDE is added by editi
 
 <req id="DATA-CFG-0002" type="DATA" level="System" ticketId="" classification="technical">
   <title>Plugin-target descriptor</title>
-  <statement>Each plugin-target descriptor shall declare, as data, every adaptation needed to produce that target: target name; output location; preserved config folder and preserved files; the model vocabulary to normalize into; agent-file format; folder renames; file renames; pre-copied folders; generated index folders; templates to render; bootstrap-context inclusion flags; hook folder location; and any runtime-layout transforms.</statement>
-  <rationale>Uniform, declarative target definition lets every variant be generated the same way.</rationale>
+  <statement>Each `PluginTarget` descriptor shall declare, as data, its `PluginSpec` — an ordered list of `SpecEntry` (`{source: glob, target: path, exclude: string[], processors: FileProcessor[]}`), an ordered `PluginProcessor` pipeline, and the descriptor fields (target name, output location and base subfolder, preserved-file seed source, `ModelVocabulary`, bootstrap manifest and inclusion flags, hook configuration, and index and injection declarations). Every per-IDE adaptation shall be expressed by `FileProcessor`s in `SpecEntry` pipelines (model normalization, file/suffix renames, codex agent format), by the `SpecEntry` `target` (folder placement, alternate-name duplication), or by `PluginProcessor`s (reference rewriting, index generation, template rendering, section injection) — never by bespoke descriptor flags or out-of-band passes.</statement>
+  <rationale>Uniform, declarative target definition lets every variant be generated the same way: one shared spec shape (FR-ARCH-0001/0002), values in `plugin-specs.ts`, behavior in the two-tier processor pipelines.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -37,7 +37,7 @@ The generator is data-driven: a future release, domain, or IDE is added by editi
   </acceptance>
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
-  <notes>Main-target fields: name, destination, preserved_folder, preserved_files, normalize_models, copilot_models, cursor_models, codex_models, rename_agents, rename_folders, rename_files, pre_copy_folders, pre_move_files, generated_indexes, include_bootstrap_in_hooks, include_indexes_in_hooks, templates, hook_subdir, runtime_asset_subdirs.</notes>
+  <notes>Target-state descriptor = `PluginSpec` = descriptor fields (name, destination, baseSubfolder, preserved-file seed source, modelVocabulary, bootstrap manifest/inclusion flags, hook config) + `SpecEntry[]` + `PluginProcessor[]`. File-tier behavior lives in each `SpecEntry`'s `FileProcessor` pipeline (`fileRead`, `fileApplyOverrides`, `fileBundle`, `fileNormalizeModels`, `fileRename`, `fileCodexAgentFormat`); plugin-tier behavior is `PluginProcessor`s (`pluginCleanup`, `pluginCopy`, `pluginProcessSpecEntries`, `pluginRewriteReferences`, `pluginGenerateIndexes`, `pluginInjectSections`, `pluginAssembleBootstrap`, `pluginRenderTemplates`, `pluginWrite`). The original Python flags `rename_folders` become `SpecEntry` `target`s; `rename_files`/`rename_agents` become `fileRename()`; `pre_copy_folders` an extra `SpecEntry` (FR-COPY-0033); `pre_move_files` a relocation `SpecEntry`/`fileRename()` (FR-COPY-0034); runtime-layout moves become `SpecEntry` `target`s (FR-VAR-0030/0041). Mapping retained here only as parity provenance against `scripts/plugin_generator.py`.</notes>
 </req>
 
 <req id="DATA-CFG-0003" type="DATA" level="System" ticketId="" classification="technical">
@@ -46,8 +46,8 @@ The generator is data-driven: a future release, domain, or IDE is added by editi
   <rationale>Fixed, known delivery set per supported IDE and mode.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -64,8 +64,8 @@ The generator is data-driven: a future release, domain, or IDE is added by editi
   <rationale>Each IDE accepts a different model identifier format for the same underlying model.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
   <changed>2026-06-04</changed>
   <verification>Inspection</verification>
   <acceptance>
@@ -75,4 +75,24 @@ The generator is data-driven: a future release, domain, or IDE is added by editi
   <implementation>NotStarted</implementation>
   <implementationNotes></implementationNotes>
   <notes>Mapping values (model version strings) are content/config, expected to change over time; the mapping mechanism is the requirement, not the specific strings.</notes>
+</req>
+
+<req id="DATA-CFG-0005" type="DATA" level="System" ticketId="" classification="technical">
+  <title>Preserved-file source location</title>
+  <statement>The generator shall hold a committed preserved-file source under `src/plugin-generator/plugins/<target>/`, mirroring the output-relative layout, that contains every file a target keeps but does not generate: the IDE manifest, hook templates, IDE config-folder contents, and any `.mcp.json`. Each main target's preserved files shall be sourced only from its own `src/plugin-generator/plugins/<target>/` location.</statement>
+  <rationale>The preserved files have no derivation from the instruction source; a committed source is the only authority for them and is what makes generation into a clean output directory possible.</rationale>
+  <source>User</source>
+  <priority>Must</priority>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
+  <changed>2026-06-04</changed>
+  <verification>Inspection</verification>
+  <acceptance>
+    <criteria>Given: the preserved-file source When: inspected Then: `src/plugin-generator/plugins/<target>/` exists for each main target and holds that target's manifest, hook templates, and config-folder files at their output-relative paths.</criteria>
+    <criteria>Given: a file generated from the instruction source When: inspected Then: it is absent from `src/plugin-generator/plugins/<target>/`.</criteria>
+  </acceptance>
+  <implementation>NotStarted</implementation>
+  <implementationNotes></implementationNotes>
+  <depends>DATA-CFG-0002, DATA-CFG-0003</depends>
+  <notes>Main-target preserved-file source sets (grounded in the current `plugins/` tree): core-claude → `.claude-plugin/plugin.json`, `hooks/hooks.json.tmpl`; core-cursor → `.cursor-plugin/plugin.json`, `hooks/hooks.json.tmpl`, `hooks.json.tmpl` (root, standalone-form template); core-copilot → `.github/plugin/plugin.json`, `.github/plugin/hooks.json.tmpl`, `hooks/hooks.json.tmpl` (and `.github/plugin/.mcp.json` where present); core-codex → `.codex-plugin/plugin.json`, `.codex-plugin/hooks.json.tmpl`. These mirror the per-target preserved set: `preserved_folder` plus `preserved_files` in DATA-CFG-0002/0003, minus the items the generator renders/syncs (rendered `hooks.json`, `*.js` bundles). Standalone preserved files are not stored here (FR-SEED-0002).</notes>
 </req>

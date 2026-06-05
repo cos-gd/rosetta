@@ -14,6 +14,7 @@ Orchestrates deep research via meta-prompting: craft an optimized research promp
 <workflow_phases>
 
 - All Rosetta prep steps MUST be FULLY completed, load-context skill loaded and fully executed
+- If `/goal` is set repeat phases 3-4 until goal is met.
 
 Orchestrator trusts the system and skills; coordinates sequence, artifacts, state, and approvals only.
 Execute phases sequentially.
