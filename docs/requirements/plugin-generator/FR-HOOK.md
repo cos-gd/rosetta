@@ -87,9 +87,13 @@
   <acceptance>
     <criteria>Given: any target When: assembled Then: each entry conforms to that IDE's session-start hook schema per its guide, with content transported intact.</criteria>
     <criteria>Given: a target whose command interpreter requires it When: assembled Then: entries carry the interpreter-specific command form(s) with correct escaping.</criteria>
+    <criteria>Given: claude When: assembled Then: each entry = `{"type":"command","command":"printf '%s' '<json>'","once":true}` under `SessionStart[0]` with `matcher:"startup"`.</criteria>
+    <criteria>Given: codex When: assembled Then: each entry = `{"type":"command","command":"printf '%s' '<json>'","statusMessage":"Loading Rosetta bootstrap","timeout":30}` (no `once`) under `SessionStart[0]` with `matcher:"startup|resume"`.</criteria>
+    <criteria>Given: copilot When: assembled Then: each entry = `{"type":"command","bash":"<lock+printf>","powershell":"<lock+Write-Output>"}` under lowercase `sessionStart` (no matcher, `version:1`); the lock key carries a 0-based entry index.</criteria>
+    <criteria>Given: entries within a payload When: serialized Then: they are joined by `, ` (comma-space) and inserted raw into the template's `{{{bootstrap_hooks_<ide>}}}` placeholder.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
+  <implementationNotes>per-IDE entry field shapes (once / statusMessage+timeout / bash+powershell), matchers, and join separator decoded from r2/r3 baseline; pending owner review. The wrapper (matcher, advisory blocks, version) comes from preserved `.tmpl`; only `{{{bootstrap_hooks_<ide>}}}` is generated. Exact bytes: GROUND-TRUTH.md GT-2/GT-3.</implementationNotes>
   <depends>INT-IDE-0002</depends>
 </req>
 
@@ -113,19 +117,23 @@
 
 <req id="FR-HOOK-0007" type="FR" level="System" ticketId="" classification="technical">
   <title>Plugin-path context entry</title>
-  <statement>The generator shall append to each target a session-start entry that reports the resolved plugin root path to the agent.</statement>
-  <rationale>Agents need the plugin root to resolve instruction file paths at runtime.</rationale>
+  <statement>The generator shall append to each session-hook target's bootstrap payload exactly one additional, SEPARATE session-start entry (the final entry) that reports the resolved plugin root path to the agent. This entry is NOT folded into the lead document's body; it is its own entry appended after all bootstrap-document entries, so the payload entry count = (present bootstrap-manifest documents) + 1. The entry uses the IDE's command shape with a double-quoted `printf` form (to allow runtime env/var expansion), and any instruction-path reference inside it is reference-rewritten per target (FR-HOOK-0008).</statement>
+  <rationale>Agents need the plugin root to resolve instruction file paths at runtime. Baseline confirms it is a distinct trailing entry, not merged into the lead — claude/codex/copilot each emit 9 entries for r2 and 8 for r3 (= present docs + 1 plugin-root entry).</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Approved</status>
-  <approved_by>User</approved_by>
+  <status>Draft</status>
+  <approved_by></approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: any target When: assembled Then: its payload includes a plugin-root path entry in that IDE's shape.</criteria>
+    <criteria>Given: any session-hook target When: assembled Then: its payload includes exactly one plugin-root path entry, appended last, in that IDE's shape.</criteria>
+    <criteria>Given: claude/codex/copilot for r2 When: assembled Then: the SessionStart payload has 9 entries (8 docs + 1 plugin-root); for r3, 8 entries.</criteria>
+    <criteria>Given: the claude plugin-root entry When: inspected Then: command = `printf '%s' "{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Rosetta Plugin Path: ${CLAUDE_PLUGIN_ROOT}\"}}"` with `"once": true`.</criteria>
+    <criteria>Given: the codex plugin-root entry When: inspected Then: it is a workspace-root probe resolving to `$workspace_root/.agents` with `statusMessage`+`timeout`; the copilot one is an agentPlugins-base probe (`commands/coding-flow.md`) resolving to `$root` with bash+powershell.</criteria>
+    <criteria>Given: cursor (marketplace) When: assembled Then: no bootstrap payload is produced (its templates carry no payload placeholder).</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
+  <implementationNotes>enriched with baseline-decoded ground truth; pending owner review. Exact per-IDE strings decoded into plans/plugin-generator/GROUND-TRUTH.md (GT-3.4). Corrects the earlier SPEC misreading that the plugin-root path was "folded into the lead document".</implementationNotes>
 </req>
 
 <req id="FR-HOOK-0008" type="FR" level="System" ticketId="" classification="technical">

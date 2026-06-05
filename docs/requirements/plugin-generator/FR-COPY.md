@@ -92,20 +92,21 @@ The files a target keeps but never generates — the IDE manifest, hook template
 
 <req id="FR-COPY-0011" type="FR" level="System" ticketId="" classification="technical">
   <title>Exclude designated source files</title>
-  <statement>The generator shall not emit source files named in a `SpecEntry`'s `exclude` list (an array of VFS paths) into the target — `pluginProcessSpecEntries()` creates no frame for them (FR-ARCH-0054). The legacy MCP-mode rules `rules/bootstrap.md` and `rules/local-files-mode.md` are excluded this way. Exclusion is data on the entry (composing with `--domain` overlays) and requires no source rename — the source files remain unchanged because MCP and other instructions still reference them.</statement>
-  <rationale>Certain rule files are delivered via hooks (or are legacy) and must not ship in plugins, but the source files cannot be renamed or removed because MCP serves them and instruction text references them. A data `exclude` list omits them at generation without touching the source.</rationale>
-  <source>Sources</source>
+  <statement>The generator shall not emit source files matched by a `SpecEntry`'s `exclude` list (an array of VFS paths or path globs, e.g. `templates/shell-schemas/**`) into the target — `pluginProcessSpecEntries()` creates no frame for them (FR-ARCH-0054). The excluded set is: the legacy MCP-mode rules `rules/bootstrap.md` and `rules/local-files-mode.md`; and the entire `templates/shell-schemas/` folder (`agent-shell.md`, `skill-shell.md`, `workflow-shell.md` — authoring schemas not needed in any plugin). Exclusion is data on the entry (composing with `--domain` overlays) and requires no source rename — the source files remain unchanged because MCP and other instructions still reference them.</statement>
+  <rationale>Certain files are delivered via hooks, are legacy, or are authoring-only schemas (`templates/shell-schemas/*` describe frontmatter fields for authors and are not needed by any IDE plugin), but the source files cannot be renamed or removed because MCP serves them and instruction text references them. A data `exclude` list (supporting whole-folder globs) omits them at generation without touching the source.</rationale>
+  <source>User</source>
   <priority>Must</priority>
-  <status>Approved</status>
-  <approved_by>User</approved_by>
-  <changed>2026-06-04</changed>
+  <status>Draft</status>
+  <approved_by></approved_by>
+  <changed>2026-06-05</changed>
   <verification>Test</verification>
   <acceptance>
     <criteria>Given: `rules/bootstrap.md` or `rules/local-files-mode.md` listed in `exclude` When: generated Then: it is absent from the target and the source file is unchanged.</criteria>
+    <criteria>Given: the glob `templates/shell-schemas/**` in `exclude` When: any target is generated Then: no `templates/shell-schemas/` files appear in that target's output and the source files are unchanged.</criteria>
     <criteria>Given: an overlay domain adding a path to `exclude` When: generated Then: that path is omitted for that target.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
+  <implementationNotes>templates/shell-schemas exclusion added 2026-06-05 per owner instruction (authoring-only schemas, not needed in plugins); exclude now supports folder globs; pending owner review.</implementationNotes>
   <depends>FR-ARCH-0002, FR-ARCH-0054</depends>
 </req>
 
@@ -130,39 +131,45 @@ The files a target keeps but never generates — the IDE manifest, hook template
 
 <req id="FR-COPY-0020" type="FR" level="System" ticketId="" classification="technical">
   <title>Normalize model identifiers per IDE</title>
-  <statement>Where a target requires model normalization, the `fileNormalizeModels()` processor (FR-ARCH-0046) shall rewrite each markdown document's frontmatter `model:` value into that target's `ModelVocabulary`, selecting the first model from a comma-separated list, and leaving content without a model value unchanged.</statement>
-  <rationale>Each IDE accepts only its own model identifier format; the first listed model is the intended primary. Normalization is one explicit pipeline stage, not a side effect hidden inside copying.</rationale>
+  <statement>Where a target requires model normalization, the `fileNormalizeModels()` processor (FR-ARCH-0046) shall rewrite each markdown document's frontmatter `model:` value into that target's `ModelVocabulary` using the IDE's selection strategy (see FR-COPY-0021 for Claude; FR-COPY-0022 for Codex; first-model-overall for Cursor and Copilot), and shall leave content without a model value unchanged.</statement>
+  <rationale>Each IDE accepts only its own model identifier format. Normalization is one explicit pipeline stage, not a side effect hidden inside copying. The selection strategy differs per IDE: Claude scans for the first claude-compatible model; Codex scans for the first gpt-* model; Cursor and Copilot take the first model overall.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Approved</status>
-  <approved_by>User</approved_by>
+  <status>Draft</status>
+  <approved_by></approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: `model: opus,gpt-5.4` for Cursor When: normalized Then: the value becomes `claude-opus-4-6`.</criteria>
+    <criteria>Given: `model: claude-4.8-opus-high, gpt-5.5-high` for Cursor When: normalized Then: the value becomes `claude-opus-4-6` (first model overall, mapped via CURSOR_MODEL_MAP).</criteria>
+    <criteria>Given: `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` for Cursor When: normalized Then: the value becomes `gpt-5.4` (first model overall).</criteria>
     <criteria>Given: a document without frontmatter When: processed Then: content is unchanged.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
-  <depends>DATA-CFG-0004, FR-ARCH-0046</depends>
+  <implementationNotes>corrected to match generator baseline; pending owner review — original statement said "selecting the first model from a comma-separated list" universally, but Claude uses a scan-for-first-claude strategy; Cursor/Copilot do take first-overall</implementationNotes>
+  <depends>DATA-CFG-0004, FR-ARCH-0046, FR-COPY-0021, FR-COPY-0022</depends>
 </req>
 
 <req id="FR-COPY-0021" type="FR" level="System" ticketId="" classification="technical">
-  <title>Claude model normalization with fallback</title>
-  <statement>For the Claude vocabulary, the generator shall map a model value to one of the allowed short names, inferring from substrings where not an exact match, and shall fall back to `inherit` when no mapping applies.</statement>
-  <rationale>Claude Code accepts only `opus`/`sonnet`/`haiku`/`inherit`.</rationale>
+  <title>Claude model normalization: scan for first claude-compatible model</title>
+  <statement>For the Claude vocabulary, `fileNormalizeModels()` shall scan the comma-separated `model:` list for the first entry whose token contains a claude-compatible substring (`opus`, `sonnet`, or `haiku`, case-insensitive, matched within the token), map that entry to the corresponding Claude short name (`opus`, `sonnet`, or `haiku`), and fall back to `inherit` when no such entry is found. The scan shall skip any leading non-claude tokens (e.g. `gpt-*`, `gemini-*`) without mapping them.</statement>
+  <rationale>Claude Code accepts only `opus`/`sonnet`/`haiku`/`inherit`. Agents may list a preferred non-claude model first (e.g. reviewer lists `gpt-5.4-medium` first); Claude normalization must skip non-claude entries and find the first claude-compatible one. Baseline confirms: `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `sonnet`; `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `sonnet` (reviewer and validator agents in r2/r3 baseline).</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Approved</status>
-  <approved_by>User</approved_by>
+  <status>Draft</status>
+  <approved_by></approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: `claude-sonnet-4-6` When: normalized for Claude Then: result is `sonnet`.</criteria>
-    <criteria>Given: an unrecognized value When: normalized for Claude Then: result is `inherit`.</criteria>
+    <criteria>Given: `model: claude-4.8-opus-high, gpt-5.5-high` When: normalized for Claude Then: result is `opus` (first token contains `opus`).</criteria>
+    <criteria>Given: `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` When: normalized for Claude Then: result is `sonnet` (scans past gpt-* and gemini-*, finds first claude-* token containing `sonnet`).</criteria>
+    <criteria>Given: `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` When: normalized for Cursor Then: result is `gpt-5.4` (first-model-overall strategy, not claude-scan).</criteria>
+    <criteria>Given: `model: claude-4.5-haiku, gpt-5.4-low` When: normalized for Claude Then: result is `haiku`.</criteria>
+    <criteria>Given: `model: claude-sonnet-4-6, gpt-5.4-medium` When: normalized for Claude Then: result is `sonnet`.</criteria>
+    <criteria>Given: `model: gpt-5.5-high, gemini-3.1-pro-high` (no claude token) When: normalized for Claude Then: result is `inherit`.</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
+  <implementationNotes>corrected to match generator baseline; pending owner review — original stated "infers from substrings" without clarifying that Claude scans past non-claude tokens; baseline evidence: reviewer (r2/r3) source `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → claude output `sonnet`; validator same pattern → `sonnet`; Cursor/Copilot normalize reviewer to first-overall (gpt-5.4/GPT-5.4) confirming separate strategies</implementationNotes>
+  <notes>Concrete baseline examples (r3): architect `claude-4.8-opus-high, gpt-5.5-high, gemini-3.1-pro-high` → `opus`; reviewer `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `sonnet`; validator `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `sonnet`; executor `claude-4.5-haiku, gpt-5.4-low, gemini-3-flash` → `haiku`.</notes>
 </req>
 
 <req id="FR-COPY-0022" type="FR" level="System" ticketId="" classification="technical">

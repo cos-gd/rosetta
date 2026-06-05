@@ -119,20 +119,42 @@ Native folder names, short model names, hooks, `.claude-plugin` manifest. Bootst
 
 <req id="FR-VAR-0030" type="FR" level="System" ticketId="" classification="technical">
   <title>Copilot output</title>
-  <statement>The Copilot variant shall rename `workflows` to `commands`, rename agent files to `*.agent.md`, use Copilot model vocabulary, generate `rules` and `commands` indexes, render hook templates, place runtime configuration at the plugin root (the root copy expressed as a `SpecEntry`/`fileRename()` target, not a bespoke layout step), and preserve a `.github` config folder.</statement>
-  <rationale>Copilot expects `*.agent.md` agents, mapped model names, and root-level runtime config. The root placement of the runtime config is a declared output path, not an imperative `generate_copilot_runtime_layout` move.</rationale>
+  <statement>The Copilot variant shall rename `workflows` to `commands`, rename agent files to `*.agent.md`, use Copilot model vocabulary, generate `rules` and `commands` indexes, render hook templates, and preserve a `.github` config folder. It shall produce exactly three `hooks.json` files at distinct paths: (1) `.github/plugin/hooks.json` — the plugin-form hooks, rendered from `.github/plugin/hooks.json.tmpl`; (2) `hooks.json` at the plugin root — an alternate-name copy of `.github/plugin/hooks.json` with identical content, expressed as an additional `SpecEntry` (`fileRename()` target `"."`) and not a bespoke layout step; (3) `hooks/hooks.json` — the standalone-form hooks, rendered from `hooks/hooks.json.tmpl` (standalone-form template). Files (1) and (2) shall be byte-identical.</statement>
+  <rationale>Copilot expects `*.agent.md` agents, mapped model names, and the plugin-form hooks accessible at the plugin root. The root copy is an alternate-name duplication (not a rename — both source and root copy are present), confirmed byte-identical by MD5 in the r2/r3 baseline. The standalone-form hooks at `hooks/hooks.json` serve in-repo (standalone) extraction. Three distinct paths, three distinct purposes.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Approved</status>
-  <approved_by>User</approved_by>
+  <status>Draft</status>
+  <approved_by></approved_by>
   <changed>2026-06-04</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: the Copilot variant When: generated Then: agent files end in `.agent.md` and runtime config exists at the plugin root.</criteria>
+    <criteria>Given: the Copilot variant When: generated Then: agent files end in `.agent.md`.</criteria>
+    <criteria>Given: the Copilot variant When: generated Then: exactly three `hooks.json` files exist at `hooks.json` (root), `.github/plugin/hooks.json`, and `hooks/hooks.json`.</criteria>
+    <criteria>Given: `hooks.json` (root) and `.github/plugin/hooks.json` When: compared Then: they are byte-identical (same MD5).</criteria>
+    <criteria>Given: `hooks/hooks.json` When: inspected Then: it contains the standalone-form hooks with `"sessionStart": []` (empty, no bootstrap payload for standalone use).</criteria>
   </acceptance>
   <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
-  <depends>FR-COPY-0031, FR-HOOK-0006, FR-VAR-0071</depends>
+  <implementationNotes>corrected to match generator baseline; pending owner review — original stated "root copy expressed as a SpecEntry/fileRename() target" without clarifying that .github/plugin/hooks.json also remains (both present, not renamed); original omitted hooks/hooks.json (standalone-form) entirely; baseline MD5 confirms root hooks.json = .github/plugin/hooks.json (b53bc4cfbc0c19eb6ceebd4717211b6c for r2)</implementationNotes>
+  <depends>FR-COPY-0031, FR-COPY-0033, FR-HOOK-0006, FR-VAR-0071</depends>
+</req>
+
+<req id="FR-VAR-0031" type="FR" level="System" ticketId="" classification="technical">
+  <title>Copilot root hooks.json as alternate-name copy</title>
+  <statement>The `hooks.json` file at the Copilot plugin root shall be produced as an alternate-name copy of `.github/plugin/hooks.json` — an additional `SpecEntry` that sources the same rendered plugin-form hooks output and writes it to the root path — so that both `hooks.json` (root) and `.github/plugin/hooks.json` exist in the output with identical content. This shall not be expressed as a `fileRename()` (which would remove the source path from the output).</statement>
+  <rationale>The IDE runtime reads the plugin-form hooks from the root; `.github/plugin/hooks.json` is also required (it is the canonical rendered location of the plugin-form template). An alternate-name duplication (`SpecEntry`, FR-COPY-0033) correctly produces both files; a `fileRename()` would eliminate one of them. Baseline r2/r3 confirms both files exist and are byte-identical.</rationale>
+  <source>Sources</source>
+  <priority>Must</priority>
+  <status>Draft</status>
+  <approved_by></approved_by>
+  <changed>2026-06-04</changed>
+  <verification>Test</verification>
+  <acceptance>
+    <criteria>Given: the Copilot variant When: generated Then: both `hooks.json` (root) and `.github/plugin/hooks.json` exist.</criteria>
+    <criteria>Given: the generation design When: inspected Then: the root `hooks.json` is produced by a `SpecEntry` alternate-name copy, not by `fileRename()` from `.github/plugin/hooks.json`.</criteria>
+  </acceptance>
+  <implementation>NotStarted</implementation>
+  <implementationNotes>corrected to match generator baseline; pending owner review — original FR-VAR-0030 implied a fileRename/SpecEntry producing a single root file; baseline proves both files coexist with identical content</implementationNotes>
+  <depends>FR-COPY-0033, FR-VAR-0030</depends>
 </req>
 
 ## Codex (`core-codex`) — marketplace

@@ -20,6 +20,8 @@ Grep a header below for a one-line description and the file it lives in.
 ### STRUCTURES.md — Generalized example folder structure per target (preserved vs generated, with provenance), grounded in a v3 build (`FR-STRUCT-*`).
 ### ASSUMPTIONS.md — Assumptions, flagged implementation accidents/quirks, open questions.
 
+### CHANGES.md — Requirement change log with reconciliation history (date, IDs affected, before/after, baseline evidence).
+
 ## Status
 
 All requirement units are `Draft` and `<implementation>NotStarted</implementation>` (implementation reset — the prior attempt failed). The requirements are **reverse-engineered from the Python generator (`scripts/plugin_generator.py`) and unified onto a single clean target architecture (FR-ARCH) for a TypeScript/npx re-implementation.** There is one architecture: the as-is behavior FRs are recast in place as processors/`SpecEntry` data (not a competing procedural model), while remaining the parity reference (NFR-0001).
