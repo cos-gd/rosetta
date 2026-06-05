@@ -1,11 +1,11 @@
 ---
-name: [Workflow Name, must match file name without extension]
-description: [Brief description of WHEN and HOW to use this workflow and WHAT it does]
+name: "[Workflow Name, must match file name without extension]"
+description: "[Brief description of WHEN and HOW to use this workflow and WHAT it does]"
 
 # Knowledge Base Tags (use the same tag to bundle, publisher will automatically add tags of parent folder names and file name with extension, and file name parts split by dash)
 tags: ["one", "second"]
 
-# do not remove baseSchema!ß
+# do not remove baseSchema!
 baseSchema: docs/schemas/workflow.md
 ---
 
