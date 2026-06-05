@@ -205,7 +205,7 @@ permalink: /
 <!-- ===== GET STARTED ===== -->
 <section class="section" id="quick-start">
   <h2 class="with-marker">Get Started</h2>
-  <p class="section-subtitle">Install Rosetta with a plugin where your IDE supports it. Use MCP for agents without a plugin path.</p>
+  <p class="section-subtitle">Pick the supported installation path, verify Rosetta is active, initialize the repository, then start using workflows.</p>
   <div class="qs-panel">
 
     <div class="qs-stepper">
@@ -218,7 +218,7 @@ permalink: /
         </div>
         <div class="qs-step-body">
           <h3 class="qs-step-title">Install Rosetta</h3>
-          <p class="qs-step-desc">Pick your editor. Plugins load Rosetta locally; MCP is the fallback for agents that do not support plugins.</p>
+          <p class="qs-step-desc">Use plugins where they are supported. Use MCP only for agents without a Rosetta plugin path.</p>
           <div class="qs-trust-badge">
             <svg class="qs-trust-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             <span>Rosetta is designed to never use or see your data or IP.</span>
@@ -230,18 +230,17 @@ permalink: /
 
           <div class="qs-tabs-scroll">
             <div class="qs-tabs" role="tablist">
-              <button class="qs-tab active" data-tab="claude" role="tab">Claude Code</button>
-              <button class="qs-tab" data-tab="cursor" role="tab">Cursor</button>
-              <button class="qs-tab" data-tab="vscode" role="tab">VS Code / GitHub Copilot</button>
-              <button class="qs-tab" data-tab="copilot-jetbrains" role="tab">GitHub Copilot (JetBrains)</button>
-              <button class="qs-tab" data-tab="codex" role="tab">Codex</button>
-              <button class="qs-tab" data-tab="mcps" role="tab">MCP fallback</button>
+              <button class="qs-tab active" data-tab="claude" role="tab">Claude Code plugin</button>
+              <button class="qs-tab" data-tab="cursor" role="tab">Cursor plugin</button>
+              <button class="qs-tab" data-tab="vscode" role="tab">Copilot plugin</button>
+              <button class="qs-tab" data-tab="codex" role="tab">Codex plugin</button>
+              <button class="qs-tab" data-tab="mcps" role="tab">MCP install</button>
             </div>
           </div>
 
           <!-- Tab: Claude Code -->
           <div class="qs-content active" id="qs-claude">
-            <p class="qs-content-hint">Install the Rosetta plugin from the Claude Code marketplace:</p>
+            <p class="qs-content-hint">Install the Rosetta plugin from the Claude Code marketplace.</p>
             <div class="qs-code-wrap">
               <pre class="qs-code"><span class="qs-prompt">$</span> claude plugin marketplace add griddynamics/rosetta
 <span class="qs-prompt">$</span> claude plugin install rosetta@rosetta</pre>
@@ -252,7 +251,7 @@ claude plugin install rosetta@rosetta">Copy</button>
 
           <!-- Tab: Cursor -->
           <div class="qs-content" id="qs-cursor">
-            <p class="qs-content-hint">Use a Cursor team marketplace when available, or extract the standalone plugin into the repository.</p>
+            <p class="qs-content-hint">Use a Cursor team marketplace when available. If not, extract the standalone package into the repository.</p>
             <div class="qs-code-wrap">
               <pre class="qs-code"><span class="qs-comment"># Team marketplace repository</span>
 https://github.com/griddynamics/rosetta
@@ -265,7 +264,7 @@ Download core-cursor-standalone-*.zip from the latest release and extract it int
 
           <!-- Tab: VS Code / GitHub Copilot -->
           <div class="qs-content" id="qs-vscode">
-            <p class="qs-content-hint">Add Rosetta as a Copilot plugin marketplace, then install <code>rosetta</code> from agent customizations.</p>
+            <p class="qs-content-hint">Add Rosetta as a Copilot plugin marketplace, then install <code>rosetta</code> from agent customizations. For JetBrains Copilot, use the standalone package.</p>
             <div class="qs-code-wrap">
               <pre class="qs-code"><span class="qs-comment"># VS Code setting: chat.plugins.marketplaces</span>
 https://github.com/griddynamics/rosetta</pre>
@@ -273,20 +272,9 @@ https://github.com/griddynamics/rosetta</pre>
             </div>
           </div>
 
-          <!-- Tab: GitHub Copilot (JetBrains) -->
-          <div class="qs-content" id="qs-copilot-jetbrains">
-            <p class="qs-content-hint">Use the standalone GitHub Copilot plugin package for JetBrains or VS Code.</p>
-            <div class="qs-code-wrap">
-              <pre class="qs-code">Download core-copilot-standalone-*.zip from the latest release and extract it into the repository.
-
-<span class="qs-comment"># If .github/copilot-instructions.md exists, merge Rosetta first, then your original content.</span></pre>
-              <button class="qs-copy" data-copy="https://github.com/griddynamics/rosetta/releases/latest">Copy</button>
-            </div>
-          </div>
-
           <!-- Tab: Codex -->
           <div class="qs-content" id="qs-codex">
-            <p class="qs-content-hint">Codex uses the standalone plugin package. Enable hooks after extracting it into the repository.</p>
+            <p class="qs-content-hint">Extract the standalone Codex plugin package into the repository, then enable hooks.</p>
             <div class="qs-code-wrap">
               <pre class="qs-code">Download core-codex-*.zip from the latest release and extract it into the repository.
 
@@ -297,7 +285,7 @@ https://github.com/griddynamics/rosetta</pre>
 
           <!-- Tab: MCP fallback -->
           <div class="qs-content" id="qs-mcps">
-            <p class="qs-content-hint">Use MCP for Windsurf, Antigravity, OpenCode, JetBrains Junie, and other agents without Rosetta plugin support.</p>
+            <p class="qs-content-hint">Use MCP for Windsurf, Antigravity, OpenCode, JetBrains Junie, and other agents without Rosetta plugin support. Full per-IDE setup is in <a href="{{ '/docs/mcps/' | relative_url }}">MCPs Installation</a>.</p>
             <div class="qs-code-wrap">
               <pre class="qs-code">{
   "mcpServers": {
@@ -320,8 +308,12 @@ https://github.com/griddynamics/rosetta</pre>
           <span class="qs-step-line"></span>
         </div>
         <div class="qs-step-body">
-          <h3 class="qs-step-title">Use MCP Only When Needed</h3>
-          <p class="qs-step-desc">MCP installs authenticate with OAuth and require the Rosetta server to be reachable. See <a href="{{ '/docs/mcps/' | relative_url }}">MCPs Installation</a> for exact setup per unsupported IDE.</p>
+          <h3 class="qs-step-title">Verify Rosetta</h3>
+          <p class="qs-step-desc">Restart the IDE if you changed files or settings. Then ask the agent this exact question:</p>
+          <div class="qs-code-wrap">
+            <pre class="qs-code">What can you do, Rosetta?</pre>
+          </div>
+          <p class="qs-step-desc" style="margin-top:.8rem;">A working setup responds through Rosetta, lists available workflows, and runs the self-help flow instead of giving a generic model answer.</p>
         </div>
       </div>
 
@@ -332,15 +324,12 @@ https://github.com/griddynamics/rosetta</pre>
           <span class="qs-step-line"></span>
         </div>
         <div class="qs-step-body">
-          <h3 class="qs-step-title">Verify &amp; Initialize</h3>
-          <p class="qs-step-desc">Restart your IDE, then verify Rosetta is connected:</p>
+          <h3 class="qs-step-title">Initialize The Repository</h3>
+          <p class="qs-step-desc">Run once per repository and commit the generated workspace files.</p>
           <div class="qs-code-wrap">
-            <pre class="qs-code"><span class="qs-comment"># "What can you do, Rosetta?"</span></pre>
+            <pre class="qs-code">Initialize this repository using Rosetta</pre>
           </div>
-          <p class="qs-step-desc" style="margin-top:.8rem;">Then initialize your repository:</p>
-          <div class="qs-code-wrap">
-            <pre class="qs-code"><span class="qs-comment"># "Initialize this repository using Rosetta"</span></pre>
-          </div>
+          <p class="qs-step-desc" style="margin-top:.8rem;">The agent analyzes the tech stack, creates workspace docs such as <code>TECHSTACK.md</code>, <code>CODEMAP.md</code>, <code>DEPENDENCIES.md</code>, <code>ARCHITECTURE.md</code>, and <code>CONTEXT.md</code>, and asks clarifying questions.</p>
         </div>
       </div>
 
@@ -350,8 +339,13 @@ https://github.com/griddynamics/rosetta</pre>
           <span class="qs-step-num">4</span>
         </div>
         <div class="qs-step-body">
-          <h3 class="qs-step-title">Add Bootstrap Rule <em>(optional)</em></h3>
-          <p class="qs-step-desc">If something does not work — download <a href="https://github.com/griddynamics/rosetta/blob/main/instructions/r2/core/rules/bootstrap.md?plain=1" target="_blank" rel="noopener noreferrer">bootstrap.md</a> and add it to your IDE's instruction file. See <a href="{{ '/docs/mcps/#step-2-add-bootstrap-rule' | relative_url }}">MCPs Installation</a> for file paths per IDE.</p>
+          <h3 class="qs-step-title">Start With A Workflow</h3>
+          <p class="qs-step-desc">Ask for the outcome you need. Rosetta routes the task through the matching workflow.</p>
+          <div class="qs-code-wrap">
+            <pre class="qs-code">/coding-flow Implement side bar on the home page, ...
+/requirements-authoring-flow extract detailed requirements from ...
+/modernization-flow Perform modernization phase 1 to reuse library refsrc/...</pre>
+          </div>
         </div>
       </div>
 
@@ -361,7 +355,7 @@ https://github.com/griddynamics/rosetta</pre>
       <span class="qs-success-icon">&#10003;</span>
       <div class="qs-success-body">
         <strong>You're set. Rosetta is active.</strong>
-        <span>Talk naturally — Rosetta will pick the right workflow automatically.</span>
+        <span>Use the workflows directly or talk naturally after repository initialization.</span>
       </div>
       <a href="{{ '/docs/usage-guide/' | relative_url }}" class="qs-success-link">See all workflows →</a>
     </div>
