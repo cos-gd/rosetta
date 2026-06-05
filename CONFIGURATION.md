@@ -103,7 +103,7 @@ Prefer a CLI over the matching MCP when one exists — it costs no context.
 
 #### Useful MCPs
 
-MCPs are the eyes and hands of the AI — add them, but keep it balanced. Enable only what the task needs.
+MCPs are the eyes and hands of the AI — add them, but keep it balanced. Enable only what the task needs. **MUST** confirm with client!
 
 **Essential**
 
