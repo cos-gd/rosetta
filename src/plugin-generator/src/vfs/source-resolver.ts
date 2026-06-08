@@ -1,5 +1,6 @@
 // FR-CLI-0030/0031 — release+domain resolution & layer bundling
-// NFR-0010: uses fast-glob for directory traversal (replaced hand-rolled recursive readdir)
+// NFR-0010: uses fast-glob (fast-glob = filesystem traversal; uses micromatch internally) for directory traversal
+// FR-CLI-0020: instructionsSource is resolved externally and passed in directly
 
 import path from 'path';
 import fs from 'fs';
@@ -8,15 +9,17 @@ import { sortPaths } from './sort.js';
 
 /**
  * Resolve instruction source directories for a release+domain combination.
+ * instructionsSource: absolute path to the instructions root (e.g. /repo/instructions).
  * Returns ordered list of absolute directory paths (left=lower priority, right=higher priority).
  * Left-to-right bundling: same path → concat; FR-ARCH-0042.
+ * FR-CLI-0020/0030/0031
  */
-export function resolveSourceDirs(repoRoot: string, release: string, domain: string): string[] {
+export function resolveSourceDirs(instructionsSource: string, release: string, domain: string): string[] {
   const domainList = domain.split(',').map((d) => d.trim()).filter(Boolean);
   const dirs: string[] = [];
 
   for (const dom of domainList) {
-    const dir = path.join(repoRoot, 'instructions', release, dom);
+    const dir = path.join(instructionsSource, release, dom);
     if (!fs.existsSync(dir)) {
       throw new Error(`Instruction source not found: ${dir} (release=${release}, domain=${dom})`);
     }

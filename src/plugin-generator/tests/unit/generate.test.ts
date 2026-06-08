@@ -5,6 +5,7 @@ import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { generate } from '../../src/index.js';
+import type { ResolvedSources } from '../../src/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures');
@@ -53,6 +54,16 @@ function buildFakeRepo(): string {
   return tmpRepo;
 }
 
+// FR-CLI-0020: build ResolvedSources from a fake repo layout
+function buildSources(repoRoot: string, outputDir: string): ResolvedSources {
+  return {
+    instructionsSource: path.join(repoRoot, 'instructions'),
+    pluginsSource: path.join(repoRoot, 'src', 'plugin-generator', 'plugins'),
+    hooksSource: path.join(repoRoot, 'hooks'),
+    outputDir,
+  };
+}
+
 describe('generate() — error coverage', () => {
   let tmpRepo: string;
 
@@ -67,10 +78,9 @@ describe('generate() — error coverage', () => {
   it('unknown release → returns exit code 1 (FR-CLI-0010)', async () => {
     const outputDir = path.join(tmpRepo, 'out-bad-release');
     const code = await generate({
-      repoRoot: tmpRepo,
+      sources: buildSources(tmpRepo, outputDir),
       release: 'r999',
       domain: 'core',
-      outputDir,
       dryRun: false,
       verbose: false,
     });
@@ -78,16 +88,15 @@ describe('generate() — error coverage', () => {
   });
 
   it('missing instruction directory → returns exit code 1 (FR-CLI-0031)', async () => {
-    // repoRoot with no instructions → buildVfs throws
+    // instructionsSource with no release/domain dirs → buildVfs throws
     const emptyRepo = fs.mkdtempSync(path.join(os.tmpdir(), 'gen-empty-'));
     fs.mkdirSync(path.join(emptyRepo, '.git'), { recursive: true });
     try {
       const outputDir = path.join(emptyRepo, 'out');
       const code = await generate({
-        repoRoot: emptyRepo,
+        sources: buildSources(emptyRepo, outputDir),
         release: 'r2',
         domain: 'core',
-        outputDir,
         dryRun: false,
         verbose: false,
       });
@@ -123,10 +132,9 @@ describe('generate() — error coverage', () => {
     const oversizeOutputDir = path.join(tmpRepo, 'out-oversize');
     try {
       code = await generate({
-        repoRoot: tmpRepo,
+        sources: buildSources(tmpRepo, oversizeOutputDir),
         release: 'r2',
         domain: 'core',
-        outputDir: oversizeOutputDir,
         dryRun: false,
         verbose: false,
       });
@@ -163,10 +171,9 @@ describe('generate() — error coverage', () => {
     try {
       const outputDir = path.join(r3Repo, 'out-r3');
       const code = await generate({
-        repoRoot: r3Repo,
+        sources: buildSources(r3Repo, outputDir),
         release: 'r3',
         domain: 'core',
-        outputDir,
         dryRun: false,
         verbose: false,
       });

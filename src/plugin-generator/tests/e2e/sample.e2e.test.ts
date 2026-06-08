@@ -22,6 +22,7 @@ import { fileURLToPath } from 'url';
 import { generate } from '../../src/index.js';
 import { initLogger } from '../../src/logging.js';
 import { PassThrough } from 'stream';
+import type { ResolvedSources } from '../../src/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.join(__dirname, '..', 'fixtures');
@@ -82,6 +83,16 @@ function copyDirSync(src: string, dest: string): void {
   }
 }
 
+// FR-CLI-0020: build ResolvedSources from fake repo layout
+function buildSources(repoRoot: string, outputDir: string): ResolvedSources {
+  return {
+    instructionsSource: path.join(repoRoot, 'instructions'),
+    pluginsSource: path.join(repoRoot, 'src', 'plugin-generator', 'plugins'),
+    hooksSource: path.join(repoRoot, 'hooks'),
+    outputDir,
+  };
+}
+
 function listFilesRecursive(dir: string): string[] {
   if (!fs.existsSync(dir)) return [];
   const results: string[] = [];
@@ -107,13 +118,11 @@ describe('Sample E2E — generate() with self-owned fixtures', () => {
     outputDir = path.join(tmpRepo, 'output');
     fs.mkdirSync(outputDir, { recursive: true });
 
-    // The generate() fn resolves plugins from __dirname of generate.ts — we need to patch
-    // the pluginsRoot. Do this by providing repoRoot that has our sample plugins structure.
+    // FR-CLI-0020: sources derive from fake repo layout
     exitCode = await generate({
-      repoRoot: tmpRepo,
+      sources: buildSources(tmpRepo, outputDir),
       release: 'r2',
       domain: 'core',
-      outputDir,
       dryRun: false,
       verbose: false,
     });
@@ -251,10 +260,9 @@ describe('Sample E2E — generate() with self-owned fixtures', () => {
 
     try {
       await generate({
-        repoRoot: tmpRepo,
+        sources: buildSources(tmpRepo, dryOutputDir),
         release: 'r2',
         domain: 'core',
-        outputDir: dryOutputDir,
         dryRun: true,
         verbose: false,
       });
@@ -279,10 +287,9 @@ describe('Sample E2E — generate() with self-owned fixtures', () => {
   it('unknown release → exit 1, no output', async () => {
     const badOutputDir = path.join(tmpRepo, 'bad-output');
     const code = await generate({
-      repoRoot: tmpRepo,
+      sources: buildSources(tmpRepo, badOutputDir),
       release: 'r99',
       domain: 'core',
-      outputDir: badOutputDir,
       dryRun: false,
       verbose: false,
     });
@@ -292,10 +299,9 @@ describe('Sample E2E — generate() with self-owned fixtures', () => {
   it('missing domain → exit 1, no output', async () => {
     const badOutputDir = path.join(tmpRepo, 'bad-output-domain');
     const code = await generate({
-      repoRoot: tmpRepo,
+      sources: buildSources(tmpRepo, badOutputDir),
       release: 'r2',
       domain: 'nonexistent-domain',
-      outputDir: badOutputDir,
       dryRun: false,
       verbose: false,
     });
@@ -318,10 +324,9 @@ describe('Sample E2E — generate() with self-owned fixtures', () => {
 
       initLogger(verboseMode, sink);
       await generate({
-        repoRoot: tmpRepo,
+        sources: buildSources(tmpRepo, outDir),
         release: 'r2',
         domain: 'core',
-        outputDir: outDir,
         dryRun: true, // dry-run: no disk side effects
         verbose: verboseMode,
       });
@@ -351,10 +356,9 @@ describe('Sample E2E — bundling (core+acme domains)', () => {
     fs.mkdirSync(bundleOutputDir, { recursive: true });
 
     await generate({
-      repoRoot: bundleRepo,
+      sources: buildSources(bundleRepo, bundleOutputDir),
       release: 'r2',
       domain: 'core,acme',
-      outputDir: bundleOutputDir,
       dryRun: false,
       verbose: false,
     });
@@ -434,10 +438,9 @@ describe('Sample E2E — NFR-0004 synthetic oversize entry (G-1)', () => {
     let outputFileCount = 0;
     try {
       exitCode = await generate({
-        repoRoot: oversizeRepo,
+        sources: buildSources(oversizeRepo, oversizeOutputDir),
         release: 'r2',
         domain: 'core',
-        outputDir: oversizeOutputDir,
         dryRun: false,
         verbose: false,
       });

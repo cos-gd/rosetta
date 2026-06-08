@@ -10,10 +10,11 @@ import { sortPaths } from './sort.js';
 /**
  * Build the immutable VFS for a release+domain.
  * VFS is a sorted, flat list of VirtualFiles, each with ordered SourceFiles.
+ * instructionsSource: absolute path to the instructions root (FR-CLI-0020).
  * FR-ARCH-0010/0011/0012
  */
-export function buildVfs(repoRoot: string, release: string, domain: string): Vfs {
-  const sourceDirs = resolveSourceDirs(repoRoot, release, domain);
+export function buildVfs(instructionsSource: string, release: string, domain: string): Vfs {
+  const sourceDirs = resolveSourceDirs(instructionsSource, release, domain);
   const fileMap = collectSourceFiles(sourceDirs);
 
   const virtualFiles: VirtualFile[] = [];

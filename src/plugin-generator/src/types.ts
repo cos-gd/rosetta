@@ -47,22 +47,6 @@ export interface SpecEntry {
   target: string;
   exclude: string[];
   processors: FileProcessor[];
-  /**
-   * Declarative extension rewrites for this entry's target folder.
-   * Each entry triggers a content-rewrite pass in pluginRewriteReferences.
-   * 'md-to-mdc': rewrites `rules/X.md` → `rules/X.mdc` in content references.
-   * 'md-to-prompt-md': rewrites `prompts/X.md` → `prompts/X.prompt.md` in content references.
-   * NFR-0006: eliminates per-target-name branching in the engine. F-F fix.
-   */
-  extensionRewrites?: Array<'md-to-mdc' | 'md-to-prompt-md'>;
-  /**
-   * Declarative cascaded folder rewrites for this entry.
-   * Each entry is [fromFolder, toFolder] (without trailing slash; slash added by engine).
-   * Used when a standalone plugin's source content already has references to an intermediate
-   * folder name (e.g. 'commands') that must be rewritten to the final folder (e.g. 'prompts').
-   * NFR-0006: eliminates per-target-name branching in the engine. F-F fix.
-   */
-  cascadedFolderRewrites?: Array<[from: string, to: string]>;
 }
 
 export interface IndexDecl {
@@ -107,7 +91,6 @@ export interface PluginSpec {
   bootstrapManifest: BootstrapEntryRef[]; // FR-HOOK-0009 ordered
   includeBootstrapRules: boolean;
   includeIndexEntries: boolean;   // FR-HOOK-0004
-  bootstrapStrategy: 'session-hooks' | 'native-rules' | 'auto-instructions';
   hookEntryShape: 'claude' | 'copilot' | 'codex' | 'cursor';
   pluginRootPath: string;         // reported to agent (FR-HOOK-0007)
   indexes: IndexDecl[];
@@ -115,8 +98,6 @@ export interface PluginSpec {
   specEntries: SpecEntry[];
   pluginProcessors: PluginProcessor[];
   manifestOverride?: { name: string; version: 'parent' }; // standalones (FR-VAR-0060)
-  /** Directories that must be created even if empty (e.g. templates/ after shell-schemas exclusion). GT-8 */
-  ensureDirs?: string[];
   /** For standalone targets: specific templates to register with remapped paths.
    *  Each [sourceRelPath, targetPath] where sourceRelPath is relative to preservedSource.
    *  Rendered to targetPath (minus .tmpl). GT-4 standalone hooks template routing. */
@@ -175,14 +156,20 @@ export interface TargetContext {
   spec: PluginSpec;
   vfs: Vfs;
   release: ReleaseDescriptor;
-  repoRoot: string;
+}
+
+// FR-CLI-0020 — resolved source locations (derived from --source + per-source overrides)
+export interface ResolvedSources {
+  instructionsSource: string; // <source>/instructions (or --instructionsSource override)
+  pluginsSource: string;      // <source>/src/plugin-generator/plugins (or --pluginsSource override)
+  hooksSource: string;        // <source>/hooks (or --hooksSource override)
+  outputDir: string;          // <source>/plugins (or --output override)
 }
 
 export interface GenerateOptions {
-  repoRoot: string;
+  sources: ResolvedSources;
   release: string;
   domain: string;
-  outputDir: string;
   dryRun: boolean;
   verbose: boolean;
 }

@@ -19,13 +19,7 @@ export function pluginWrite(outputDir: string, dryRun: boolean) {
     const logger = getLogger();
     const targetDir = path.join(outputDir, p.spec.destination);
 
-    // Create ensureDirs (empty directories required even if no files produced). GT-8
-    if (p.spec.ensureDirs && !dryRun) {
-      for (const dir of p.spec.ensureDirs) {
-        fs.mkdirSync(path.join(targetDir, dir), { recursive: true });
-      }
-    }
-
+    // FR-ARCH-0004: folders emerge from files; no ensureDirs (D change).
     for (const frame of p.frames) {
       if (frame.target_contents === null) continue; // drop
 

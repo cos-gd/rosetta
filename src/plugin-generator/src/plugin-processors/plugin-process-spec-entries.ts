@@ -31,7 +31,6 @@ export function pluginProcessSpecEntries(
       spec,
       vfs,
       release,
-      repoRoot: '', // set at orchestration level
     };
 
     const logger = getLogger();
@@ -46,16 +45,45 @@ export function pluginProcessSpecEntries(
       for (const vfsPath of sortedPaths) {
         // Check excludes (supports exact match, folder prefix, and glob patterns ending in /**)
         // FR-COPY-0011, GT-8: 'templates/shell-schemas/**' matches all files under that folder
-        if (entry.exclude.some((ex) => isExcluded(vfsPath, ex))) {
-          logger.debug({ target: spec.name, vfsPath }, 'FR-ARCH-0050: file excluded, skipping');
-          continue;
-        }
+        const isExcludedFile = entry.exclude.some((ex) => isExcluded(vfsPath, ex));
 
         const vf = vfs.find((v) => v.path === vfsPath);
         if (!vf) continue;
 
         // Determine target path: join entry.target with the file name relative to entry.source
         const targetPath = computeTargetPath(entry.source, entry.target, vfsPath);
+
+        if (isExcludedFile) {
+          // FR-ARCH-0049: for excluded files, run only rename-type processors (fileRename)
+          // to compute the target path for reference-rewrite lookup purposes.
+          // Emit as a null-content frame only if path changed. pluginWrite skips null-content frames.
+          let ghostTarget = targetPath;
+          for (const processor of entry.processors) {
+            if (processor.name === 'fileRenameProcessor') {
+              const ghost: FileProcessingFrame = {
+                sourcePath: vfsPath,
+                target: ghostTarget,
+                isBinary: false,
+                target_contents: null, // excluded — never written
+                source: [],
+              };
+              const renamed = processor(ghost, ctx);
+              ghostTarget = renamed.target;
+            }
+          }
+          if (ghostTarget !== vfsPath) {
+            // Path changed via rename — add ghost frame so buildRenamePairs includes the pair
+            allFrames.push({
+              sourcePath: vfsPath,
+              target: ghostTarget,
+              isBinary: false,
+              target_contents: null,
+              source: [],
+            });
+          }
+          logger.debug({ target: spec.name, vfsPath, ghostTarget }, 'FR-ARCH-0049: excluded file ghost frame for reference-rewrite lookup');
+          continue;
+        }
 
         // FR-ARCH-0050: log per-VirtualFile processing metadata (path decisions only, no content)
         logger.debug({ target: spec.name, vfsPath, targetPath, sourceCount: vf.sourceFiles.length }, 'FR-ARCH-0050: processing VirtualFile');

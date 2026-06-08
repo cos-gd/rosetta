@@ -5,10 +5,11 @@ import os from 'os';
 import path from 'path';
 import { resolveSourceDirs, collectSourceFiles } from '../../../src/vfs/source-resolver.js';
 
+// Returns the instructionsSource dir (tmpDir/instructions/) — FR-CLI-0020
 function makeTempInstructionDir(release: string, domains: string[]): string {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'src-resolver-'));
   for (const domain of domains) {
-    const base = path.join(tmpDir, 'instructions', release, domain, 'rules');
+    const base = path.join(tmpDir, release, domain, 'rules');
     fs.mkdirSync(base, { recursive: true });
     fs.writeFileSync(path.join(base, `${domain}-rule.md`), `# ${domain} rule`);
     if (domain === 'core') {
@@ -110,7 +111,7 @@ describe('collectSourceFiles', () => {
   it('skips .DS_Store files', () => {
     const tmpDir = makeTempInstructionDir('r2', ['core']);
     try {
-      const base = path.join(tmpDir, 'instructions', 'r2', 'core');
+      const base = path.join(tmpDir, 'r2', 'core');
       fs.writeFileSync(path.join(base, '.DS_Store'), '');
       const dirs = resolveSourceDirs(tmpDir, 'r2', 'core');
       const fileMap = collectSourceFiles(dirs);

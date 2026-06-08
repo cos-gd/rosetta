@@ -38,13 +38,14 @@ const TEMPLATES_EXCLUDES = ['templates/shell-schemas/**'];
 // Base processors shared across all text file entries
 const BASE_PROCESSORS = [fileRead, fileApplyOverrides, fileBundle];
 
-// --- Spec builders (called at generate time with outputDir, release, repoRoot) ---
+// --- Spec builders (called at generate time with resolved sources + release) ---
 
+// FR-CLI-0020: all source roots are resolved externally (from --source + overrides) and passed in.
 export interface SpecBuildContext {
-  repoRoot: string;
+  pluginsSource: string;  // absolute path to plugin preserved-files root (FR-CLI-0020)
+  hooksSource: string;    // absolute path to hooks root for bundle sync (FR-CLI-0020)
   outputDir: string;
   release: ReleaseDescriptor;
-  pluginsRoot: string; // src/plugin-generator/plugins/
   /** FR-CLI-0050: when true, all pipeline processors skip disk writes */
   dryRun?: boolean;
 }
@@ -126,7 +127,8 @@ function makeTemplatesEntry(targetFolder = 'templates', normalizeModels?: typeof
 // ─── Factory function for all six PluginSpecs ──────────────────────────────
 
 export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
-  const { repoRoot, outputDir, release, pluginsRoot, dryRun = false } = ctx;
+  const { pluginsSource, hooksSource, outputDir, release, dryRun = false } = ctx;
+  const pluginsRoot = pluginsSource; // alias for readability in spec constructors
 
   // ── core-claude ───────────────────────────────────────────────────────────
   const coreClaude: PluginSpec = {
@@ -138,7 +140,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
     includeBootstrapRules: true,
     includeIndexEntries: true,
-    bootstrapStrategy: 'session-hooks',
     hookEntryShape: 'claude',
     pluginRootPath: '${CLAUDE_PLUGIN_ROOT}',
     indexes: [
@@ -146,9 +147,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
       { folder: 'workflows', targetFolder: 'workflows', requiredTag: 'workflow', heading: 'workflows' },
     ],
     injections: [],
-    // GT-8: templates/ dir created empty after shell-schemas exclusion
-    ensureDirs: ['templates'],
-    // DATA-CFG-0002: hook folder and bundle config (F-F-adjacent fix)
+    // DATA-CFG-0002: hook folder and bundle config
     hookFolder: 'hooks',
     createHookFolderInR2: true,
     specEntries: [
@@ -159,7 +158,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
       makeConfigureEntry(),
       makeTemplatesEntry('templates', fileNormalizeModels),
     ],
-    pluginProcessors: buildPipeline(repoRoot, outputDir, release, false, dryRun),
+    pluginProcessors: buildPipeline(hooksSource, outputDir, release, false, dryRun),
   };
 
   // ── core-cursor ────────────────────────────────────────────────────────────
@@ -173,7 +172,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
     includeBootstrapRules: true,
     includeIndexEntries: true,
-    bootstrapStrategy: 'session-hooks',
     hookEntryShape: 'cursor',
     pluginRootPath: '',
     indexes: [
@@ -181,9 +179,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
       { folder: 'workflows', targetFolder: 'commands', requiredTag: 'workflow', heading: 'workflows' },
     ],
     injections: [],
-    // GT-8: templates/ dir created empty after shell-schemas exclusion
-    ensureDirs: ['templates'],
-    // DATA-CFG-0002: hook folder and bundle config (F-F-adjacent fix)
+    // DATA-CFG-0002: hook folder and bundle config
     hookFolder: 'hooks',
     createHookFolderInR2: true,
     specEntries: [
@@ -191,9 +187,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
         source: 'rules/**',
         target: 'rules',
         exclude: RULES_EXCLUDES,
-        // extensionRewrites: 'md-to-mdc' signals pluginRewriteReferences to update
-        // content references from rules/X.md → rules/X.mdc (NFR-0006, F-F fix)
-        extensionRewrites: ['md-to-mdc'],
         processors: [
           ...BASE_PROCESSORS,
           fileNormalizeModels,
@@ -206,7 +199,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
       makeConfigureEntry(),
       makeTemplatesEntry('templates', fileNormalizeModels),
     ],
-    pluginProcessors: buildPipeline(repoRoot, outputDir, release, false, dryRun),
+    pluginProcessors: buildPipeline(hooksSource, outputDir, release, false, dryRun),
   };
 
   // ── core-copilot ───────────────────────────────────────────────────────────
@@ -221,7 +214,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
     includeBootstrapRules: true,
     includeIndexEntries: true,
-    bootstrapStrategy: 'session-hooks',
     hookEntryShape: 'copilot',
     pluginRootPath: '',
     indexes: [
@@ -229,9 +221,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
       { folder: 'workflows', targetFolder: 'commands', requiredTag: 'workflow', heading: 'workflows' },
     ],
     injections: [],
-    // GT-8: templates/ dir created empty after shell-schemas exclusion
-    ensureDirs: ['templates'],
-    // DATA-CFG-0002: hook folder and bundle config (F-F-adjacent fix)
+    // DATA-CFG-0002: hook folder and bundle config
     hookFolder: 'hooks',
     createHookFolderInR2: true,
     specEntries: [
@@ -256,7 +246,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     mirrors: [
       { from: '.github/plugin/hooks.json', to: 'hooks.json' },
     ],
-    pluginProcessors: buildPipeline(repoRoot, outputDir, release, false, dryRun),
+    pluginProcessors: buildPipeline(hooksSource, outputDir, release, false, dryRun),
   };
 
   // ── core-codex ─────────────────────────────────────────────────────────────
@@ -270,7 +260,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
     includeBootstrapRules: true,
     includeIndexEntries: true,
-    bootstrapStrategy: 'session-hooks',
     hookEntryShape: 'codex',
     pluginRootPath: '',
     indexes: [
@@ -278,9 +267,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
       { folder: '.agents/workflows', targetFolder: '.agents/workflows', requiredTag: 'workflow', heading: 'workflows' },
     ],
     injections: [],
-    // GT-8: .agents/templates/ dir created empty after shell-schemas exclusion
-    ensureDirs: ['.agents/templates'],
-    // DATA-CFG-0002: hook folder and bundle config (F-F-adjacent fix)
+    // DATA-CFG-0002: hook folder and bundle config
     // core-codex does NOT create hook folder in r2 (only r3 ships .codex/hooks/)
     hookFolder: '.codex/hooks',
     createHookFolderInR2: false,
@@ -331,7 +318,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     mirrors: [
       { from: '.codex-plugin/hooks.json', to: '.codex/hooks.json' },
     ],
-    pluginProcessors: buildPipeline(repoRoot, outputDir, release, false, dryRun),
+    pluginProcessors: buildPipeline(hooksSource, outputDir, release, false, dryRun),
   };
 
   // ── core-cursor-standalone ────────────────────────────────────────────────
@@ -351,7 +338,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
     includeBootstrapRules: false,
     includeIndexEntries: false,
-    bootstrapStrategy: 'native-rules',
     hookEntryShape: 'cursor',
     pluginRootPath: '.cursor',
     indexes: [
@@ -377,7 +363,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     manifestOverride: { name: 'core-cursor-standalone', version: 'parent' },
     // GT-4: cursor-standalone renders root hooks.json.tmpl (standalone-form) to .cursor/hooks.json
     standaloneTemplates: [['hooks.json.tmpl', '.cursor/hooks.json.tmpl']],
-    // DATA-CFG-0002: hook folder and bundle config (F-F-adjacent fix)
+    // DATA-CFG-0002: hook folder and bundle config
     hookFolder: '.cursor/hooks',
     createHookFolderInR2: true,
     bundleSource: 'core-cursor', // uses parent target's bundles
@@ -386,9 +372,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
         source: 'rules/**',
         target: '.cursor/rules',
         exclude: RULES_EXCLUDES,
-        // extensionRewrites: 'md-to-mdc' signals pluginRewriteReferences to update
-        // content references from rules/X.md → rules/X.mdc (NFR-0006, F-F fix)
-        extensionRewrites: ['md-to-mdc'],
         processors: [
           ...BASE_PROCESSORS,
           fileNormalizeModels,
@@ -420,7 +403,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
         processors: [...BASE_PROCESSORS],
       },
     ],
-    pluginProcessors: buildPipeline(repoRoot, outputDir, release, true, dryRun),
+    pluginProcessors: buildPipeline(hooksSource, outputDir, release, true, dryRun),
   };
 
   // ── core-copilot-standalone ───────────────────────────────────────────────
@@ -443,7 +426,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
     includeBootstrapRules: false,
     includeIndexEntries: false,
-    bootstrapStrategy: 'auto-instructions',
     hookEntryShape: 'copilot',
     pluginRootPath: '.github',
     indexes: [
@@ -477,7 +459,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     manifestOverride: { name: 'core-copilot-standalone', version: 'parent' },
     // GT-4: copilot-standalone renders hooks/hooks.json.tmpl (standalone-form) to .github/hooks/hooks.json
     standaloneTemplates: [['hooks/hooks.json.tmpl', '.github/hooks/hooks.json.tmpl']],
-    // DATA-CFG-0002: hook folder and bundle config (F-F-adjacent fix)
+    // DATA-CFG-0002: hook folder and bundle config
     hookFolder: '.github/hooks',
     createHookFolderInR2: true,
     bundleSource: 'core-copilot', // uses parent target's bundles
@@ -526,13 +508,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
         source: 'workflows/**',
         target: '.github/prompts',
         exclude: [],
-        // extensionRewrites: 'md-to-prompt-md' signals pluginRewriteReferences to update
-        // content references from prompts/X.md → prompts/X.prompt.md (NFR-0006, F-F fix)
-        extensionRewrites: ['md-to-prompt-md'],
-        // cascadedFolderRewrites: copilot-standalone source content has 'commands/' references
-        // (from copilot-main pipeline which wrote workflows→commands); these must become 'prompts/'
-        // NFR-0006: declarative data, no spec.name branching in engine
-        cascadedFolderRewrites: [['commands', 'prompts']],
         processors: [
           ...BASE_PROCESSORS,
           fileNormalizeModels,
@@ -563,7 +538,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
         processors: [...BASE_PROCESSORS],
       },
     ],
-    pluginProcessors: buildPipeline(repoRoot, outputDir, release, true, dryRun),
+    pluginProcessors: buildPipeline(hooksSource, outputDir, release, true, dryRun),
   };
 
   return [coreClaude, coreCursor, coreCopilot, coreCodex, coreCursorStandalone, coreCopilotStandalone];
@@ -571,12 +546,13 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
 
 /**
  * Build the standard plugin processor pipeline for a target.
+ * hooksSource: absolute path to hooks root (FR-CLI-0020); used by pluginSyncBundles.
  * dryRun threads through all disk-mutating processors (FR-CLI-0050, FR-ARCH-0045).
  * pluginMirrorFiles reads mirror pairs from spec.mirrors (data-driven, FR-ARCH-0035, DATA-CFG-0002).
  * FR-ARCH-0032
  */
 function buildPipeline(
-  repoRoot: string,
+  hooksSource: string,
   outputDir: string,
   release: ReleaseDescriptor,
   isStandalone: boolean,
@@ -593,7 +569,8 @@ function buildPipeline(
     pluginRenderTemplates,
     // GT-4: mirror step reads spec.mirrors (declarative data); no-op if mirrors is empty/absent
     pluginMirrorFiles,
-    pluginSyncBundles(repoRoot, outputDir, release.deterministicHooks, dryRun), // FR-CLI-0050
+    // FR-CLI-0020: hooksSource is <source>/hooks; bundles at <hooksSource>/dist/bundles/<bundleSource>
+    pluginSyncBundles(hooksSource, outputDir, release.deterministicHooks, dryRun), // FR-CLI-0050
     pluginWrite(outputDir, dryRun),           // FR-ARCH-0045: emit paths+contents in dry-run
   ];
   return pipeline;

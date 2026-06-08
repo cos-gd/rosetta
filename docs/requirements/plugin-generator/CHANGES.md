@@ -72,6 +72,19 @@
 
 **Changes:** FR-HOOK-0005 acceptance enriched with the exact per-IDE entry shapes, matchers, and join separator; status → `Draft`.
 
+## 2026-06-05 — Architecture & CLI target-state correction (owner review)
+
+Owner review of the implementation surfaced overfitting and bolt-on options that violate the data-driven, primitive-only architecture. Requirements corrected to the clean target state (forward-looking; not narrating the implementation).
+
+### RECONCILIATION-7 — Processors are universal and reusable (new FR-ARCH-0004)
+**Files:** `FR-ARCH.md`, `MODEL.md`. New FR-ARCH-0004: every processor is a generic, reusable unit; no processor names/branches on a concrete target, release, folder, or filename; copying is a generic `pluginCopyFiles`/`pluginMirrorFiles(from,to)`, directory creation is a generic `createFolder(path)`, reference rewriting derives renames from the frames (FR-ARCH-0049). DATA-CFG-0002 reinforced: descriptor holds no bespoke per-target/per-release flag; `mirrors` is allowed as data for the generic mirror processor. (Implications: code fields `extensionRewrites`, `cascadedFolderRewrites`, `ensureDirs`, `bootstrapStrategy`, and the `createHookFolderInR2` flag are all bespoke flags forbidden by DATA-CFG-0002/FR-ARCH-0004 and are being removed/refactored.) Status `Draft`.
+
+### RECONCILIATION-8 — Bootstrap delivery is a property of preserved templates/rules, not a generator strategy (FR-VAR-0070)
+**Files:** `FR-VAR.md`. The generator assembles bootstrap values uniformly for every target and size-checks all (NFR-0004); whether bootstrap reaches the agent via hooks vs auto-loaded rules/instructions is decided by the target's preserved templates/rules (placeholder present or not), not by a generator delivery-strategy field. Cursor (both forms) delivers via native `alwaysApply` rules; its hook templates carry no bootstrap placeholder. Status `Draft`.
+
+### RECONCILIATION-9 — `--source` model replaces repo-root (FR-CLI-0001/0020/0021/0030)
+**Files:** `FR-CLI.md`. The tool is a self-contained utility: global `--source` (default `.`) with derived inputs `<source>/instructions`, `<source>/src/plugin-generator/plugins`, `<source>/hooks`, output `<source>/plugins`, each independently overridable via `--instructionsSource`/`--pluginsSource`/`--hooksSource`/`--output`. No repository-root argument. Status `Draft`.
+
 ### RECONCILIATION-6 — Exclude templates/shell-schemas entirely (FR-COPY-0011)
 
 **Files:** `FR-COPY.md`, `GROUND-TRUTH.md`, `plugin-generator-SPECS.md`

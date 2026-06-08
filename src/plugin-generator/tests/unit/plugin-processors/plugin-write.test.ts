@@ -21,7 +21,6 @@ function makePluginFrame(frames: FileProcessingFrame[], spec = 'core-claude'): P
     spec: {
       name: spec,
       destination: spec,
-      ensureDirs: [],
     } as unknown as PluginSpec,
     vfs: [] as any,
     frames,
@@ -137,7 +136,8 @@ describe('pluginWrite', () => {
     }
   });
 
-  it('creates ensureDirs even if no files in them', () => {
+  it('does NOT create empty directories (FR-ARCH-0004: folders emerge from files)', () => {
+    // Change D: ensureDirs removed; empty folders must not be created
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'write-test-'));
     const outputDir = path.join(tmpDir, 'output');
     try {
@@ -145,7 +145,6 @@ describe('pluginWrite', () => {
         spec: {
           name: 'core-claude',
           destination: 'core-claude',
-          ensureDirs: ['templates'],
         } as unknown as PluginSpec,
         vfs: [] as any,
         frames: [],
@@ -153,7 +152,8 @@ describe('pluginWrite', () => {
         errors: [],
       };
       pluginWrite(outputDir, false)(p);
-      expect(fs.existsSync(path.join(outputDir, 'core-claude', 'templates'))).toBe(true);
+      // No files → no output directory created at all
+      expect(fs.existsSync(path.join(outputDir, 'core-claude'))).toBe(false);
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }

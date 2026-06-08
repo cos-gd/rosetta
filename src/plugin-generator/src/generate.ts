@@ -1,7 +1,7 @@
 // FR-CLI-0002, FR-ARCH-0032 — orchestration: resolve → build VFS → per-target pipeline run
 // FR-CLI-0050: dryRun threads into buildAllSpecs → buildPipeline; no processor swapping here.
+// FR-CLI-0020: all source roots resolved externally and passed via GenerateOptions.sources.
 
-import path from 'path';
 import { buildVfs } from './vfs/build-vfs.js';
 import { createPluginFrame } from './frames.js';
 import { getRelease, listReleases } from './spec/releases.js';
@@ -16,7 +16,8 @@ import type { GenerateOptions, GenError, PluginProcessingFrame } from './types.j
  */
 export async function generate(options: GenerateOptions): Promise<number> {
   const logger = getLogger();
-  const { repoRoot, release: releaseName, domain, outputDir, dryRun } = options;
+  const { sources, release: releaseName, domain, dryRun } = options;
+  const { instructionsSource, pluginsSource, hooksSource, outputDir } = sources;
 
   // Validate release (FR-CLI-0010/0011)
   const release = getRelease(releaseName);
@@ -27,9 +28,10 @@ export async function generate(options: GenerateOptions): Promise<number> {
   }
 
   // Build VFS (FR-ARCH-0010–0014, FR-CLI-0030/0031)
+  // instructionsSource is the resolved instructions root (FR-CLI-0020)
   let vfs;
   try {
-    vfs = buildVfs(repoRoot, releaseName, domain);
+    vfs = buildVfs(instructionsSource, releaseName, domain);
   } catch (err) {
     process.stderr.write(`Failed to resolve instruction sources: ${(err as Error).message}\n`);
     return 1;
@@ -37,19 +39,13 @@ export async function generate(options: GenerateOptions): Promise<number> {
 
   logger.info({ release: releaseName, domain, vfsSize: vfs.length }, 'VFS built');
 
-  // Resolve plugin generator plugins root
-  const pluginsRoot = path.join(
-    path.dirname(fileURLToPath(import.meta.url)),
-    '..',
-    'plugins',
-  );
-
   // Build all target specs — dryRun threads into every disk-mutating processor (FR-CLI-0050)
+  // FR-CLI-0020: pluginsSource and hooksSource are resolved externally
   const specs = buildAllSpecs({
-    repoRoot,
+    pluginsSource,
+    hooksSource,
     outputDir,
     release,
-    pluginsRoot,
     dryRun,
   });
 
@@ -117,9 +113,4 @@ export async function generate(options: GenerateOptions): Promise<number> {
   }
 
   return anyError ? 1 : 0;
-}
-
-// ESM __dirname equivalent
-function fileURLToPath(url: string): string {
-  return new URL(url).pathname;
 }

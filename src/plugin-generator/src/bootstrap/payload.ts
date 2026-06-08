@@ -13,7 +13,7 @@ import {
   COPILOT_PLUGIN_ROOT_POWERSHELL,
 } from '../spec/bootstrap-manifest.js';
 import { stripFrontmatter } from '../serialize/frontmatter.js';
-import { applyFolderRewrites, buildFolderPairs } from '../plugin-processors/plugin-rewrite-references.js';
+import { applyFolderRewrites, buildRenamePairs } from '../plugin-processors/plugin-rewrite-references.js';
 import type { FileProcessingFrame, GenError, PluginProcessingFrame } from '../types.js';
 
 const MAX_ENTRY_CHARS = 10000; // NFR-0004
@@ -52,7 +52,7 @@ export function assembleBootstrapPayload(
 ): { payload: string; errors: GenError[] } {
   const { spec, frames } = p;
   const errors: GenError[] = [];
-  const folderPairs = buildFolderPairs(spec);
+  const folderPairs = buildRenamePairs(frames, spec);
 
   if (spec.hookEntryShape === 'cursor') {
     // Cursor: no bootstrap payload (GT-0)

@@ -5,11 +5,13 @@ import os from 'os';
 import path from 'path';
 import { buildVfs } from '../../../src/vfs/build-vfs.js';
 
+// Returns instructionsSource dir (tmpDir itself) — FR-CLI-0020
 function makeTempInstructionTree(): string {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vfs-test-'));
   const release = 'r1';
   const domain = 'core';
-  const base = path.join(tmpDir, 'instructions', release, domain);
+  // instructionsSource = tmpDir; path: tmpDir/<release>/<domain>/
+  const base = path.join(tmpDir, release, domain);
 
   fs.mkdirSync(path.join(base, 'rules'), { recursive: true });
   fs.mkdirSync(path.join(base, 'workflows'), { recursive: true });
@@ -103,9 +105,9 @@ describe('buildVfs', () => {
   it('multi-domain bundling: same relative path has multiple sourceFiles', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vfs-multi-'));
     try {
-      // Create core and acme domains with same file
-      const coreBase = path.join(tmpDir, 'instructions', 'r1', 'core', 'rules');
-      const acmeBase = path.join(tmpDir, 'instructions', 'r1', 'acme', 'rules');
+      // instructionsSource = tmpDir; path: tmpDir/<release>/<domain>/
+      const coreBase = path.join(tmpDir, 'r1', 'core', 'rules');
+      const acmeBase = path.join(tmpDir, 'r1', 'acme', 'rules');
       fs.mkdirSync(coreBase, { recursive: true });
       fs.mkdirSync(acmeBase, { recursive: true });
       fs.writeFileSync(path.join(coreBase, 'shared.md'), '# Core Shared');
@@ -129,7 +131,8 @@ describe('buildVfs', () => {
     // This exercises the "existing" merge branch in buildVfs (line 37).
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'vfs-collision-'));
     try {
-      const base = path.join(tmpDir, 'instructions', 'r1', 'core', 'rules');
+      // instructionsSource = tmpDir; path: tmpDir/<release>/<domain>/
+      const base = path.join(tmpDir, 'r1', 'core', 'rules');
       fs.mkdirSync(base, { recursive: true });
       fs.writeFileSync(path.join(base, 'policy~overwrite.md'), '# Overwrite');
       fs.writeFileSync(path.join(base, 'policy~append.md'), '# Append');

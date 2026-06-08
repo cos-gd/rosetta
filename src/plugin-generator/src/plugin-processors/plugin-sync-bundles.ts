@@ -1,4 +1,5 @@
-// FR-HOOK-0020–0022 — r3 .js bundle sync from hooks/dist/bundles/<target>/
+// FR-HOOK-0020–0022 — r3 .js bundle sync from <hooksSource>/dist/bundles/<bundleSource>/
+// FR-CLI-0020: hooksSource is resolved externally (<source>/hooks or --hooksSource override).
 // DATA-CFG-0002: bundle source, hook folder, and r2 behavior read from PluginSpec data.
 // No per-target-name branching (F-F-adjacent fix).
 // FR-CLI-0050: dry-run → skip all disk writes.
@@ -17,14 +18,15 @@ const BUNDLE_FILENAMES = [
 ];
 
 /**
- * pluginSyncBundles: r3 → copy hooks/dist/bundles/<bundleSource>/*.js to target hook folder.
+ * pluginSyncBundles: r3 → copy <hooksSource>/dist/bundles/<bundleSource>/*.js to target hook folder.
  * r2 → ensure hook folder exists (when createHookFolderInR2 is true) and remove stale .js.
+ * hooksSource: absolute path to hooks root (FR-CLI-0020, e.g. <source>/hooks).
  * Reads bundleSource, hookFolder, and createHookFolderInR2 from PluginSpec data (DATA-CFG-0002).
  * dry-run → no-op (FR-CLI-0050, FR-ARCH-0045).
  * FR-HOOK-0020–0022
  */
 export function pluginSyncBundles(
-  repoRoot: string,
+  hooksSource: string,
   outputDir: string,
   deterministicHooks: boolean,
   dryRun = false,
@@ -42,13 +44,13 @@ export function pluginSyncBundles(
     const hookFolder = path.join(targetDir, spec.hookFolder);
 
     if (deterministicHooks) {
-      // r3: copy bundles from source to hook folder
+      // r3: copy bundles from hooksSource/dist/bundles/<bundleSource>/ to hook folder
       // bundleSource from spec data: standalone targets use parent target's bundles
       const bundleTargetName = spec.bundleSource ?? spec.name;
 
+      // FR-CLI-0020: bundles live at <hooksSource>/dist/bundles/<bundleSource>/
       const bundleSourceDir = path.join(
-        repoRoot,
-        'hooks',
+        hooksSource,
         'dist',
         'bundles',
         bundleTargetName,

@@ -62,6 +62,27 @@ Architecture requirements: the configuration-driven generation model — uniform
   <implementationNotes></implementationNotes>
 </req>
 
+<req id="FR-ARCH-0004" type="FR" level="System" ticketId="" classification="technical">
+  <title>Processors are universal and reusable</title>
+  <statement>Every `FileProcessor` and `PluginProcessor` shall be a universal, reusable unit of work: it shall encode no specific target, IDE, release, folder, or filename, and all specificity shall be supplied to it as data (glob, target path, path pair, vocabulary, declaration) at composition time. A processor that copies a file shall be a general `pluginCopyFiles(source, target)` / `pluginMirrorFiles(from, to)`, never a `copilotCopyHooks()`; a processor that creates a directory shall be a general `createFolder(path)`, never a per-target/per-release flag; reference rewriting shall consume the resolved renames already recorded on the frames (FR-ARCH-0049), never re-derive them from per-target rules. No processor name, branch, or constant shall name a concrete target (`core-cursor`), release (`r2`/`r3`), folder (`rules`/`workflows`), or instruction filename.</statement>
+  <rationale>A processor is a small, composable unit; correctness and maintainability come from composing a fixed catalog of generic processors over per-target data, not from growing target-aware variants or option flags. Naming or branching on a concrete target/release/folder couples the engine to content and defeats the data-driven design (NFR-0006, DATA-CFG-0002).</rationale>
+  <source>User</source>
+  <priority>Must</priority>
+  <status>Draft</status>
+  <approved_by></approved_by>
+  <changed>2026-06-05</changed>
+  <verification>Inspection</verification>
+  <acceptance>
+    <criteria>Given: any processor When: inspected Then: it contains no literal target name, release name, folder name, or instruction filename; all such values arrive as data.</criteria>
+    <criteria>Given: a need to copy or mirror a file When: expressed Then: it is a general copy/mirror processor parameterized by source and target, reusable by any target.</criteria>
+    <criteria>Given: a need to create a directory When: expressed Then: it is a general `createFolder(path)` processor, not a per-target/per-release flag.</criteria>
+    <criteria>Given: the processor catalog When: extended Then: new behavior is a new generic processor or new data, never a target-specific branch inside an existing one.</criteria>
+  </acceptance>
+  <implementation>NotStarted</implementation>
+  <implementationNotes></implementationNotes>
+  <depends>FR-ARCH-0003, FR-ARCH-0035, FR-ARCH-0049, NFR-0006</depends>
+</req>
+
 ## Virtual File System (VFS)
 
 <req id="FR-ARCH-0010" type="FR" level="System" ticketId="" classification="technical">
