@@ -54,34 +54,25 @@ export function pluginProcessSpecEntries(
         const targetPath = computeTargetPath(entry.source, entry.target, vfsPath);
 
         if (isExcludedFile) {
-          // FR-ARCH-0049: for excluded files, run only rename-type processors (fileRename)
-          // to compute the target path for reference-rewrite lookup purposes.
-          // Emit as a null-content frame only if path changed. pluginWrite skips null-content frames.
-          let ghostTarget = targetPath;
+          // FR-ARCH-0049: for excluded files, run ALL processors on a null-content ghost frame.
+          // fileRead is a no-op on empty source (source.length === 0 → immediate return).
+          // Only fileRename changes the target; content processors are no-ops on null content.
+          // buildRenamePairs filters ghost frame pairs by folder to avoid cross-folder ghost pairs.
+          // pluginWrite skips null-content frames (no file emitted).
+          let ghostFrame: FileProcessingFrame = {
+            sourcePath: vfsPath,
+            target: targetPath,
+            isBinary: false,
+            target_contents: null,
+            source: [],
+          };
           for (const processor of entry.processors) {
-            if (processor.name === 'fileRenameProcessor') {
-              const ghost: FileProcessingFrame = {
-                sourcePath: vfsPath,
-                target: ghostTarget,
-                isBinary: false,
-                target_contents: null, // excluded — never written
-                source: [],
-              };
-              const renamed = processor(ghost, ctx);
-              ghostTarget = renamed.target;
-            }
+            ghostFrame = processor(ghostFrame, ctx);
           }
-          if (ghostTarget !== vfsPath) {
-            // Path changed via rename — add ghost frame so buildRenamePairs includes the pair
-            allFrames.push({
-              sourcePath: vfsPath,
-              target: ghostTarget,
-              isBinary: false,
-              target_contents: null,
-              source: [],
-            });
+          if (ghostFrame.target !== vfsPath) {
+            allFrames.push(ghostFrame);
           }
-          logger.debug({ target: spec.name, vfsPath, ghostTarget }, 'FR-ARCH-0049: excluded file ghost frame for reference-rewrite lookup');
+          logger.debug({ target: spec.name, vfsPath, ghostTarget: ghostFrame.target }, 'FR-ARCH-0049: excluded file ghost frame for reference-rewrite lookup');
           continue;
         }
 

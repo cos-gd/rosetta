@@ -22,14 +22,6 @@ export function pluginRewriteReferences(
   //   2. Unambiguous folder-level pairs: source folder has exactly one plugin-root-relative target
   const renamePairs = buildRenamePairs(frames, spec);
 
-  // DEBUG TEMP
-  if (spec.name === 'core-copilot-standalone') {
-    process.stderr.write('\n=== PAIRS FOR ' + spec.name + ' ===\n');
-    for (const [f, t] of renamePairs) {
-      process.stderr.write('  "' + f + '" → "' + t + '"\n');
-    }
-  }
-
   if (renamePairs.length === 0) return p;
 
   // Rewrite content in all text frames
@@ -108,10 +100,20 @@ export function buildRenamePairs(
   // 1. File-level pairs from frames (FR-ARCH-0049)
   // For every frame whose path changed (sourcePath to plugin-root-relative target).
   // Exclude frames whose target is outside baseSubfolder (disk-placement only, not content refs).
+  // Ghost frames (source.length === 0, null content): only emit pair if target stays in the same
+  // folder as source. Cross-folder ghost pairs arise when a file is excluded from entry A (folder X)
+  // but processed by entry B (folder Y); the real frame from entry B takes precedence for references.
   for (const frame of frames) {
     if (!isInScope(frame.target)) continue;
     const pluginRelTarget = stripBase(frame.target);
     if (pluginRelTarget !== frame.sourcePath) {
+      if (frame.source.length === 0 && frame.target_contents === null) {
+        // Ghost frame (excluded file, never materialized): only same-folder renames (e.g. .md → .mdc)
+        // generate valid pairs. Cross-folder ghost pairs arise when a file is excluded from entry A
+        // (folder X) but processed by entry B (folder Y); the real frame from B takes precedence.
+        const parentOf = (p: string): string => { const i = p.lastIndexOf('/'); return i >= 0 ? p.slice(0, i + 1) : ''; };
+        if (parentOf(pluginRelTarget) !== parentOf(frame.sourcePath)) continue;
+      }
       const key = frame.sourcePath + ' ' + pluginRelTarget;
       if (!seen.has(key)) {
         seen.add(key);
@@ -163,16 +165,12 @@ export function buildRenamePairs(
  * Applies longest/most-specific first (pairs must already be sorted).
  * Only complete boundary-delimited path tokens are replaced (FR-ARCH-0037).
  */
-function applyRenamePairs(content: string, pairs: Array<[string, string]>, debugFile?: string): string {
+function applyRenamePairs(content: string, pairs: Array<[string, string]>): string {
   let result = content;
   for (const [from, to] of pairs) {
     if (from === to) continue; // no-op pair
     if (result.includes(from)) {
-      const before = result;
       result = rewritePathToken(result, from, to);
-      if (before !== result && debugFile) {
-        process.stderr.write('  DEBUG applied pair "' + from + '" → "' + to + '" in ' + debugFile + '\n');
-      }
     }
   }
   return result;
