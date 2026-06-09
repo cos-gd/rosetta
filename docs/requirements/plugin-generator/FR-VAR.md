@@ -21,8 +21,8 @@ The generator assembles the bootstrap context values uniformly for every target 
     <criteria>Given: a target whose preserved hook template omits the `bootstrap_hooks_<ide>` placeholder When: generated Then: its hooks carry no bootstrap payload and the same content is delivered by its auto-loaded rules/instructions.</criteria>
     <criteria>Given: the generator When: inspected Then: it holds no per-target bootstrap-delivery-strategy field and does not branch on a delivery mechanism.</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes>delivery reframed as a property of preserved templates/rules (2026-06-05); the generator exposes values uniformly and size-checks all; pending owner review.</implementationNotes>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: bootstrap delivery rework — generator always emits all hooks, delivery is a template decision; the cursor short-circuit "fix" must be redone properly (report A2). delivery reframed as a property of preserved templates/rules (2026-06-05); the generator exposes values uniformly and size-checks all; pending owner review.</implementationNotes>
   <depends>INT-IDE-0002, FR-HOOK-0001, FR-HOOK-0004, FR-ARCH-0004</depends>
 </req>
 
@@ -40,8 +40,8 @@ The generator assembles the bootstrap context values uniformly for every target 
     <criteria>Given: Cursor or Copilot When: generated Then: both a marketplace-form and a standalone-form hook template are produced.</criteria>
     <criteria>Given: a target with no separate in-repo distribution When: generated Then: a single hook-template form suffices.</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: bootstrap delivery rework (two-hook-set), tied to FR-VAR-0070.</implementationNotes>
 </req>
 
 <req id="FR-VAR-0072" type="FR" level="System" ticketId="" classification="technical">
@@ -58,8 +58,8 @@ The generator assembles the bootstrap context values uniformly for every target 
     <criteria>Given: Cursor-standalone When: generated Then: the commands index and plugin-root instructions appear in the auto-loaded rule file.</criteria>
     <criteria>Given: Copilot-standalone When: generated Then: the workflow index and plugin-root instructions appear in the auto-loaded instructions file.</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: bootstrap delivery rework (standalone injection), tied to FR-VAR-0070.</implementationNotes>
   <depends>FR-VAR-0070, FR-ARCH-0051</depends>
 </req>
 
@@ -129,8 +129,8 @@ Native folder names, short model names, hooks, `.claude-plugin` manifest. Bootst
     <criteria>Given: `hooks.json` (root) and `.github/plugin/hooks.json` When: compared Then: they are byte-identical (same MD5).</criteria>
     <criteria>Given: `hooks/hooks.json` When: inspected Then: it contains the standalone-form hooks with `"sessionStart": []` (empty, no bootstrap payload for standalone use).</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes>corrected to match generator baseline; pending owner review — original stated "root copy expressed as a SpecEntry/fileRename() target" without clarifying that .github/plugin/hooks.json also remains (both present, not renamed); original omitted hooks/hooks.json (standalone-form) entirely; baseline MD5 confirms root hooks.json = .github/plugin/hooks.json (b53bc4cfbc0c19eb6ceebd4717211b6c for r2)</implementationNotes>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: clean-architecture re-implementation (runtime layout via SpecEntry, RECON-2). corrected to match generator baseline; pending owner review — original stated "root copy expressed as a SpecEntry/fileRename() target" without clarifying that .github/plugin/hooks.json also remains (both present, not renamed); original omitted hooks/hooks.json (standalone-form) entirely; baseline MD5 confirms root hooks.json = .github/plugin/hooks.json (b53bc4cfbc0c19eb6ceebd4717211b6c for r2)</implementationNotes>
   <depends>FR-COPY-0031, FR-COPY-0033, FR-HOOK-0006, FR-VAR-0071</depends>
 </req>
 

@@ -92,3 +92,27 @@ Owner review of the implementation surfaced overfitting and bolt-on options that
 **Context:** Owner instruction 2026-06-05: `templates/shell-schemas/*` (agent-shell.md, skill-shell.md, workflow-shell.md) are authoring-only frontmatter schemas, not needed in any plugin. Exclude them.
 
 **Changes:** FR-COPY-0011 statement/acceptance extended to exclude the whole `templates/shell-schemas/**` folder (exclude now supports folder globs); status → `Draft`. The parity baseline (`agents/TEMP/old-gen-r2|r3`) was regenerated and the 12 shell-schemas files per release removed so the baseline equals the new generator's intended output. New generator code MUST add `templates/shell-schemas/**` to the templates SpecEntry exclude for every target.
+
+## 2026-06-09 — No identity branching / no identity-discriminant flags (owner instruction)
+
+**Context:** Owner instruction: the engine must have NO branching in any processor on IDE/target identity (Claude/Cursor/Copilot/Codex), AND no branching on an identity-discriminant flag — a flag whose value set enumerates IDE/target/case identities (`hookEntryShape`, `ModelVocabulary.kind`); such a flag is identity relabeled ("you cannot use flags after Copilot/Cursor either"). The prescribed mechanism is composition: small single-purpose processors (P0); per-case behavior as a separate case-specific processor placed only in the needing spec's pipeline, selected by composition not a branch (P1); shared logic in low-level reusable functions composed by those processors (P2); path-specific behavior scoped by `SpecEntry` source globs (P3). This refines FR-ARCH-0004/NFR-0006, which the existing code satisfied only in letter by switching on identity-discriminant enums. Evidence (code sites for the follow-up fix, open task #8): `src/plugin-generator/src/bootstrap/payload.ts` `switch(shape)`; `file-processors/file-normalize-models.ts` `switch(vocabulary.kind)`; `plugin-processors/plugin-assemble-bootstrap.ts` `bootstrap_hooks_${shape}`; `types.ts` `hookEntryShape` and `ModelVocabulary.kind` enums.
+
+### RECONCILIATION-10 — No identity branching; per-case variation by composition (new FR-ARCH-0005)
+
+**Files:** `FR-ARCH.md`, `FR-HOOK.md`, `MODEL.md`, `NFR.md`, `FR-COPY.md`, `GLOSSARY.md`, `INDEX.md`
+
+**Changes:**
+- **New `FR-ARCH-0005`** — the rule: no processor branches on IDE/target identity or on an identity-discriminant flag; variation is expressed by composition (P0–P3, stated explicitly). Outcome-tested by inspection. Status `Approved`.
+- **`FR-ARCH-0004`** tightened — "supply as data" explicitly excludes identity-discriminant flags; cross-references FR-ARCH-0005; +1 acceptance criterion. Status `Approved`.
+- **`FR-ARCH-0002`** realigned — per-case file behavior is selected by which `FileProcessor`s a spec composes, not an identity-discriminant field; +1 criterion. Status `Approved`.
+- **`FR-ARCH-0046`** reframed — model normalization is per-vocabulary case-specific `FileProcessor`s sharing low-level helpers, no `vocabulary.kind` switch; title updated. Status `Approved`.
+- **`FR-HOOK-0005`** realigned — per-IDE hook entry shape produced by a case-specific entry builder composed per spec, no `hookEntryShape` switch; +1 criterion. Status `Approved`.
+- **`DATA-CFG-0002`** realigned — descriptor holds no identity-discriminant flag; +1 criterion. Status `Approved`.
+- **`NFR-0007`** realigned — catalog lists per-vocabulary model-normalization processors instead of a single `fileNormalizeModels`. Status `Approved`.
+- **`FR-COPY-0020`, `FR-COPY-0021`, `FR-COPY-0033`** — references to the singular `fileNormalizeModels()` replaced by the per-vocabulary model-normalization processors (removes the contradiction created by the FR-ARCH-0046 reframe). These units stay `Draft` (their independent RECONCILIATION-1 model-algorithm review is still pending owner approval).
+- **`FR-ARCH-0055`** — `depends` extended with `FR-HOOK-0005` (no wording change; remains the identity-agnostic orchestrator that composes a per-case entry builder).
+- **`GLOSSARY.md`** — `ModelVocabulary` clarified as pure data; new terms **Case-specific processor**, **Identity-discriminant flag (forbidden)**, **Genuine behavior flag (permitted)**.
+- **`INDEX.md`** — FR-ARCH-0005 added to the "New / target-state design" list.
+- **`<implementation>`** for every unit above set to `ToBeModified` (existing TS code violates the new rule; the fix is open task #8).
+
+**Validation:** Reviewer subagent ran the rubric — no circular dependencies; FR-ARCH-0055 vs FR-HOOK-0005 confirmed compatible; no hallucinations (all five code sites confirmed present). One Must finding (stale `fileNormalizeModels()` in FR-COPY/NFR-0007) fixed; one Nit (define "genuine behavior flag") fixed.

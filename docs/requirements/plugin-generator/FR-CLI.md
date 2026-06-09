@@ -18,8 +18,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
     <criteria>Given: no arguments When: invoked Then: it generates from the default release and default domain into the default output directory.</criteria>
     <criteria>Given: an unknown argument When: invoked Then: it reports usage and exits non-zero.</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: clean-architecture re-implementation (CLI source model, RECON-9).</implementationNotes>
 </req>
 
 <req id="FR-CLI-0002" type="FR" level="System" ticketId="" classification="technical">
@@ -94,8 +94,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
     <criteria>Given: `--domain acme` When: invoked Then: source resolves to `<instructionsSource>/<release>/acme/`.</criteria>
     <criteria>Given: a domain folder that does not exist When: invoked Then: it reports the missing source and exits non-zero without generating output.</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: clean-architecture re-implementation (CLI source model, RECON-9).</implementationNotes>
   <depends>DATA-CFG-0001</depends>
 </req>
 
@@ -139,8 +139,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
     <criteria>Given: `--instructionsSource <dir>` (or `--pluginsSource`/`--hooksSource`) When: invoked Then: that location is used in place of its `<source>/…` default and the others remain derived from `source`.</criteria>
     <criteria>Given: the argument list When: inspected Then: there is no repository-root argument.</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes>source model replaces the prior repo-root model (2026-06-05); pending owner review.</implementationNotes>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: clean-architecture re-implementation (CLI source model, RECON-9). source model replaces the prior repo-root model (2026-06-05); pending owner review.</implementationNotes>
   <depends>DATA-CFG-0005</depends>
 </req>
 
@@ -158,8 +158,8 @@ EARS-phrased functional requirements for invocation, source resolution, run mode
     <criteria>Given: no `output` argument When: invoked Then: output goes to `<source>/plugins`.</criteria>
     <criteria>Given: an `output` argument When: invoked Then: every target folder is created under it.</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes></implementationNotes>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: clean-architecture re-implementation (CLI source model, RECON-9).</implementationNotes>
 </req>
 
 ## Run modes

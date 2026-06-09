@@ -76,13 +76,13 @@
 
 <req id="FR-HOOK-0005" type="FR" level="System" ticketId="" classification="technical">
   <title>Per-IDE entry shape and escaping</title>
-  <statement>The generator shall emit each bootstrap entry in the target IDE's hook schema as documented in that IDE's guide (INT-IDE-0002), applying the escaping required for that IDE's command interpreter so the embedded content is transported intact.</statement>
-  <rationale>Each IDE expects a different hook schema and quoting; the exact schema is owned by the IDE guide, not duplicated here.</rationale>
+  <statement>The generator shall emit each bootstrap entry in the target IDE's hook schema as documented in that IDE's guide (INT-IDE-0002), applying the escaping required for that IDE's command interpreter so the embedded content is transported intact. The per-IDE entry shape shall be produced by a case-specific entry-building unit composed into that target's pipeline (selected by composition) and reusing shared low-level escaping and JSON helpers; it shall not be selected by branching on an identity-discriminant such as `hookEntryShape` (FR-ARCH-0005).</statement>
+  <rationale>Each IDE expects a different hook schema and quoting; the exact schema is owned by the IDE guide, not duplicated here. Because the shapes differ by IDE, each is a case-specific entry builder composed per target rather than a switch on an identity-discriminant (FR-ARCH-0005).</rationale>
   <source>Sources</source>
   <priority>Must</priority>
   <status>Approved</status>
   <approved_by>User</approved_by>
-  <changed>2026-06-04</changed>
+  <changed>2026-06-09</changed>
   <verification>Test</verification>
   <acceptance>
     <criteria>Given: any target When: assembled Then: each entry conforms to that IDE's session-start hook schema per its guide, with content transported intact.</criteria>
@@ -91,10 +91,11 @@
     <criteria>Given: codex When: assembled Then: each entry = `{"type":"command","command":"printf '%s' '<json>'","statusMessage":"Loading Rosetta bootstrap","timeout":30}` (no `once`) under `SessionStart[0]` with `matcher:"startup|resume"`.</criteria>
     <criteria>Given: copilot When: assembled Then: each entry = `{"type":"command","bash":"<lock+printf>","powershell":"<lock+Write-Output>"}` under lowercase `sessionStart` (no matcher, `version:1`); the lock key carries a 0-based entry index.</criteria>
     <criteria>Given: entries within a payload When: serialized Then: they are joined by `, ` (comma-space) and inserted raw into the template's `{{{bootstrap_hooks_<ide>}}}` placeholder.</criteria>
+    <criteria>Given: the entry-building code When: inspected Then: each IDE's entry shape comes from a case-specific unit composed per spec plus shared low-level helpers, with no branch on an identity-discriminant such as `hookEntryShape` (FR-ARCH-0005).</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes>per-IDE entry field shapes (once / statusMessage+timeout / bash+powershell), matchers, and join separator decoded from r2/r3 baseline; pending owner review. The wrapper (matcher, advisory blocks, version) comes from preserved `.tmpl`; only `{{{bootstrap_hooks_<ide>}}}` is generated. Exact bytes: GROUND-TRUTH.md GT-2/GT-3.</implementationNotes>
-  <depends>INT-IDE-0002</depends>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: the `hookEntryShape` switch is dropped — per-IDE entry shape becomes a case-specific entry builder composed per spec, sharing low-level escaping/JSON helpers. per-IDE entry field shapes (once / statusMessage+timeout / bash+powershell), matchers, and join separator decoded from r2/r3 baseline; pending owner review. The wrapper (matcher, advisory blocks, version) comes from preserved `.tmpl`; only `{{{bootstrap_hooks_<ide>}}}` is generated. Exact bytes: GROUND-TRUTH.md GT-2/GT-3.</implementationNotes>
+  <depends>INT-IDE-0002, FR-ARCH-0005</depends>
 </req>
 
 <req id="FR-HOOK-0006" type="FR" level="System" ticketId="" classification="technical">
@@ -117,8 +118,8 @@
 
 <req id="FR-HOOK-0007" type="FR" level="System" ticketId="" classification="technical">
   <title>Plugin-path context entry</title>
-  <statement>The generator shall append to each session-hook target's bootstrap payload exactly one additional, SEPARATE session-start entry (the final entry) that reports the resolved plugin root path to the agent. This entry is NOT folded into the lead document's body; it is its own entry appended after all bootstrap-document entries, so the payload entry count = (present bootstrap-manifest documents) + 1. The entry uses the IDE's command shape with a double-quoted `printf` form (to allow runtime env/var expansion), and any instruction-path reference inside it is reference-rewritten per target (FR-HOOK-0008).</statement>
-  <rationale>Agents need the plugin root to resolve instruction file paths at runtime. Baseline confirms it is a distinct trailing entry, not merged into the lead — claude/codex/copilot each emit 9 entries for r2 and 8 for r3 (= present docs + 1 plugin-root entry).</rationale>
+  <statement>The generator shall append to each session-hook target's bootstrap payload exactly one additional, SEPARATE session-start entry (the final entry) that reports the resolved plugin root path to the agent. This entry is NOT folded into the lead document's body; it is its own entry appended after all bootstrap-document entries, so the payload entry count = (present bootstrap-manifest documents) + 1. The entry uses the IDE's command shape with a double-quoted `printf` form (to allow runtime env/var expansion), and any instruction-path reference inside it is reference-rewritten per target (FR-HOOK-0008). Hooks generated for all IDEs always, regardless those are used or not. Template engineer decides to include it or solve it differently.</statement>
+  <rationale>Agents need the plugin root to resolve instruction file paths at runtime. Baseline confirms it is a distinct trailing entry, not merged into the lead — claude/codex/copilot/cursor each emit 9 entries for r2 and 8 for r3 (= present docs + 1 plugin-root entry).</rationale>
   <source>Sources</source>
   <priority>Must</priority>
   <status>Draft</status>
@@ -130,10 +131,10 @@
     <criteria>Given: claude/codex/copilot for r2 When: assembled Then: the SessionStart payload has 9 entries (8 docs + 1 plugin-root); for r3, 8 entries.</criteria>
     <criteria>Given: the claude plugin-root entry When: inspected Then: command = `printf '%s' "{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Rosetta Plugin Path: ${CLAUDE_PLUGIN_ROOT}\"}}"` with `"once": true`.</criteria>
     <criteria>Given: the codex plugin-root entry When: inspected Then: it is a workspace-root probe resolving to `$workspace_root/.agents` with `statusMessage`+`timeout`; the copilot one is an agentPlugins-base probe (`commands/coding-flow.md`) resolving to `$root` with bash+powershell.</criteria>
-    <criteria>Given: cursor (marketplace) When: assembled Then: no bootstrap payload is produced (its templates carry no payload placeholder).</criteria>
+    <criteria>Given: cursor (marketplace) When: assembled Then: no bootstrap payload is produced, because its templates carry no payload placeholder.</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
-  <implementationNotes>enriched with baseline-decoded ground truth; pending owner review. Exact per-IDE strings decoded into plans/plugin-generator/GROUND-TRUTH.md (GT-3.4). Corrects the earlier SPEC misreading that the plugin-root path was "folded into the lead document".</implementationNotes>
+  <implementation>ToBeModified</implementation>
+  <implementationNotes>ToBeModified: all IDEs always emit hook placeholders; whether bootstrap reaches the agent is a template decision (report A2). enriched with baseline-decoded ground truth; pending owner review. Exact per-IDE strings decoded into plans/plugin-generator/GROUND-TRUTH.md (GT-3.4). Corrects the earlier SPEC misreading that the plugin-root path was "folded into the lead document". All IDEs always generate all hooks placeholders.</implementationNotes>
 </req>
 
 <req id="FR-HOOK-0008" type="FR" level="System" ticketId="" classification="technical">

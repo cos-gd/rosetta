@@ -17,7 +17,7 @@ Compact state to **fully restart** this session and continue the TS-rewrite pari
 
 ## Verified current state (2026-06-08)
 - `npx tsc --noEmit`: **clean**. `npx vitest run`: **304 pass / 31 files**.
-- Parity: **r2 exit 0, 12 differing files · r3 exit 1, 22 differing files** — ALL in accepted buckets, ZERO structural/Only-in diffs.
+- Parity: **r2 exit 1 (1 NFR-0004 violation) · r3 exit 1 (5 NFR-0004 violations)** — diff counts: r2=12, r3=22, all in accepted buckets, ZERO structural/Only-in diffs.
 - Ghost frame fix complete: removed `processor.name === 'fileRenameProcessor'` check; run ALL processors on ghost frame. Added same-folder guard in `buildRenamePairs` for ghost frames (source.length===0 && target_contents===null).
 
 ## Accepted diff buckets (owner decisions locked)
@@ -44,15 +44,21 @@ Files: 6× plugin-files-mode.md/mdc/.instructions.md + 5× hooks.json (core-clau
 
 ## Remaining compliance discrepancies (pending owner decisions)
 
-- **`createHookFolderInR2`** — bespoke per-release flag. Present at `types.ts:124`, `spec/targets.ts:152,184,226,273,368,464`, branched at `plugin-sync-bundles.ts:86`. Likely redundant (codex `.codex/hooks/` correctly absent in r2 because folders emerge from rendered files). **OWNER must confirm before removal (task #17, deferred).**
-- **Cursor bootstrap not uniform:** `bootstrap/payload.ts:57-59` short-circuits cursor (`hookEntryShape === 'cursor'` → returns empty, skips assembly+size-check). Per FR-VAR-0070 assembly+size-check must be uniform for ALL targets. Currently r3 reports **3** soft violations; **target 4** (cursor included). Files unaffected (cursor hooks.json stays empty). **Task #6 pending.**
+> **2026-06-09:** Authored **FR-ARCH-0005** (Approved) — no identity branching / no identity-discriminant flags; per-case variation by composition (P0–P3). CHANGES.md RECON-10. All clean-architecture-track requirements set `<implementation>ToBeModified</implementation>` (23 units). `createHookFolderInR2` (task #17) under owner review now.
+
+- **`createHookFolderInR2`** — bespoke per-release+per-target flag (forbidden, DATA-CFG-0002/FR-ARCH-0004). **DECIDED 2026-06-09: DELETE.** Baseline: it only uniquely creates the **empty** r2 `core-cursor-standalone/.cursor/hooks/`; the other 4 `true` targets' folders are populated by rendered `hooks.json` (redundant), codex `false`. That empty folder has **no functional value** — nothing references the dir; empty = no hooks = same as absent; vestigial old-gen artifact. Remove flag from `types.ts:124` + 6 specs + `plugin-sync-bundles.ts:86` branch; accept the absent folder as an old-gen artifact. **Code = task #17, deferred (coding-flow).** **Origin: NO requirement created it** — no FR mandates an empty r2 hook folder (FR-HOOK-0020 = bundle placement/stale-removal only; STRUCTURES = generated files only); it is mentioned in requirements only to be *forbidden* (FR-ARCH-0004/DATA-CFG-0002, RECON-7). Introduced in impl commit `0b83256` ⇒ baseline-overfit / wrong-prompt artifact, not requirements-driven.
+- ~~Cursor bootstrap not uniform~~ — **FIXED** (task #6). Short-circuit removed. Assembly+size-check now runs for all targets. r2 has 1 violation (cursor-standalone plugin-files-mode = 10705 chars → r2 exit 1). r3 has 5 violations (claude, cursor, copilot, codex, cursor-standalone). Whether the assembled payload reaches the agent is decided by the preserved templates (cursor templates carry no `{{{bootstrap_hooks_cursor}}}` placeholder → nothing injected).
 - **Open (owner decision):** unused per-target `includeBootstrapRules` (`types.ts`); the `deterministicHooks` release branch in `plugin-sync-bundles.ts:46` (is a release-conditional acceptable as data, or must it be reshaped?).
 
 ## Open task list
 - **#5** Fix ghost-frame rename → **COMPLETED** (2026-06-08)
-- **#6** Make cursor bootstrap assembly+size-check uniform (FR-VAR-0070) → **pending** (requires owner decision on approach)
-- **#7** Re-verify: parity, tests, exit codes, coverage → partially done; re-run after #6
-- **#17** Re-review/remove `createHookFolderInR2` → **pending owner confirm**
+- **#6** Make cursor bootstrap assembly+size-check uniform (FR-VAR-0070) → **COMPLETED** (2026-06-09)
+- **#8** Eliminate IDE-name switch dispatch: `hookEntryShape`/`vocabulary.kind` → **requirement DONE (FR-ARCH-0005, Approved, 2026-06-09); CODE pending**. Fix per FR-ARCH-0005 = case-specific processor per case composed into that target's `PluginSpec` pipeline + shared low-level helpers (P1+P2) — NOT a callback on a shared processor; remove `hookEntryShape`/`ModelVocabulary.kind` enums; per-vocabulary model normalizers.
+  - `bootstrap/payload.ts:189-225` — `switch (spec.hookEntryShape)` on `'claude'/'codex'/'copilot'`
+  - `file-normalize-models.ts:41-106` — `switch (vocabulary.kind)` on `'claude'/'cursor'/'copilot'/'codex'`
+  - `plugin-assemble-bootstrap.ts:19` — `` `bootstrap_hooks_${shape}` `` string interpolation on shape
+- **#7** Re-verify: parity, tests, exit codes, coverage → re-run after #8
+- **#17** Remove `createHookFolderInR2` → **DECIDED 2026-06-09: delete (empty r2 `.cursor/hooks/` is a valueless old-gen artifact); code pending (coding-flow)**
 - **#18** Full requirements-deviation audit → **ask owner before spawning**
 
 ## Baseline regen recipe

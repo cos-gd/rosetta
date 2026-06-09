@@ -54,11 +54,6 @@ export function assembleBootstrapPayload(
   const errors: GenError[] = [];
   const folderPairs = buildRenamePairs(frames, spec);
 
-  if (spec.hookEntryShape === 'cursor') {
-    // Cursor: no bootstrap payload (GT-0)
-    return { payload: '', errors };
-  }
-
   const entryStrings: string[] = [];
   let lockIndex = 0;
 
