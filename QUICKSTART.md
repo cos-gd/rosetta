@@ -69,6 +69,10 @@ To properly set up an entire workspace, refer to [CONFIGURATION.md](CONFIGURATIO
 /requirements-authoring-flow extract high-level business and technical requirements at end-point level for controllers according to glob ... using subagents. Additionally, ... . Once done spawn subagent to validate and repeat an entire loop until there are no issues detected.
 ```
 
+```
+/requirements-authoring-flow update existing requirements for <component name> so that it <does new behavior/supports new capability>. Additionally, ... . Once done spawn subagent to validate and repeat an entire loop until there are no issues detected.
+```
+
 ### Modernization
 
 **FIRST**: Document modernization goals in CONTEXT.md, document target services technical aspects in ARCHITECTURE.md, document where source code should be created, keep refsrc populated with reference code source (old code, new code, reusable libraries, configuration and documentation files, and similar).

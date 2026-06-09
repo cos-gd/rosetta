@@ -16,7 +16,7 @@ permalink: /docs/configuration/
 
 AI agents do not see your source code or your business. They only know what the workspace tells them. Good setup gives the agent three things: business context, technical context, and reference code it can read. With these, the agent makes fewer wrong guesses and produces more consistent, correct code. This page is the checklist to provide them.
 
-If you are migrating or modernizing a codebase, do the steps below first, then read [Modernization Additional Setup](#3-modernization-additional-setup) for the extra steps.
+If you are migrating or modernizing a codebase, do the steps below first, then read [Modernization Additional Setup](#4-modernization-additional-setup) for the extra steps.
 
 ---
 
@@ -135,7 +135,113 @@ Use **either Playwright or Chrome DevTools, not both.**
 
 ---
 
-## 3. Modernization Additional Setup
+## 3. Choose a Workspace Layout
+
+Pick the layout that fits your project. These options apply to any multi-repository project — regular development, microservices, or modernization.
+
+**Option 1 — Single Repo Workspace.** The workspace is a single, writable repository. AI agents can only write to this repository. All other codebases the agent needs to read are brought in via `refsrc/` as read-only references. This is the simplest option and the recommended starting point.
+
+```
+<new git repo root>
+├── docs/
+│   ├── ARCHITECTURE.md   # main service architecture and goals
+│   └── CONTEXT.md        # main service business context
+├── refsrc/
+│   ├── <old code>/       # read-only: legacy codebase
+│   ├── microservice2/    # read-only: peer service API reference
+│   ├── shared-lib/       # read-only: corporate shared library
+│   └── frontend/         # read-only: UI codebase for reference
+└── <new code>
+```
+
+Setup actions:
+- Open the repository in your IDE.
+- Clone any read-only reference codebases into `refsrc/` as subfolders.
+- Initialize Rosetta (see [Quick Start](/rosetta/docs/quickstart/)).
+
+*For modernization:* name the `refsrc/` entry after the legacy codebase (e.g. `refsrc/old-app/`).
+
+---
+
+**Option 2 — Composite Workspace with Submodules.** A top-level envelope repository holds each sub-repository as a git submodule. This integrates cleanly with standard git tooling and avoids manual gitignore maintenance. This layout needs the `large-workspace-handling` skill.
+
+```
+<workspace git repo>
+├── docs/
+│   ├── ARCHITECTURE.md   # index: technical purpose of each sub-repo
+│   └── CONTEXT.md        # index: business purpose of each sub-repo
+├── <old repo>/            # git submodule — e.g. old-app
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+├── <new repo>/            # git submodule — e.g. new-app
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+├── microservice1/         # git submodule
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+├── frontend/              # git submodule
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+└── shared-lib/            # git submodule
+    ├── docs/ARCHITECTURE.md
+    ├── docs/CONTEXT.md
+    └── <source files>
+```
+
+Setup actions:
+- Create a new empty git repository to serve as the composite workspace envelope.
+- Request AI to add each sub-repository (code, infra, QA, frontend, shared libraries, etc.) as a git submodule and clone them into the envelope.
+- Initialize Rosetta in the envelope workspace, telling it this is a composite workspace and that `ARCHITECTURE.md` must record that submodules are used for dynamic sparse-checkout (see [Quick Start](/rosetta/docs/quickstart/)).
+- Development teams and AI can then use sparse-checkout to pull only the repos they need.
+- AI can dynamically check out a missing submodule at any point: `git submodule update --init <name>`.
+
+---
+
+**Option 3 — Composite Workspace with gitignore.** A top-level folder holds all repositories as plain directories. Each sub-repo folder is excluded from the envelope's git tracking via `.gitignore`. The downsides: the workspace must be tracked in git, and `.gitignore` and doc routing need ongoing care. This layout needs the `large-workspace-handling` skill.
+
+```
+<workspace git repo>
+├── docs/
+│   ├── ARCHITECTURE.md   # index: technical purpose of each sub-repo
+│   └── CONTEXT.md        # index: business purpose of each sub-repo
+├── <old repo 1>/
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+├── <old repo 2>/
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+├── <new repo>/
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+├── microservice1/
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+├── frontend/
+│   ├── docs/ARCHITECTURE.md
+│   ├── docs/CONTEXT.md
+│   └── <source files>
+└── .gitignore             # excludes the cloned repo folders
+```
+
+*For modernization:* use names such as `old-app/` and `new-app/` as the folder names, and list each explicitly in `.gitignore`.
+
+Setup actions:
+- Create a new empty git repository to serve as the composite workspace envelope.
+- Clone each sub-repository (code, infra, QA, frontend, shared libraries, etc.) into the envelope as a plain folder.
+- Add each cloned folder to `.gitignore` so it is excluded from the envelope's git tracking.
+- Initialize Rosetta in the envelope workspace, telling it this is a composite workspace (see [Quick Start](/rosetta/docs/quickstart/)).
+
+---
+
+## 4. Modernization Additional Setup
 
 Read this section only if you are converting, migrating, upgrading, or re-architecting a codebase. These steps are **in addition to** Section 2 — do those first.
 
@@ -164,44 +270,3 @@ The old code in `refsrc/` keeps its own `docs/CONTEXT.md` and `docs/ARCHITECTURE
 
 - Use `/requirements-authoring-flow` or `Allium` to generate specs from the existing old code.
 - Use `/coding-flow` for unit tests and `/aqa-flow` for e2e tests to cover the old code before you change it.
-
-### Choose a workspace layout
-
-Pick one of two layouts.
-
-**Option 1 — Single Repo with Reference Source.** The workspace is just the new repository; it pulls in the old code through `refsrc/`. This is the easiest and fastest option. The downside: you can only edit one repository, so you need a separate window per repository.
-
-```
-<new git repo root>
-├── docs/
-│   ├── ARCHITECTURE.md   # new app + modernization target; references the old code's docs/ARCHITECTURE.md
-│   └── CONTEXT.md        # new app + modernization process; references the old code's docs/CONTEXT.md
-├── refsrc/
-│   └── <old code>/
-│       ├── docs/ARCHITECTURE.md
-│       ├── docs/CONTEXT.md
-│       └── <source files>
-└── <new code>
-```
-
-**Option 2 — Composite Workspace.** A top-level folder holds the old and new repositories together, plus any others. This is useful for cross-service work. The downsides: the workspace itself must be tracked in git, the `.gitignore` and doc routing need care, and overall complexity is higher. This layout needs the `large-workspace-handling` skill.
-
-```
-<workspace git repo>
-├── docs/
-│   ├── ARCHITECTURE.md   # short index: technical purpose of each sub-repo, modernization processes, etc.
-│   └── CONTEXT.md        # short index: business purpose of each sub-repo, modernization target, etc.
-├── <old repo 1>/
-│   ├── docs/ARCHITECTURE.md
-│   ├── docs/CONTEXT.md
-│   └── <source files>
-├── <old repo 2>/
-│   ├── docs/ARCHITECTURE.md
-│   ├── docs/CONTEXT.md
-│   └── <source files>
-├── <new repo>/
-│   ├── docs/ARCHITECTURE.md
-│   ├── docs/CONTEXT.md
-│   └── <source files>
-└── .gitignore            # excludes the cloned repo folders (old 1, old 2, new)
-```
