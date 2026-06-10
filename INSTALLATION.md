@@ -513,7 +513,7 @@ It should use Rosetta MCP to retrieve agents, guardrails, and instructions:
 Run once per repository after installation:
 
 ```
-Initialize this repository using Rosetta
+Initialize repository using respective Rosetta workflow
 ```
 
 The agent runs an eight-phase workflow (see [Usage Guide — Init Workspace](USAGE_GUIDE.md#workflows) for details):

@@ -49,7 +49,7 @@ Sets up a repository so AI coding agents can work with Rosetta context from the 
 **Expect:** built-in subagents for mode detection, discovery, pattern extraction, documentation, gap filling, and verification. Your responsibility is to answer domain and architecture questions, review generated docs, and restart the chat after initialization so new shell/context files are loaded.
 
 ```
-"Initialize this repository using Rosetta"
+"Initialize repository using respective Rosetta workflow"
 "Upgrade this repository from Rosetta R1 to R2"
 "Initialize subagents and workflows"
 ```
@@ -522,7 +522,7 @@ What happens:
 ### Project Initialization
 
 ```
-You: "Initialize this repository using Rosetta"
+You: "Initialize repository using respective Rosetta workflow"
 
 What happens:
 1. Agent scans your tech stack, dependencies, and project structure

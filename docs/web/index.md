@@ -430,7 +430,7 @@ Download bootstrap.md and place it in your IDE or agent's project instruction fi
           <h3 class="qs-step-title">Initialize The Repository</h3>
           <p class="qs-step-desc">Run once per repository and commit the generated workspace files.</p>
           <div class="qs-code-wrap">
-            <pre class="qs-code">Initialize this repository using Rosetta</pre>
+            <pre class="qs-code">Initialize repository using respective Rosetta workflow</pre>
           </div>
           <p class="qs-step-desc" style="margin-top:.8rem;">The agent analyzes the tech stack, creates workspace docs such as <code>TECHSTACK.md</code>, <code>CODEMAP.md</code>, <code>DEPENDENCIES.md</code>, <code>ARCHITECTURE.md</code>, and <code>CONTEXT.md</code>, and asks clarifying questions. Deep links: <a href="{{ '/docs/quickstart/' | relative_url }}">Quick Start</a>, <a href="{{ '/docs/init-workspace-flow/' | relative_url }}">Init Workspace Flow</a>.</p>
         </div>

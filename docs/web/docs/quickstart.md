@@ -33,7 +33,7 @@ If AI coding agent does not support plugins, use [MCPs](/rosetta/docs/mcps/).
 Ask the agent:
 
 ```
-Initialize this repository using Rosetta
+Initialize repository using respective Rosetta workflow
 ```
 
 The agent will analyze your tech stack, generate documentation (TECHSTACK.md, CODEMAP.md, DEPENDENCIES.md, ARCHITECTURE.md, CONTEXT.md), and ask clarifying questions. Read more about [workspace files](/rosetta/docs/installation/#workspace-files-created) and [all workflows](/rosetta/docs/usage-guide/#workflows).
