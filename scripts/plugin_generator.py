@@ -25,7 +25,7 @@ BOOTSTRAP_PREFIX = (
 )
 
 CURSOR_MODEL_MAP: dict[str, str] = {
-    "opus":                   "claude-opus-4-6",
+    "opus":                   "claude-opus-4-8",
     "sonnet":                 "claude-sonnet-4-6",
     "haiku":                  "claude-haiku-4-5",
     "gpt-5.5":                "gpt-5.5",
@@ -37,7 +37,7 @@ CURSOR_MODEL_MAP: dict[str, str] = {
 }
 
 COPILOT_MODEL_MAP: dict[str, str] = {
-    "opus":                   "Claude Opus 4.6",
+    "opus":                   "Claude Opus 4.8",
     "sonnet":                 "Claude Sonnet 4.6",
     "haiku":                  "Claude Haiku 4.5",
     "gpt-5.5":                "GPT-5.5",
