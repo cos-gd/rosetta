@@ -2,6 +2,87 @@
 
 # Plugin Generator — Implementation Plan (WBS)
 
+## Compliance Refactor Plan (2026-06-10)
+
+**Requirements:** FR-ARCH-0005, DATA-CFG-0002, FR-ARCH-0004, FR-HOOK-0004.
+**Companion specs:** `plugin-generator-SPECS.md` compliance refactor section (WHAT).
+**Hard constraints:** tsc clean at all times; parity r2≤12 r3≤22 same buckets; 304 tests pass; NEVER read plugin_generator.py.
+
+### Step ordering (sequential — each step must tsc-clean before proceeding)
+
+**Step R1 — Delete dead `includeBootstrapRules`** [~5 min, no risk]
+- `src/types.ts`: remove `includeBootstrapRules: boolean` from `PluginSpec`
+- `src/spec/targets.ts`: remove 6 `includeBootstrapRules:` lines
+- Verify: `npx tsc --noEmit` clean
+
+**Step R2 — Delete `createHookFolderInR2`** [~10 min, no risk]
+- `src/types.ts`: remove `createHookFolderInR2?: boolean` from `PluginSpec`
+- `src/spec/targets.ts`: remove 6 `createHookFolderInR2:` lines
+- `src/plugin-processors/plugin-sync-bundles.ts`: remove the `if (spec.createHookFolderInR2)` branch
+- Verify: `npx tsc --noEmit` clean
+
+**Step R3 — Update types.ts for C1+C2 removals** [~10 min]
+- Remove `modelVocabulary: ModelVocabulary` from `PluginSpec`
+- Remove `hookEntryShape: ...` from `PluginSpec`
+- Remove `ModelVocabulary` interface (or `kind` + `map` fields if interface has other fields)
+- Add `EntryBuilderFn` and `RootEntryBuilderFn` type aliases
+- Verify: `npx tsc --noEmit` (will have errors from downstream files — OK at this step, mark them, continue)
+
+**Step R4 — Refactor `bootstrap/payload.ts`** [~20 min, highest risk]
+- Export per-IDE builder functions: `buildClaudeEntry`, `buildCodexEntry`, `buildCopilotEntry`, `buildClaudeRootEntry`, `buildCodexRootEntry`, `buildCopilotRootEntry`
+- Change `assembleBootstrapPayload` signature: add `buildEntry: EntryBuilderFn, buildRoot: RootEntryBuilderFn` params; remove `spec.hookEntryShape` reads
+- Remove `buildEntryForIde` switch and `buildPluginRootEntry` switch entirely
+- Verify: `npx tsc --noEmit` (plugin-assemble-bootstrap.ts will still error — OK)
+
+**Step R5 — Refactor `plugin-assemble-bootstrap.ts`** [~10 min]
+- Change `pluginAssembleBootstrap` from `PluginProcessor` to factory: `(buildEntry, buildRoot, contextKey) => PluginProcessor`
+- Remove `hookEntryShape` read, remove backtick interpolation
+- Verify: `npx tsc --noEmit` (targets.ts will have errors on old wiring — OK)
+
+**Step R6 — Create 3 thin bootstrap entry processors** [~10 min]
+- Create `src/plugin-processors/plugin-bootstrap-entry-claude.ts`
+- Create `src/plugin-processors/plugin-bootstrap-entry-codex.ts`
+- Create `src/plugin-processors/plugin-bootstrap-entry-copilot.ts`
+- Verify: `npx tsc --noEmit` (targets.ts errors persist)
+
+**Step R7 — Create 4 per-vocabulary model processors** [~20 min]
+- Create `src/file-processors/file-normalize-models-claude.ts`
+- Create `src/file-processors/file-normalize-models-cursor.ts`
+- Create `src/file-processors/file-normalize-models-copilot.ts`
+- Create `src/file-processors/file-normalize-models-codex.ts`
+- Refactor `file-normalize-models.ts` to export only shared helpers (no switch)
+- Remove `ModelVocabulary.kind/map` from model-maps.ts constants
+- Verify: `npx tsc --noEmit` (targets.ts errors persist)
+
+**Step R8 — Rewire `spec/targets.ts`** [~20 min]
+- Remove `hookEntryShape`, `modelVocabulary`, `includeBootstrapRules`, `createHookFolderInR2` assignments (some done in R1/R2)
+- Update pipeline compositions: swap old processors for new per-vocabulary/per-ide processors per the wiring table in SPECS
+- Cursor targets: remove bootstrap processor from pipeline
+- Verify: `npx tsc --noEmit` MUST BE CLEAN — this is the full-clean gate
+
+**Step R9 — Run full test suite + fix + new tests** [~15 min]
+- `npx vitest run` — run to identify failures first
+- Fix `plugin-assemble-bootstrap.test.ts`: `pluginAssembleBootstrap` is now a factory — pass `buildEntry`, `buildRoot`, `contextKey` in test call sites
+- Fix `file-normalize-models.test.ts`: now testing 4 per-vocabulary processors; split or parameterize existing tests
+- Create new test files for the 3 thin P1 processors: `plugin-bootstrap-entry-claude.test.ts`, `plugin-bootstrap-entry-codex.test.ts`, `plugin-bootstrap-entry-copilot.test.ts` — verify correct `contextKey` and builder function wiring
+- Verify no test asserts `bootstrap_hooks_cursor` key presence (cursor pipeline has no bootstrap processor)
+- Verify: all tests (304+) pass
+
+**Step R10 — Parity check** [~10 min]
+```
+cd /Users/isolomatov/Sources/GAIN/rosetta/src/plugin-generator
+S=/Users/isolomatov/Sources/GAIN/rosetta
+rm -rf /tmp/g2 /tmp/g3
+npx tsx src/cli.ts --release r2 --domain core --source "$S" --output /tmp/g2; diff -rq /tmp/g2 "$S/agents/TEMP/old-gen-r2"
+npx tsx src/cli.ts --release r3 --domain core --source "$S" --output /tmp/g3; diff -rq /tmp/g3 "$S/agents/TEMP/old-gen-r3"
+```
+Verify: r2 diff count ≤ 12 (same buckets A+D), r3 diff count ≤ 22 (same buckets A+D+Decision3). ZERO new diffs.
+
+### Risk notes
+- Step R4 (payload.ts) is highest risk: the assembly loop must be preserved exactly; builder functions must produce same bytes as old switch cases
+- Cursor pipeline bootstrap removal: verify cursor tests do not assert `bootstrap_hooks_cursor` key
+- Test updates: `plugin-assemble-bootstrap.test.ts` calls the factory now — update call sites to pass builder args
+
 **Companion specs:** `plugin-generator-SPECS.md` (WHAT). This file = HOW: dependency-ordered WBS, commands, parity loop, parallelization.
 **Goal:** TS/npx generator under `src/plugin-generator/`, byte-for-byte parity with `agents/TEMP/old-gen-r2|r3` (domain=core), fully autonomous (no HITL), all tests passing.
 **Prohibited reads:** `scripts/plugin_generator.py`, `specs/plugin-generator.allium`.

@@ -89,7 +89,6 @@ export interface PluginSpec {
   preservedSource: string;     // src/plugin-generator/plugins/<parent>/ (FR-SEED-0001/0002)
   modelVocabulary: ModelVocabulary;
   bootstrapManifest: BootstrapEntryRef[]; // FR-HOOK-0009 ordered
-  includeBootstrapRules: boolean;
   includeIndexEntries: boolean;   // FR-HOOK-0004
   hookEntryShape: 'claude' | 'copilot' | 'codex' | 'cursor';
   pluginRootPath: string;         // reported to agent (FR-HOOK-0007)
@@ -116,12 +115,6 @@ export interface PluginSpec {
    * F-F-adjacent fix: eliminates spec.name branching in pluginSyncBundles. DATA-CFG-0002.
    */
   bundleSource?: string;
-  /**
-   * Whether to create the hook folder directory in r2 mode.
-   * core-codex does NOT get .codex/hooks/ in r2 (only r3).
-   * F-F-adjacent fix: eliminates spec.name branching in pluginSyncBundles. DATA-CFG-0002.
-   */
-  createHookFolderInR2?: boolean;
   /**
    * Hook folder path relative to the target output directory.
    * Replaces the hardcoded resolveHookFolder switch. DATA-CFG-0002.

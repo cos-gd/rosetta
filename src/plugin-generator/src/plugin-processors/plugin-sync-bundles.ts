@@ -1,6 +1,6 @@
 // FR-HOOK-0020–0022 — r3 .js bundle sync from <hooksSource>/dist/bundles/<bundleSource>/
 // FR-CLI-0020: hooksSource is resolved externally (<source>/hooks or --hooksSource override).
-// DATA-CFG-0002: bundle source, hook folder, and r2 behavior read from PluginSpec data.
+// DATA-CFG-0002: bundle source and hook folder read from PluginSpec data.
 // No per-target-name branching (F-F-adjacent fix).
 // FR-CLI-0050: dry-run → skip all disk writes.
 
@@ -19,9 +19,9 @@ const BUNDLE_FILENAMES = [
 
 /**
  * pluginSyncBundles: r3 → copy <hooksSource>/dist/bundles/<bundleSource>/*.js to target hook folder.
- * r2 → ensure hook folder exists (when createHookFolderInR2 is true) and remove stale .js.
+ * r2 → remove stale .js files (from any previous r3 run).
  * hooksSource: absolute path to hooks root (FR-CLI-0020, e.g. <source>/hooks).
- * Reads bundleSource, hookFolder, and createHookFolderInR2 from PluginSpec data (DATA-CFG-0002).
+ * Reads bundleSource and hookFolder from PluginSpec data (DATA-CFG-0002).
  * dry-run → no-op (FR-CLI-0050, FR-ARCH-0045).
  * FR-HOOK-0020–0022
  */
@@ -82,11 +82,7 @@ export function pluginSyncBundles(
         });
       }
     } else {
-      // r2: create hook folder only if spec declares it (createHookFolderInR2, DATA-CFG-0002)
-      if (spec.createHookFolderInR2) {
-        fs.mkdirSync(hookFolder, { recursive: true });
-      }
-      // Remove stale .js files (from any previous r3 run)
+      // r2: remove stale .js files (from any previous r3 run)
       if (fs.existsSync(hookFolder)) {
         for (const filename of BUNDLE_FILENAMES) {
           const stale = path.join(hookFolder, filename);

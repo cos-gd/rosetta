@@ -10,19 +10,19 @@ import {
 describe('normalizeClaude', () => {
   it('scans for first claude-compatible token (not first overall)', () => {
     // PARITY-9: gpt is first, claude is second — should find claude
-    expect(normalizeClaude('gpt-5.5-high, claude-4.8-opus-high')).toBe('opus');
+    expect(normalizeClaude('gpt-5.5-high, claude-4.8-opus-high')).toBe('claude-opus-4-8');
   });
 
-  it('maps opus token to "opus"', () => {
-    expect(normalizeClaude('claude-4.8-opus-high')).toBe('opus');
+  it('maps opus token to "claude-opus-4-8"', () => {
+    expect(normalizeClaude('claude-4.8-opus-high')).toBe('claude-opus-4-8');
   });
 
-  it('maps sonnet token to "sonnet"', () => {
-    expect(normalizeClaude('claude-4.6-sonnet')).toBe('sonnet');
+  it('maps sonnet token to "claude-sonnet-4-6"', () => {
+    expect(normalizeClaude('claude-4.6-sonnet')).toBe('claude-sonnet-4-6');
   });
 
-  it('maps haiku token to "haiku"', () => {
-    expect(normalizeClaude('claude-4.5-haiku')).toBe('haiku');
+  it('maps haiku token to "claude-haiku-4-5"', () => {
+    expect(normalizeClaude('claude-4.5-haiku')).toBe('claude-haiku-4-5');
   });
 
   it('returns "inherit" for claude-* token without opus/sonnet/haiku', () => {
@@ -33,8 +33,8 @@ describe('normalizeClaude', () => {
     expect(normalizeClaude('gpt-5.5-high, gemini-3.1')).toBeNull();
   });
 
-  it('handles reviewer case: gpt,gemini,claude-sonnet → sonnet', () => {
-    expect(normalizeClaude('gpt-5.4-medium, gemini-3.1-pro, claude-4.6-sonnet')).toBe('sonnet');
+  it('handles reviewer case: gpt,gemini,claude-sonnet → claude-sonnet-4-6', () => {
+    expect(normalizeClaude('gpt-5.4-medium, gemini-3.1-pro, claude-4.6-sonnet')).toBe('claude-sonnet-4-6');
   });
 });
 

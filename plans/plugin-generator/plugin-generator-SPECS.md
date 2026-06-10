@@ -2,6 +2,162 @@
 
 # Plugin Generator — Tech Specifications (Target State)
 
+## Compliance Refactor (2026-06-10)
+
+**Status:** Approved for implementation. **Requirements:** FR-ARCH-0005, DATA-CFG-0002, FR-ARCH-0004, FR-HOOK-0004.
+**Companion plan:** `plugin-generator-PLAN.md` compliance refactor section (HOW).
+
+### Overview
+Three tasks to eliminate architecture violations found in requirements audit:
+- **Task A** (SMALL): Delete dead `includeBootstrapRules` field
+- **Task B** (SMALL): Delete `createHookFolderInR2` bespoke flag
+- **Task C** (MEDIUM): Eliminate IDE-name switch dispatch — main architectural refactor per FR-ARCH-0005
+
+### Task A — Delete `includeBootstrapRules` (FR-HOOK-0004 / dead field) — **APPROVED**
+
+**What changes:**
+- Remove `includeBootstrapRules: boolean` from `PluginSpec` in `src/types.ts` (~line 92)
+- Remove 6 `includeBootstrapRules: true/false` assignments in `src/spec/targets.ts`
+- No behavior change: field was never read by any processor (confirmed by grep — 0 read sites)
+
+**Acceptance:** `tsc --noEmit` clean; no test references to field.
+
+### Task B — Delete `createHookFolderInR2` (DATA-CFG-0002 / FR-ARCH-0004) — **APPROVED**
+
+**What changes:**
+- Remove `createHookFolderInR2?: boolean` from `PluginSpec` in `src/types.ts` (~line 124)
+- Remove 6 assignments in `src/spec/targets.ts` (claude:true, cursor:true, copilot:true, codex:false, cursor-standalone:true, copilot-standalone:true)
+- Remove `if (spec.createHookFolderInR2) { fs.mkdirSync(hookFolder, ...) }` branch in `src/plugin-processors/plugin-sync-bundles.ts` (~lines 84–98)
+
+**Accepted consequence:** r2 `core-cursor-standalone/.cursor/hooks/` empty directory is no longer created. This is an accepted old-gen artifact (Session Context decision 2026-06-09: "empty folder has no functional value — nothing references the dir; empty = absent").
+
+**Parity impact:** r2 diff count may decrease by 0 (empty dir is not tracked in file-diff). This is correct.
+
+**Acceptance:** `tsc --noEmit` clean; parity diff counts unchanged (empty dirs not tracked).
+
+### Task C — Eliminate IDE-name switch dispatch (FR-ARCH-0005) — **NOT APPROVED — DEFERRED**
+
+> Owner decision (2026-06-10): Analysis marked as too shallow. Task C is deferred. No implementation. Return to this task in a future session with deeper analysis before re-submitting for approval.
+
+**Two sub-problems:**
+
+#### C1 — Replace `file-normalize-models.ts` switch
+
+**Removed:**
+- `file-normalize-models.ts`: the entire `switch (vocabulary.kind)` block; the file is refactored to export only shared types/helpers
+- `ModelVocabulary` interface fields `kind` and `map` from `src/types.ts`
+- `modelVocabulary` field from `PluginSpec` in `src/types.ts`
+- `ModelVocabulary.kind` assignments from `*_VOCABULARY` constants in `src/file-processors/model-maps.ts`
+
+**Added (4 per-vocabulary processor files in `src/file-processors/`):**
+
+| File | Exports | Behavior |
+|---|---|---|
+| `file-normalize-models-claude.ts` | `fileNormalizeModelsClaude(): FileProcessor` | Scans for first claude-compatible token; maps to sonnet/opus/haiku/inherit via CLAUDE_MODEL_MAP |
+| `file-normalize-models-cursor.ts` | `fileNormalizeModelsCursor(): FileProcessor` | Takes first token; maps via CURSOR_CLAUDE_MAP |
+| `file-normalize-models-copilot.ts` | `fileNormalizeModelsCopilot(): FileProcessor` | Takes first token; maps to display names via COPILOT_MODEL_MAP |
+| `file-normalize-models-codex.ts` | `fileNormalizeModelsCodex(): FileProcessor` | Scans for first gpt-* token; can strip line or split into two YAML fields |
+
+Each is a factory function returning a `FileProcessor`. Each calls shared low-level helpers from `file-normalize-models.ts` (preserved — see below) and `model-maps.ts`. The `CLAUDE_MODEL_MAP`, `CURSOR_CLAUDE_MAP`, `COPILOT_MODEL_MAP`, `CODEX_MODEL_MAP` constants in `model-maps.ts` stay as P2 shared helpers.
+
+**`file-normalize-models.ts` post-refactor — KEEP as shared helper module (do NOT delete):**
+The file currently holds the switch + shared frontmatter-parsing setup + two codex-specific helpers. After refactor:
+- `removeModelLine(content)` and `rewriteCodexModelFields(content, gptModel, effort)` — move to `file-normalize-models-codex.ts` (codex-specific logic)
+- Export shared helpers for all 4 per-vocabulary processors:
+  - `extractFrontmatterModelField(frame: FileProcessingFrame, content: string): string | null` — runs the common guard checks (isBinary, target_contents null, no frontmatter, no model field) and returns `modelField` string or null
+  - `applyNormalizedModel(frame: FileProcessingFrame, content: string, normalized: string): FileProcessingFrame` — applies `rewriteModelLine` + updates `source[0].frontmatter.model` (the common update block used by claude, cursor, copilot)
+- The main `fileNormalizeModels` export is REMOVED (replaced by the 4 per-vocabulary exports)
+- File becomes a shared-helpers module (~30 lines), not dead/empty
+
+**`targets.ts` wiring for C1:**
+- core-claude pipeline: replace `fileNormalizeModels(claudeVocabulary)` → `fileNormalizeModelsClaude()`
+- core-cursor pipeline: replace → `fileNormalizeModelsCursor()`
+- core-copilot pipeline: replace → `fileNormalizeModelsCopilot()`
+- core-codex pipeline: replace → `fileNormalizeModelsCodex()`
+- core-cursor-standalone pipeline: replace → `fileNormalizeModelsCursor()`
+- core-copilot-standalone pipeline: replace → `fileNormalizeModelsCopilot()`
+
+#### C2 — Replace `bootstrap/payload.ts` + `plugin-assemble-bootstrap.ts` switch
+
+**Removed:**
+- `switch (shape)` in `buildEntryForIde()` and `buildPluginRootEntry()` in `bootstrap/payload.ts`
+- `hookEntryShape` field read from `spec` in `bootstrap/payload.ts` and `plugin-assemble-bootstrap.ts`
+- `hookEntryShape: HookEntryShape` from `PluginSpec` in `src/types.ts`
+- Backtick interpolation `` `bootstrap_hooks_${shape}` `` in `plugin-assemble-bootstrap.ts`
+
+**Refactored — `bootstrap/payload.ts`:**
+```typescript
+export type EntryBuilderFn = (jsonPayload: string, lockIndex: number, targetName: string, errors: GenError[], basename: string) => string | null;
+// lockIndex deliberately excluded: none of the three root entry builders use it
+export type RootEntryBuilderFn = (folderPairs: Array<[string, string]>) => string | null;
+
+export function assembleBootstrapPayload(
+  p: PluginProcessingFrame,
+  buildEntry: EntryBuilderFn,
+  buildRoot: RootEntryBuilderFn,
+): { payload: string; errors: GenError[] }
+
+// P2 shared low-level helpers (exported):
+export function buildClaudeEntry(jsonPayload: string, lockIndex: number, targetName: string, errors: GenError[], basename: string): string | null
+export function buildCodexEntry(jsonPayload: string, lockIndex: number, targetName: string, errors: GenError[], basename: string): string | null
+export function buildCopilotEntry(jsonPayload: string, lockIndex: number, targetName: string, errors: GenError[], basename: string): string | null
+// RootEntryBuilderFn uses only folderPairs (no lockIndex — none of the builders need it)
+export function buildClaudeRootEntry(folderPairs: Array<[string, string]>): string | null
+export function buildCodexRootEntry(folderPairs: Array<[string, string]>): string | null
+export function buildCopilotRootEntry(folderPairs: Array<[string, string]>): string | null
+```
+
+**Refactored — `plugin-assemble-bootstrap.ts` (generic factory, P0):**
+```typescript
+export function pluginAssembleBootstrap(
+  buildEntry: EntryBuilderFn,
+  buildRoot: RootEntryBuilderFn,
+  contextKey: string,
+): PluginProcessor
+```
+No IDE name, no identity field read. The `contextKey` is the template context key to set (e.g. `'bootstrap_hooks_claude'`).
+
+**Added — 3 thin P1 processor files in `src/plugin-processors/`:**
+
+| File | Export | Value |
+|---|---|---|
+| `plugin-bootstrap-entry-claude.ts` | `pluginBootstrapEntryClaude` | `pluginAssembleBootstrap(buildClaudeEntry, buildClaudeRootEntry, 'bootstrap_hooks_claude')` |
+| `plugin-bootstrap-entry-codex.ts` | `pluginBootstrapEntryCodex` | `pluginAssembleBootstrap(buildCodexEntry, buildCodexRootEntry, 'bootstrap_hooks_codex')` |
+| `plugin-bootstrap-entry-copilot.ts` | `pluginBootstrapEntryCopilot` | `pluginAssembleBootstrap(buildCopilotEntry, buildCopilotRootEntry, 'bootstrap_hooks_copilot')` |
+
+Cursor targets get NO bootstrap processor — cursor templates have no `{{{bootstrap_hooks_cursor}}}` placeholder.
+
+**`targets.ts` wiring for C2:**
+- core-claude pipeline: replace `pluginAssembleBootstrap` → `pluginBootstrapEntryClaude`
+- core-cursor pipeline: REMOVE bootstrap processor entirely
+- core-copilot pipeline: replace → `pluginBootstrapEntryCopilot`
+- core-codex pipeline: replace → `pluginBootstrapEntryCodex`
+- core-cursor-standalone pipeline: REMOVE bootstrap processor (cursor family)
+- core-copilot-standalone pipeline: replace → `pluginBootstrapEntryCopilot` (copilot family)
+
+### Types.ts net changes summary
+
+| Field | Action | Reason |
+|---|---|---|
+| `PluginSpec.includeBootstrapRules` | DELETE | Dead field, never read |
+| `PluginSpec.hookEntryShape` | DELETE | Identity-discriminant, forbidden by FR-ARCH-0005 |
+| `PluginSpec.modelVocabulary` | DELETE | Replaced by per-vocabulary processors |
+| `PluginSpec.createHookFolderInR2` | DELETE | Bespoke per-release flag, forbidden by DATA-CFG-0002 |
+| `ModelVocabulary.kind` | DELETE | Identity field, never needed post-refactor |
+| `ModelVocabulary.map` | DELETE | Never read at runtime (only set, never consumed) |
+| `ModelVocabulary` interface | DELETE (if empty after above) | Nothing left |
+| `EntryBuilderFn` | ADD | Builder function type for bootstrap assembly |
+| `RootEntryBuilderFn` | ADD | Root entry builder function type |
+
+### Parity guarantee
+All behavioral logic is preserved — only dispatch mechanism changes from runtime switch to compile-time parameter binding. Byte output is identical. Expected: r2 diff count ≤ 12, r3 diff count ≤ 22, same accepted buckets.
+
+### Test impact
+- `plugin-assemble-bootstrap.test.ts` — update: `pluginAssembleBootstrap` now factory; pass builder functions in tests
+- `file-normalize-models.test.ts` — split or update to test 4 per-vocabulary processors
+- New tests for 3 `plugin-bootstrap-entry-*.ts` files (thin — mostly verify correct contextKey and builder wiring)
+- All 304 existing tests must still pass
+
 **Status:** Authoritative. **Date:** 2026-06-04. **Audience:** implementing engineers.
 **Parity oracle:** empty recursive byte-diff vs `agents/TEMP/old-gen-r2/` and `agents/TEMP/old-gen-r3/` (domain=core) — NFR-0001.
 **Companion plan:** `plugin-generator-PLAN.md` (HOW/sequencing). This file = WHAT (architecture, contracts, data, tests).

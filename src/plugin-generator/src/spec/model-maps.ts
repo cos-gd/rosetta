@@ -6,16 +6,23 @@ import type { ModelVocabulary } from '../types.js';
 // ─── Claude vocabulary (FR-COPY-0020, PARITY-9) ──────────────────────────────
 // Scan all comma-split tokens for first claude-compatible one.
 // NOT first-overall (CONTRADICTION-1). claude-compatible: starts with "claude-" OR contains opus/sonnet/haiku.
-// Map: contains "opus" → "opus", contains "sonnet" → "sonnet", contains "haiku" → "haiku", else → "inherit".
+// Map: contains "opus" → CLAUDE_CODE_MAP.opus, "sonnet" → CLAUDE_CODE_MAP.sonnet, "haiku" → CLAUDE_CODE_MAP.haiku, else → "inherit".
+
+// FR-COPY-0021 — Claude Code full model IDs; update here when models change
+const CLAUDE_CODE_MAP: Record<string, string> = {
+  opus: 'claude-opus-4-8',
+  sonnet: 'claude-sonnet-4-6',
+  haiku: 'claude-haiku-4-5',
+};
 
 export function normalizeClaude(modelField: string): string | null {
   const tokens = modelField.split(',').map((t) => t.trim());
   for (const token of tokens) {
     const lower = token.toLowerCase();
     if (lower.startsWith('claude-') || lower.includes('opus') || lower.includes('sonnet') || lower.includes('haiku')) {
-      if (lower.includes('opus')) return 'opus';
-      if (lower.includes('sonnet')) return 'sonnet';
-      if (lower.includes('haiku')) return 'haiku';
+      if (lower.includes('opus')) return CLAUDE_CODE_MAP.opus;
+      if (lower.includes('sonnet')) return CLAUDE_CODE_MAP.sonnet;
+      if (lower.includes('haiku')) return CLAUDE_CODE_MAP.haiku;
       return 'inherit';
     }
   }

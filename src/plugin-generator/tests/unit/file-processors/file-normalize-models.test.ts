@@ -30,19 +30,19 @@ describe('fileNormalizeModels — claude', () => {
     // gpt-5.5 is first, claude-4.8-opus-high is second — claude should pick second
     const content = '---\nname: test\nmodel: gpt-5.5-high, claude-4.8-opus-high\n---\n\n# Body\n';
     const result = fileNormalizeModels(makeFrame(content), makeCtx('claude'));
-    expect(result.target_contents as string).toContain('model: opus');
+    expect(result.target_contents as string).toContain('model: claude-opus-4-8');
   });
 
-  it('maps claude-4.8-opus-high to opus', () => {
+  it('maps claude-4.8-opus-high to claude-opus-4-8', () => {
     const content = '---\nmodel: claude-4.8-opus-high, gpt-5.5-high\n---\n\n# Body\n';
     const result = fileNormalizeModels(makeFrame(content), makeCtx('claude'));
-    expect(result.target_contents as string).toContain('model: opus');
+    expect(result.target_contents as string).toContain('model: claude-opus-4-8');
   });
 
-  it('maps token containing sonnet to sonnet', () => {
+  it('maps token containing sonnet to claude-sonnet-4-6', () => {
     const content = '---\nmodel: gpt-5.4-medium, claude-4.6-sonnet\n---\n\n# Body\n';
     const result = fileNormalizeModels(makeFrame(content), makeCtx('claude'));
-    expect(result.target_contents as string).toContain('model: sonnet');
+    expect(result.target_contents as string).toContain('model: claude-sonnet-4-6');
   });
 
   it('returns frame unchanged when no claude-compatible model', () => {

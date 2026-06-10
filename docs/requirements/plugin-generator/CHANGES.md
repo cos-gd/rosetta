@@ -128,3 +128,19 @@ Owner review of the implementation surfaced overfitting and bolt-on options that
 **Changes:** FR-HOOK-0004 retitled "Index-entry inclusion flag (bootstrap-rule delivery is template-driven)"; statement now gates only index entries (`includeIndexEntries`) and states bootstrap-rule delivery follows the preserved templates (FR-VAR-0070) with no bootstrap-rule inclusion flag in the descriptor; acceptance updated (index-disabled → no index entries; bootstrap-rule delivery per templates; descriptor carries no `includeBootstrapRules`); `depends` → FR-VAR-0070; `implementation` → `ToBeModified` (remove the dead `includeBootstrapRules` field from `types.ts` + 6 specs). Status `Approved`.
 
 **Sibling code decisions (not requirement changes — logged in `plans/plugin-generator/report.md` + `SESSION-CONTEXT.md`):** `createHookFolderInR2` → **delete** (no requirement ever created it; baseline-overfit / wrong-prompt artifact). `deterministicHooks` branch → **RESOLVED compliant** (genuine behavior flag from release config, DATA-CFG-0001 / FR-HOOK-0020; the branch holds no release name, so NFR-0006 ✓ and FR-ARCH-0005 permits it).
+
+## 2026-06-10 — Claude Code model output format: short names → full model IDs
+
+**Context:** Owner instruction: Claude Code model normalization must output full model IDs (`claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-8`) instead of the previous short names (`sonnet`, `haiku`, `opus`). Scope: Claude Code only. Cursor and Copilot model mappings unchanged.
+
+### UPDATE-1 — FR-COPY-0021: Claude model normalization output format
+
+**Files:** `FR-COPY.md`, `MODEL.md`, `docs/ARCHITECTURE.md`
+
+**Change:** FR-COPY-0021 statement updated: "map that entry to the corresponding Claude short name (`opus`, `sonnet`, or `haiku`)" → "map that entry to the corresponding Claude full model ID (`claude-opus-4-8`, `claude-sonnet-4-6`, or `claude-haiku-4-5`)". Rationale, all acceptance criteria result assertions, implementation notes, and notes updated accordingly.
+
+DATA-CFG-0004 acceptance criteria updated: `Claude→'sonnet'` → `Claude→'claude-sonnet-4-6'`.
+
+ARCHITECTURE.md plugin section updated: "Claude Code uses short names (`sonnet`, `opus`, `haiku`)" → "Claude Code uses full model IDs (`claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5`)".
+
+**Status:** FR-COPY-0021 stays `Draft` (pending implementation). DATA-CFG-0004 remains `Approved` (acceptance criteria updated in place).

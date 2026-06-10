@@ -138,7 +138,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     preservedSource: path.join(pluginsRoot, 'core-claude'),
     modelVocabulary: CLAUDE_VOCABULARY,
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
-    includeBootstrapRules: true,
     includeIndexEntries: true,
     hookEntryShape: 'claude',
     pluginRootPath: '${CLAUDE_PLUGIN_ROOT}',
@@ -149,7 +148,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     injections: [],
     // DATA-CFG-0002: hook folder and bundle config
     hookFolder: 'hooks',
-    createHookFolderInR2: true,
     specEntries: [
       makeRulesEntry(fileNormalizeModels),
       makeWorkflowsEntry(fileNormalizeModels),
@@ -170,7 +168,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     preservedSource: path.join(pluginsRoot, 'core-cursor'),
     modelVocabulary: CURSOR_VOCABULARY,
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
-    includeBootstrapRules: true,
     includeIndexEntries: true,
     hookEntryShape: 'cursor',
     pluginRootPath: '',
@@ -181,7 +178,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     injections: [],
     // DATA-CFG-0002: hook folder and bundle config
     hookFolder: 'hooks',
-    createHookFolderInR2: true,
     specEntries: [
       {
         source: 'rules/**',
@@ -212,7 +208,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     preservedSource: path.join(pluginsRoot, 'core-copilot'),
     modelVocabulary: COPILOT_VOCABULARY,
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
-    includeBootstrapRules: true,
     includeIndexEntries: true,
     hookEntryShape: 'copilot',
     pluginRootPath: '',
@@ -223,7 +218,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     injections: [],
     // DATA-CFG-0002: hook folder and bundle config
     hookFolder: 'hooks',
-    createHookFolderInR2: true,
     specEntries: [
       makeRulesEntry(fileNormalizeModels),
       makeWorkflowsEntry(fileNormalizeModels, 'commands'),
@@ -258,7 +252,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     preservedSource: path.join(pluginsRoot, 'core-codex'),
     modelVocabulary: CODEX_VOCABULARY,
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
-    includeBootstrapRules: true,
     includeIndexEntries: true,
     hookEntryShape: 'codex',
     pluginRootPath: '',
@@ -268,9 +261,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     ],
     injections: [],
     // DATA-CFG-0002: hook folder and bundle config
-    // core-codex does NOT create hook folder in r2 (only r3 ships .codex/hooks/)
     hookFolder: '.codex/hooks',
-    createHookFolderInR2: false,
     specEntries: [
       {
         source: 'rules/**',
@@ -336,7 +327,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     preservedSource: path.join(pluginsRoot, 'core-cursor'),
     modelVocabulary: CURSOR_VOCABULARY,
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
-    includeBootstrapRules: false,
     includeIndexEntries: false,
     hookEntryShape: 'cursor',
     pluginRootPath: '.cursor',
@@ -365,7 +355,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     standaloneTemplates: [['hooks.json.tmpl', '.cursor/hooks.json.tmpl']],
     // DATA-CFG-0002: hook folder and bundle config
     hookFolder: '.cursor/hooks',
-    createHookFolderInR2: true,
     bundleSource: 'core-cursor', // uses parent target's bundles
     specEntries: [
       {
@@ -424,7 +413,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     preservedSource: path.join(pluginsRoot, 'core-copilot'),
     modelVocabulary: COPILOT_VOCABULARY,
     bootstrapManifest: [...BOOTSTRAP_MANIFEST_ORDER],
-    includeBootstrapRules: false,
     includeIndexEntries: false,
     hookEntryShape: 'copilot',
     pluginRootPath: '.github',
@@ -461,7 +449,6 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
     standaloneTemplates: [['hooks/hooks.json.tmpl', '.github/hooks/hooks.json.tmpl']],
     // DATA-CFG-0002: hook folder and bundle config
     hookFolder: '.github/hooks',
-    createHookFolderInR2: true,
     bundleSource: 'core-copilot', // uses parent target's bundles
     specEntries: [
       // Bootstrap rules → .github/instructions/*.instructions.md

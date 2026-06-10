@@ -151,25 +151,25 @@ The files a target keeps but never generates — the IDE manifest, hook template
 
 <req id="FR-COPY-0021" type="FR" level="System" ticketId="" classification="technical">
   <title>Claude model normalization: scan for first claude-compatible model</title>
-  <statement>For the Claude vocabulary, the Claude model-normalization processor shall scan the comma-separated `model:` list for the first entry whose token contains a claude-compatible substring (`opus`, `sonnet`, or `haiku`, case-insensitive, matched within the token), map that entry to the corresponding Claude short name (`opus`, `sonnet`, or `haiku`), and fall back to `inherit` when no such entry is found. The scan shall skip any leading non-claude tokens (e.g. `gpt-*`, `gemini-*`) without mapping them.</statement>
-  <rationale>Claude Code accepts only `opus`/`sonnet`/`haiku`/`inherit`. Agents may list a preferred non-claude model first (e.g. reviewer lists `gpt-5.4-medium` first); Claude normalization must skip non-claude entries and find the first claude-compatible one. Baseline confirms: `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `sonnet`; `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `sonnet` (reviewer and validator agents in r2/r3 baseline).</rationale>
+  <statement>For the Claude vocabulary, the Claude model-normalization processor shall scan the comma-separated `model:` list for the first entry whose token contains a claude-compatible substring (`opus`, `sonnet`, or `haiku`, case-insensitive, matched within the token), map that entry to the corresponding Claude full model ID (`claude-opus-4-8`, `claude-sonnet-4-6`, or `claude-haiku-4-5`), and fall back to `inherit` when no such entry is found. The scan shall skip any leading non-claude tokens (e.g. `gpt-*`, `gemini-*`) without mapping them.</statement>
+  <rationale>Claude Code accepts full model IDs (`claude-opus-4-8`, `claude-sonnet-4-6`, `claude-haiku-4-5`) and `inherit`. Agents may list a preferred non-claude model first (e.g. reviewer lists `gpt-5.4-medium` first); Claude normalization must skip non-claude entries and find the first claude-compatible one. Target output: `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `claude-sonnet-4-6` (reviewer and validator agents).</rationale>
   <source>Sources</source>
   <priority>Must</priority>
-  <status>Draft</status>
-  <approved_by></approved_by>
-  <changed>2026-06-04</changed>
+  <status>Approved</status>
+  <approved_by>User</approved_by>
+  <changed>2026-06-10</changed>
   <verification>Test</verification>
   <acceptance>
-    <criteria>Given: `model: claude-4.8-opus-high, gpt-5.5-high` When: normalized for Claude Then: result is `opus` (first token contains `opus`).</criteria>
-    <criteria>Given: `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` When: normalized for Claude Then: result is `sonnet` (scans past gpt-* and gemini-*, finds first claude-* token containing `sonnet`).</criteria>
+    <criteria>Given: `model: claude-4.8-opus-high, gpt-5.5-high` When: normalized for Claude Then: result is `claude-opus-4-8` (first token contains `opus`).</criteria>
+    <criteria>Given: `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` When: normalized for Claude Then: result is `claude-sonnet-4-6` (scans past gpt-* and gemini-*, finds first claude-* token containing `sonnet`).</criteria>
     <criteria>Given: `model: gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` When: normalized for Cursor Then: result is `gpt-5.4` (first-model-overall strategy, not claude-scan).</criteria>
-    <criteria>Given: `model: claude-4.5-haiku, gpt-5.4-low` When: normalized for Claude Then: result is `haiku`.</criteria>
-    <criteria>Given: `model: claude-sonnet-4-6, gpt-5.4-medium` When: normalized for Claude Then: result is `sonnet`.</criteria>
+    <criteria>Given: `model: claude-4.5-haiku, gpt-5.4-low` When: normalized for Claude Then: result is `claude-haiku-4-5`.</criteria>
+    <criteria>Given: `model: claude-sonnet-4-6, gpt-5.4-medium` When: normalized for Claude Then: result is `claude-sonnet-4-6`.</criteria>
     <criteria>Given: `model: gpt-5.5-high, gemini-3.1-pro-high` (no claude token) When: normalized for Claude Then: result is `inherit`.</criteria>
   </acceptance>
   <implementation>ToBeModified</implementation>
-  <implementationNotes>ToBeModified: names the Claude model-normalization processor rather than a single `fileNormalizeModels()`. corrected to match generator baseline; pending owner review — original stated "infers from substrings" without clarifying that Claude scans past non-claude tokens; baseline evidence: reviewer (r2/r3) source `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → claude output `sonnet`; validator same pattern → `sonnet`; Cursor/Copilot normalize reviewer to first-overall (gpt-5.4/GPT-5.4) confirming separate strategies</implementationNotes>
-  <notes>Concrete baseline examples (r3): architect `claude-4.8-opus-high, gpt-5.5-high, gemini-3.1-pro-high` → `opus`; reviewer `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `sonnet`; validator `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `sonnet`; executor `claude-4.5-haiku, gpt-5.4-low, gemini-3-flash` → `haiku`.</notes>
+  <implementationNotes>ToBeModified: names the Claude model-normalization processor rather than a single `fileNormalizeModels()`. Updated 2026-06-10: output changed from Claude short names (`sonnet`, `haiku`, `opus`) to full model IDs (`claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-8`). Cursor/Copilot normalize reviewer to first-overall (gpt-5.4/GPT-5.4) confirming separate strategies — unchanged.</implementationNotes>
+  <notes>Concrete target examples (r3): architect `claude-4.8-opus-high, gpt-5.5-high, gemini-3.1-pro-high` → `claude-opus-4-8`; reviewer `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `claude-sonnet-4-6`; validator `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `claude-sonnet-4-6`; executor `claude-4.5-haiku, gpt-5.4-low, gemini-3-flash` → `claude-haiku-4-5`.</notes>
 </req>
 
 <req id="FR-COPY-0022" type="FR" level="System" ticketId="" classification="technical">

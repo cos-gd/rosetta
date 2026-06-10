@@ -1,5 +1,28 @@
 # Plugin Generator — Coding Flow State
 
+## Compliance Refactor (2026-06-10)
+
+**Workflow:** coding-flow (MEDIUM) — task #8, #17, includeBootstrapRules removal
+**Requirements:** FR-ARCH-0005, DATA-CFG-0002, FR-ARCH-0004, FR-HOOK-0004
+
+| Phase | Status |
+|---|---|
+| Phase 1: Discovery | COMPLETED — discovery-notes.md written |
+| Phase 2: Tech Plan | COMPLETED — SPECS + PLAN compliance sections written |
+| Phase 3: Review Plan | PENDING |
+| Phase 4: HITL (plan) | PENDING — awaiting user approval |
+| Phase 5: Implementation | PENDING |
+| Phase 6: Code Review | PENDING |
+| Phase 7: Validation | PENDING |
+| Phase 8: HITL (impl) | PENDING |
+| Phase 9: Tests | PENDING |
+| Phase 10: Review Tests | PENDING |
+| Phase 11: Final Validation | PENDING |
+
+Baseline: tsc clean, 304 tests pass, r2=12 diffs / r3=22 diffs (all accepted buckets).
+
+---
+
 ## Code Review Findings Fix Pass (2026-06-05)
 
 ### Summary

@@ -1,3 +1,253 @@
+# Plugin Generator — Discovery Notes (Tasks #8, #17, includeBootstrapRules — 2026-06-10)
+
+## ADDENDUM: Task #8, #17, includeBootstrapRules Discovery (2026-06-10)
+
+### Baseline Health (re-check)
+
+Tests: 31 test files, **304 tests, all passing**. vitest required `npm install` first (no node_modules in worktree). Duration ~1.34s. Baseline is clean.
+
+---
+
+### Task #8 — IDE-name Switch Dispatch (FR-ARCH-0005)
+
+#### Switch site 1: `src/plugin-generator/src/bootstrap/payload.ts`
+
+Two switch sites on `shape` (sourced from `spec.hookEntryShape`):
+
+**Site A — `buildEntryForIde()` lines 188–204:**
+```
+switch (shape) {
+  case 'claude':  wrapInPrintf(jsonPayload) → buildClaudeEntry(command)
+                  → {"type":"command","command":"...","once":true}
+  case 'codex':   wrapInPrintf(jsonPayload) → buildCodexEntry(command)
+                  → {"type":"command","command":"...","statusMessage":"Loading Rosetta bootstrap","timeout":30}
+  case 'copilot': buildCopilotBashEntry(lockIndex,jsonPayload) + buildCopilotPowershellEntry(lockIndex,jsonPayload)
+                  → {"type":"command","bash":"...","powershell":"..."}
+  default:        return null   ← cursor falls here (no hook entry)
+}
+```
+
+**Site B — `buildPluginRootEntry()` lines 212–226:**
+```
+switch (shape) {
+  case 'claude':  buildClaudeEntry(CLAUDE_PLUGIN_ROOT_ENTRY.command)
+  case 'codex':   buildCodexEntry(CODEX_PLUGIN_ROOT_COMMAND)
+  case 'copilot': applyFolderRewrites(COPILOT_PLUGIN_ROOT_BASH/POWERSHELL, folderPairs) → buildCopilotEntry(bash, powershell)
+  default:        return null   ← cursor falls here (no plugin-root entry)
+}
+```
+
+Callers in the same file: `assembleBootstrapPayload()` at lines 106–113 and 122 passes `spec.hookEntryShape` to both.
+
+Cursor targets produce an **empty payload string** (`""`) from `assembleBootstrapPayload` — all entries return null and the join is empty.
+
+#### Switch site 2: `src/plugin-generator/src/file-processors/file-normalize-models.ts` lines 41–106
+
+`switch (vocabulary.kind)` — 4 cases, each genuinely different:
+- `claude`: scan comma-split tokens for FIRST claude-compatible (not first overall); map via `normalizeClaude()` → opus/sonnet/haiku/inherit
+- `cursor`: take FIRST token overall; map via `normalizeCursor()` + CURSOR_CLAUDE_MAP
+- `copilot`: take FIRST token overall; map via `normalizeCopilot()` + COPILOT_CLAUDE_MAP + COPILOT_GPT_MAP (display names)
+- `codex`: scan for FIRST gpt-* token; split effort suffix; no gpt token → STRIP model line entirely; gpt found → REWRITE to two-line `model: + model_reasoning_effort:`
+
+The `map` field on `ModelVocabulary` is set in model-maps.ts constants but is **never read at runtime** — the switch calls the free-standing normalize functions directly, not through `vocabulary.map`.
+
+#### Switch site 3: `src/plugin-generator/src/plugin-processors/plugin-assemble-bootstrap.ts` line 19
+
+```typescript
+const contextKey = `bootstrap_hooks_${shape}`;  // line 19
+```
+
+Produces `bootstrap_hooks_claude`, `bootstrap_hooks_codex`, `bootstrap_hooks_copilot`, or `bootstrap_hooks_cursor` as the templateContext key. The backtick interpolation IS the identity dispatch.
+
+Confirmed from existing discovery-notes Section 3 (Template Variables): cursor hooks.json.tmpl has **NO bootstrap payload placeholder** — cursor uses only `{{#if deterministic_hooks}}`. Claude, Copilot, Codex use `{{{triple-stache}}}` raw injection.
+
+#### `hookEntryShape` field: `types.ts` line 94
+
+```typescript
+hookEntryShape: 'claude' | 'copilot' | 'codex' | 'cursor';
+```
+Inline union on `PluginSpec`. No separate enum type.
+
+#### `ModelVocabulary.kind`: `types.ts` lines 79–82
+
+```typescript
+export interface ModelVocabulary {
+  kind: 'claude' | 'cursor' | 'copilot' | 'codex';
+  map: Record<string, string>;
+}
+```
+
+#### All reference sites (grep results)
+
+`hookEntryShape` written: `targets.ts` lines 143(claude), 175(cursor), 217(copilot), 263(codex), 341(cursor-standalone), 429(copilot-standalone)
+`hookEntryShape` read: `payload.ts:107,122`, `plugin-assemble-bootstrap.ts:17,19`
+`vocabulary.kind` read: `file-normalize-models.ts:41` — only one read site
+
+#### FR-ARCH-0005 compliance: required design
+
+1. Replace `fileNormalizeModels` (single dispatcher) with 4 case-specific processors:
+   `fileNormalizeModelsClaude`, `fileNormalizeModelsCursor`, `fileNormalizeModelsCopilot`, `fileNormalizeModelsCodex`.
+   Each calls its own normalize function. Each spec composes only the one it needs.
+   Shared low-level helpers: `normalizeClaude/Cursor/Copilot/Codex()` in model-maps.ts (keep these, they ARE the shared helpers).
+
+2. Replace `pluginAssembleBootstrap` shape switch with case-specific builders.
+   Option: factory `pluginAssembleBootstrap(entryBuilder, contextKey)` parameterized at composition time.
+   Or: 3 separate plugin processors. Cursor specs include no bootstrap assembly processor.
+
+3. Drop `hookEntryShape` from `PluginSpec` and `types.ts` after all runtime reads are gone.
+
+4. Drop `ModelVocabulary.kind` and `ModelVocabulary.map` after the switch is replaced. Both fields become dead. The `ModelVocabulary` interface + `*_VOCABULARY` constants + `modelVocabulary` field on `PluginSpec` all become dead — remove all of them.
+
+---
+
+### Task #17 — Delete `createHookFolderInR2`
+
+#### Field: `types.ts` line 124
+
+```typescript
+createHookFolderInR2?: boolean;   // optional field
+```
+
+#### Branch: `plugin-sync-bundles.ts` lines 84–98
+
+In r2 mode (`deterministicHooks === false`):
+```typescript
+if (spec.createHookFolderInR2) {
+  fs.mkdirSync(hookFolder, { recursive: true });
+}
+// regardless: remove stale .js files if folder exists
+```
+
+The `createHookFolderInR2` flag controls **only directory creation**. Stale-file cleanup still runs unconditionally.
+
+#### All 6 spec assignments in `targets.ts`
+
+| Spec | Value | Line |
+|------|-------|------|
+| core-claude | `true` | 152 |
+| core-cursor | `true` | 184 |
+| core-copilot | `true` | 226 |
+| core-codex | `false` | 273 |
+| core-cursor-standalone | `true` | 368 |
+| core-copilot-standalone | `true` | 464 |
+
+core-codex comment: "core-codex does NOT create hook folder in r2 (only r3 ships .codex/hooks/)"
+
+#### Replacement design
+
+Per FR-ARCH-0004: replace the flag with a `pluginCreateFolder(path, outputDir)` PluginProcessor. The 5 specs with `createHookFolderInR2: true` add this processor to their pipeline (conditioned on r2 — the factory captures `release.deterministicHooks`). core-codex omits it. r3 path is already covered by `pluginSyncBundles` which calls `fs.mkdirSync(hookFolder, { recursive: true })` at line 64 in the r3 branch.
+
+---
+
+### Dead `includeBootstrapRules`
+
+#### Field: `types.ts` line 92
+
+```typescript
+includeBootstrapRules: boolean;   // required (non-optional)
+```
+
+#### Confirmed dead — zero reads outside definition + assignment
+
+All occurrences in src/:
+- `types.ts:92` — definition
+- `targets.ts:141,173,215,261` — set to `true` (main targets)
+- `targets.ts:339,427` — set to `false` (standalone targets)
+
+No processor ever reads `spec.includeBootstrapRules`. The field is written only.
+
+#### Deletion scope
+
+Remove `types.ts:92` and 6 lines from `targets.ts`. No behavior changes.
+
+---
+
+### FR-ARCH-0005 Summary
+
+Full requirement at `docs/requirements/plugin-generator/FR-ARCH.md` lines 88–109.
+
+Key rules:
+1. No processor branches on IDE/target identity or identity-discriminant flags.
+2. `hookEntryShape` and `ModelVocabulary.kind` are explicitly named as identity-discriminant flags to drop.
+3. Per-case variation by composition: case-specific processor in each spec, shared low-level helpers.
+4. A new IDE requires only new spec data + new case-specific processors — no edits to shared processor control flow.
+
+FR-ARCH.md `implementationNotes` explicitly names the 3 target sites for task #8:
+- `bootstrap/payload.ts` switch(shape)
+- `file-processors/file-normalize-models.ts` switch(vocabulary.kind)
+- `plugin-processors/plugin-assemble-bootstrap.ts` bootstrap_hooks_${shape}
+
+---
+
+### Processor Pipeline Pattern
+
+`buildPipeline()` in `targets.ts` lines 554–577 — all 6 specs use the same function:
+```
+pluginCleanup → pluginCopy → pluginProcessSpecEntries → pluginRewriteReferences →
+pluginGenerateIndexes → pluginInjectSections → pluginAssembleBootstrap →
+pluginRenderTemplates → pluginMirrorFiles → pluginSyncBundles → pluginWrite
+```
+
+`isStandalone` parameter accepted but unused in `buildPipeline` body.
+
+File processor pattern — `BASE_PROCESSORS = [fileRead, fileApplyOverrides, fileBundle]`, then each entry appends `fileNormalizeModels` and optionally `fileRename(...)`.
+
+---
+
+### File Inventory
+
+**`src/plugin-generator/src/file-processors/`**
+- `file-apply-overrides.ts`
+- `file-bundle.ts`
+- `file-codex-agent.ts`
+- `file-normalize-models.ts` — TARGET (task #8: replace with 4 per-vocabulary processors)
+- `file-read.ts`
+- `file-rename.ts`
+
+**`src/plugin-generator/src/plugin-processors/`**
+- `plugin-assemble-bootstrap.ts` — TARGET (task #8: remove hookEntryShape interpolation/dispatch)
+- `plugin-cleanup.ts`
+- `plugin-copy.ts`
+- `plugin-generate-indexes.ts`
+- `plugin-inject-sections.ts`
+- `plugin-mirror-files.ts`
+- `plugin-process-spec-entries.ts`
+- `plugin-render-templates.ts`
+- `plugin-rewrite-references.ts`
+- `plugin-sync-bundles.ts` — TARGET (task #17: remove createHookFolderInR2 branch)
+- `plugin-write.ts`
+
+**`src/plugin-generator/src/bootstrap/`**
+- `copilot-lock.ts` — builds bash/ps forms, used by payload.ts
+- `payload.ts` — TARGET (task #8: both switch sites on hookEntryShape)
+
+---
+
+### Open Questions / Risks
+
+**Q1 — pluginAssembleBootstrap replacement design**
+
+Option A: factory `pluginAssembleBootstrap(entryBuilder, contextKey)` — caller passes IDE-specific entry-builder fn + literal key.
+Option B: 3 separate plugin processor factories. Common loop (manifest iteration, prefix, rewrites, size check) in shared low-level function.
+
+Cursor specs currently set `bootstrap_hooks_cursor` key with empty string `""`. After fix, cursor specs should simply not include the bootstrap assembly processor — no key set. Templates confirmed: cursor hooks.json.tmpl has no `{{{bootstrap_hooks_cursor}}}` placeholder.
+
+**Q2 — pluginCreateFolder for createHookFolderInR2 replacement**
+
+New processor needed. r3 path already creates the folder inside `pluginSyncBundles`. Factory should capture `deterministicHooks` and be no-op in r3.
+
+**Q3 — ModelVocabulary type after task #8**
+
+After removing `kind` (switch) and `map` (unused): `ModelVocabulary` interface becomes empty, `*_VOCABULARY` constants become dead, `modelVocabulary` field on `PluginSpec` becomes dead. Remove all. The normalize functions in model-maps.ts stay — they become the shared low-level helpers for the case-specific processors.
+
+**Q4 — Test coverage**
+
+304 tests pass today. New tests needed for: 4 case-specific `fileNormalizeModels*` processors, 3 (or parameterized) `pluginAssembleBootstrap*` processors, new `pluginCreateFolder` processor.
+
+---
+
+# Original Discovery Notes (2026-06-04)
+
 # Plugin Generator — Discovery Notes
 
 **Generated:** 2026-06-04

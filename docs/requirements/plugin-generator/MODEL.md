@@ -67,13 +67,13 @@ The generator is data-driven: a future release, domain, or IDE is added by editi
   <priority>Must</priority>
   <status>Approved</status>
   <approved_by>User</approved_by>
-  <changed>2026-06-04</changed>
+  <changed>2026-06-10</changed>
   <verification>Inspection</verification>
   <acceptance>
-    <criteria>Given: logical key `sonnet` When: normalized Then: Claude→`sonnet`, Cursor→`claude-sonnet-4-6`, Copilot→`Claude Sonnet 4.6`.</criteria>
+    <criteria>Given: logical key `sonnet` When: normalized Then: Claude→`claude-sonnet-4-6`, Cursor→`claude-sonnet-4-6`, Copilot→`Claude Sonnet 4.6`.</criteria>
     <criteria>Given: a `gpt-*` value When: normalized for Codex Then: a base model and optional reasoning-effort are derived.</criteria>
   </acceptance>
-  <implementation>NotStarted</implementation>
+  <implementation>ToBeModified</implementation>
   <implementationNotes></implementationNotes>
   <notes>Mapping values (model version strings) are content/config, expected to change over time; the mapping mechanism is the requirement, not the specific strings.</notes>
 </req>

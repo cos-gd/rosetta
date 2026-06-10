@@ -57,7 +57,6 @@ describe('pluginSyncBundles', () => {
         destination: 'core-claude',
         hookFolder: 'hooks',
         bundleSource: 'core-claude',
-        createHookFolderInR2: true,
       };
       const targetDir = path.join(outputDir, 'core-claude');
       fs.mkdirSync(targetDir, { recursive: true });
@@ -68,26 +67,6 @@ describe('pluginSyncBundles', () => {
       }
     } finally {
       cleanup();
-    }
-  });
-
-  it('r2: creates hook folder when createHookFolderInR2=true', () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-r2-'));
-    try {
-      const hooksSource = path.join(tmpDir, 'hooks');
-      const outputDir = path.join(tmpDir, 'output');
-      const targetDir = path.join(outputDir, 'core-claude');
-      fs.mkdirSync(targetDir, { recursive: true });
-      const spec: Partial<PluginSpec> = {
-        name: 'core-claude',
-        destination: 'core-claude',
-        hookFolder: 'hooks',
-        createHookFolderInR2: true,
-      };
-      pluginSyncBundles(hooksSource, outputDir, false)(makePluginFrame(spec));
-      expect(fs.existsSync(path.join(targetDir, 'hooks'))).toBe(true);
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
     }
   });
 
@@ -103,7 +82,6 @@ describe('pluginSyncBundles', () => {
         name: 'core-claude',
         destination: 'core-claude',
         hookFolder: 'hooks',
-        createHookFolderInR2: true,
       };
       pluginSyncBundles(hooksSource, outputDir, false)(makePluginFrame(spec));
       expect(fs.existsSync(path.join(hookDir, 'dangerous-actions.js'))).toBe(false);
@@ -124,7 +102,6 @@ describe('pluginSyncBundles', () => {
         name: 'core-claude',
         destination: 'core-claude',
         hookFolder: 'hooks',
-        createHookFolderInR2: true,
       };
       pluginSyncBundles(hooksSource, outputDir, false)(makePluginFrame(spec));
       // hooks.json must still exist
@@ -146,7 +123,6 @@ describe('pluginSyncBundles', () => {
         destination: 'core-windsurf',
         hookFolder: 'hooks',
         bundleSource: 'core-windsurf', // no bundle dir exists
-        createHookFolderInR2: true,
       };
       // Should not throw
       const result = pluginSyncBundles(hooksSource, outputDir, true)(makePluginFrame(spec));
@@ -166,7 +142,6 @@ describe('pluginSyncBundles', () => {
         destination: 'core-claude',
         hookFolder: 'hooks',
         bundleSource: 'core-claude',
-        createHookFolderInR2: true,
       };
       const targetDir = path.join(outputDir, 'core-claude');
       fs.mkdirSync(targetDir, { recursive: true });
@@ -181,7 +156,7 @@ describe('pluginSyncBundles', () => {
     }
   });
 
-  it('r2: no-op when createHookFolderInR2 is false', () => {
+  it('r2: hook folder not created (createHookFolderInR2 removed)', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-r2-nodir-'));
     try {
       const hooksSource = path.join(tmpDir, 'hooks');
@@ -192,10 +167,9 @@ describe('pluginSyncBundles', () => {
         name: 'core-codex',
         destination: 'core-codex',
         hookFolder: '.codex/hooks',
-        createHookFolderInR2: false,
       };
       pluginSyncBundles(hooksSource, outputDir, false)(makePluginFrame(spec));
-      // Hook folder must NOT be created
+      // Hook folder is never created in r2 (createHookFolderInR2 removed, FR-ARCH-0004)
       expect(fs.existsSync(path.join(targetDir, '.codex', 'hooks'))).toBe(false);
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -210,7 +184,6 @@ describe('pluginSyncBundles', () => {
         destination: 'core-claude',
         hookFolder: 'hooks',
         bundleSource: 'core-claude',
-        createHookFolderInR2: true,
       };
       const p = makePluginFrame(spec);
       // dryRun=true → no-op
