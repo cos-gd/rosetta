@@ -75,7 +75,8 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 4. Required skills: `coding`
 5. Recommended skills: `debugging`, `coding-iac`, `sensitive-data`, `testing`, `dangerous-actions`
 6. If requirements are used code must contain comments refs to requirements identifiers
-7. Update `coding-flow-state.md`
+7. Spawn multiple implementation agents on independent tasks without dependencies and files intersection if reasonable
+8. Update `coding-flow-state.md`
 
 </implementation>
 
