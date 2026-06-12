@@ -63,7 +63,7 @@ Audience: AI like you.
 Similarly, ask Opus-class model to help you with:
 
 ```
-Read and record the technical facts about the project in `docs/CONTEXT.md`:
+Read and record the technical facts about the project in `docs/ARCHITECTURE.md`:
 
 - How to start the application(s) locally.
 - Where and when integration tests and e2e tests are created.
