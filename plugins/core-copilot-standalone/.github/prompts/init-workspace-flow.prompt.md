@@ -20,9 +20,9 @@ Validation: State file tracks every phase with file inventory; verification conf
 - MUST FOLLOW THIS WORKFLOW EXACTLY AND FULLY.
 - MUST extensively use subagents as this is a large workflow.
 - Sequential phases. Each updates `agents/init-workspace-flow-state.md`. Optional phases marked as skipped. Keep state file very brief.
-- ACCURACY > SPEED
+- No rush, Take your time, Be thorough, ACCURACY > SPEED
 - Dual-mode: every phase reads `state.mode` → check-exists → identify-gaps → create/update → preserve-human-content → report-changes.
-- Composite workspace: documentation phases create top-level registry referencing sub-repository docs.
+- Composite workspace: documentation phases to create top-level index referencing sub-repository docs.
 - IF state.file_count >= 50 (set by Phase 3): pass "ACQUIRE `large-workspace-handling/SKILL.md` FROM KB" to Phase 5, 6, 8 subagents.
 - Before Phase 1: create `agents/init-workspace-flow-state.md`.
 - Conditional phases:
@@ -31,7 +31,10 @@ Validation: State file tracks every phase with file inventory; verification conf
 - Note: `rosetta@rosetta` is an MCP connector, not a plugin — it follows the normal path (shells phase 2 executes)
 - If user says to initialize rules, subagents, agents, workflows, commands it ONLY means to execute "shells" phase 2.
 - Upgrade from R1 to R2 is exactly the same process as define here, but you already have some files available, which you can reuse.
-- Additionally tell subagents: "If you want to use shell commands, prefer to combine individual shell commands into single **simple** shell script in `agents/TEMP` and execute it, but already available tools ALWAYS take precedence."
+- Additionally tell subagents: "If you want to use shell commands, prefer to combine individual shell commands into single **simple** shell script and execute it, but already available tools ALWAYS take precedence."
+- When subagents already available, you are orchestrator and senior team lead and effective manager. Orchestrator makes process poka-yoke and reliable itself, `trusts but verify`, `if anything could go wrong - it will go wrong`, provides clear context and instructions, subagents can cheat, consults with architect, makes reviewer to review and verify with fresh eyes, and uses subagents as his team. It adopts and tunes management best practices to solve specific user request. It tells WHAT to do and HOW to think, does not work on tasks for subagents itself, but organizes them, encourages to think, instead of mechanical work. It does not paraphrase instructions, but appends, uses MoSCoW, ensures subagents grounded, provides references to files, instructions, phases, steps, skills (instead of duplicating and paraphrasing).
+- Remember: subagents always start with fresh context on every run. User can not see orchestrator and subagent communication.
+- Subagent prompt must be concise, dense, factual, specific, DRY, etc.
 
 <context phase="1" subagent="built-in" role="Workspace mode detector" subagent_recommended_model="claude-haiku-4-5, gemini-3-flash-preview">
 

@@ -23,9 +23,9 @@ Validation: State file tracks every phase with file inventory; verification conf
 3. MUST FOLLOW THIS WORKFLOW EXACTLY AND FULLY.
 4. MUST extensively use subagents as this is a large workflow.
 5. Sequential phases. Each updates `agents/init-workspace-flow-state.md`. Optional phases marked as skipped. Keep state file very brief.
-6. ACCURACY > SPEED
+6. No rush, Take your time, Be thorough, ACCURACY > SPEED
 7. Dual-mode: every phase reads `state.mode` → check-exists → identify-gaps → create/update → preserve-human-content → report-changes.
-8. Composite workspace: documentation phases create top-level registry referencing sub-repository docs.
+8. Composite workspace: documentation phases to create top-level index referencing sub-repository docs.
 9. IF state.file_count >= 50 (set by Phase 3): pass "ACQUIRE `large-workspace-handling/SKILL.md` FROM KB" to Phase 5, 7, 8 subagents.
 10. Create `agents/init-workspace-flow-state.md`.
 11. Conditional phases:
@@ -34,7 +34,10 @@ Validation: State file tracks every phase with file inventory; verification conf
 12. Note: `rosetta@rosetta` is an MCP connector, not a plugin — it follows the normal path (shells phase 2 executes)
 13. If user says to initialize rules, subagents, agents, workflows, commands it ONLY means to execute "shells" phase 2.
 14. Upgrade from R2 to R3 is exactly the same process as define here, but you already have some files available, which you can reuse.
-15. Additionally tell subagents: "If you want to use shell commands, prefer to combine individual shell commands into single **simple** shell script in `agents/TEMP` and execute it, but already available tools ALWAYS take precedence."
+15. Additionally tell subagents: "If you want to use shell commands, prefer to combine individual shell commands into single **simple** shell script and execute it, but already available tools ALWAYS take precedence."
+16. When subagents already available, you are orchestrator and senior team lead and effective manager. Orchestrator makes process poka-yoke and reliable itself, `trusts but verify`, `if anything could go wrong - it will go wrong`, provides clear context and instructions, subagents can cheat, consults with architect, makes reviewer to review and verify with fresh eyes, and uses subagents as his team. It adopts and tunes management best practices to solve specific user request. It tells WHAT to do and HOW to think, does not work on tasks for subagents itself, but organizes them, encourages to think, instead of mechanical work. It does not paraphrase instructions, but appends, uses MoSCoW, ensures subagents grounded, provides references to files, instructions, phases, steps, skills (instead of duplicating and paraphrasing).
+17. Remember: subagents always start with fresh context on every run. User can not see orchestrator and subagent communication.
+18. Subagent prompt must be concise, dense, factual, specific, DRY, etc.
 
 </prerequisites>
 
@@ -107,7 +110,8 @@ DISABLED
 1. Verify all files exist, run validation checklist, suggest next steps.
 2. ACQUIRE `init-workspace-flow-verification.md` FROM KB
 3. Mark state as COMPLETE.
-4. Demand user as MUST to start new chat session (highly visible message, red icon, bold, ASCII art, it must standout).
+4. Notify user: delete `init-rosetta-shells-flow.md`.
+5. Demand user as MUST to start new chat session (highly visible message, red icon, bold, ASCII art, it must standout).
 
 </verification>
 
