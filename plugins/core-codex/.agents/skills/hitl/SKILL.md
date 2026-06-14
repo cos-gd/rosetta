@@ -47,7 +47,7 @@ Questioning:
 
 Approval:
 
-17. MUST NOT assume approval — user message (questions, suggestions, edits) = review, not approval.
+17. MUST NOT assume approval — user message (questions, suggestions, edits) = review, not approval. User questions are only questions.
 18. Accepted: `Yes, I approve`, `Approve, the plan was reviewed`, etc.
 19. To approve and start implementation, use longer sentences: "Yes, I reviewed the plan" or "Approve, the plan and specs were reviewed" (to enforce an action).
 20. Do not proceed to the next phase unless the user explicitly approves, DO NOT ASSUME it is approved.
