@@ -145,7 +145,7 @@ export function normalizeCopilot(modelField: string): string | null {
 
 export interface CodexModelResult {
   model: string;
-  effort: string;
+  effort: string | undefined;
 }
 
 export function normalizeCodex(modelField: string): CodexModelResult | null {
@@ -158,7 +158,7 @@ export function normalizeCodex(modelField: string): CodexModelResult | null {
       if (effortMatch) {
         return { model: effortMatch[1], effort: effortMatch[2] };
       }
-      return { model: token, effort: 'medium' }; // default effort
+      return { model: token, effort: undefined }; // no effort suffix
     }
   }
   return null; // no gpt token

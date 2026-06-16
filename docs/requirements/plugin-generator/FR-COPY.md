@@ -157,7 +157,7 @@ The files a target keeps but never generates — the IDE manifest, hook template
   <priority>Must</priority>
   <status>Approved</status>
   <approved_by>User</approved_by>
-  <changed>2026-06-10</changed>
+  <changed>2026-06-16</changed>
   <verification>Test</verification>
   <acceptance>
     <criteria>Given: `model: claude-4.8-opus-high, gpt-5.5-high` When: normalized for Claude Then: result is `claude-opus-4-8` (first token contains `opus`).</criteria>
@@ -166,28 +166,30 @@ The files a target keeps but never generates — the IDE manifest, hook template
     <criteria>Given: `model: claude-4.5-haiku, gpt-5.4-low` When: normalized for Claude Then: result is `claude-haiku-4-5`.</criteria>
     <criteria>Given: `model: claude-sonnet-4-6, gpt-5.4-medium` When: normalized for Claude Then: result is `claude-sonnet-4-6`.</criteria>
     <criteria>Given: `model: gpt-5.5-high, gemini-3.1-pro-high` (no claude token) When: normalized for Claude Then: result is `inherit`.</criteria>
+    <criteria>Given: the Python generator's CURSOR_MODEL_MAP or COPILOT_MODEL_MAP is updated to a new model version or entry When: the TypeScript CURSOR_CLAUDE_MAP, CURSOR_GPT_MAP, CURSOR_GEMINI_MAP, COPILOT_CLAUDE_MAP, COPILOT_GPT_MAP, and COPILOT_GEMINI_MAP are inspected Then: they produce identical output values for all model token inputs present in instruction source frontmatter.</criteria>
   </acceptance>
-  <implementation>ToBeModified</implementation>
-  <implementationNotes>ToBeModified: names the Claude model-normalization processor rather than a single `fileNormalizeModels()`. Updated 2026-06-10: output changed from Claude short names (`sonnet`, `haiku`, `opus`) to full model IDs (`claude-sonnet-4-6`, `claude-haiku-4-5`, `claude-opus-4-8`). Cursor/Copilot normalize reviewer to first-overall (gpt-5.4/GPT-5.4) confirming separate strategies — unchanged.</implementationNotes>
+  <implementation>Implemented</implementation>
+  <implementationNotes>src/plugin-generator/src/spec/model-maps.ts: normalizeClaude() scans tokens, CLAUDE_CODE_MAP maps opus/sonnet/haiku substrings to full model IDs. CURSOR_CLAUDE_MAP and COPILOT_CLAUDE_MAP kept in parity with Python authoritative maps.</implementationNotes>
   <notes>Concrete target examples (r3): architect `claude-4.8-opus-high, gpt-5.5-high, gemini-3.1-pro-high` → `claude-opus-4-8`; reviewer `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `claude-sonnet-4-6`; validator `gpt-5.4-medium, gemini-3.1-pro-preview, claude-4.6-sonnet` → `claude-sonnet-4-6`; executor `claude-4.5-haiku, gpt-5.4-low, gemini-3-flash` → `claude-haiku-4-5`.</notes>
 </req>
 
 <req id="FR-COPY-0022" type="FR" level="System" ticketId="" classification="technical">
   <title>Codex model and reasoning-effort split</title>
-  <statement>For the Codex vocabulary, the generator shall select the first `gpt-*` model from a comma-separated list, separate a trailing reasoning-effort suffix into a distinct effort value when present, and emit no model when none qualifies.</statement>
-  <rationale>Codex requires an OpenAI model and a separate reasoning-effort field.</rationale>
+  <statement>For the Codex vocabulary, the generator shall select the first `gpt-*` model from a comma-separated list, separate a trailing reasoning-effort suffix (`-high`, `-medium`, or `-low`) into a distinct effort value when present, write both `model: <id>` and `model_reasoning_effort: <effort>` when a suffix is present, write only `model: <id>` when no suffix is present (no default effort is substituted), and emit no model fields when no qualifying token is found.</statement>
+  <rationale>Codex requires an OpenAI model and a separate reasoning-effort field when effort is explicit. Requiring an explicit effort suffix in source is a content authoring contract; the generator must not silently substitute a default value because different agents carry different intended effort levels.</rationale>
   <source>Sources</source>
   <priority>Must</priority>
   <status>Approved</status>
   <approved_by>User</approved_by>
-  <changed>2026-06-04</changed>
+  <changed>2026-06-16</changed>
   <verification>Test</verification>
   <acceptance>
     <criteria>Given: `gpt-5.3-codex-high` When: normalized for Codex Then: model is `gpt-5.3-codex` and effort is `high`.</criteria>
-    <criteria>Given: a value with no `gpt-` entry When: normalized for Codex Then: no model is produced.</criteria>
+    <criteria>Given: `gpt-5.4` (no effort suffix) When: normalized for Codex Then: the output contains `model: gpt-5.4` and does not contain `model_reasoning_effort`.</criteria>
+    <criteria>Given: a value with no `gpt-` entry When: normalized for Codex Then: no model fields are produced.</criteria>
   </acceptance>
-  <implementation>ToBeModified</implementation>
-  <implementationNotes>ToBeModified: Codex model normalization becomes a per-vocabulary case-specific processor (FR-ARCH-0046/0005).</implementationNotes>
+  <implementation>Implemented</implementation>
+  <implementationNotes>src/plugin-generator/src/spec/model-maps.ts: normalizeCodex() returns { model, effort: undefined } when no effort suffix; Codex emitter writes only `model:` field when effort is undefined.</implementationNotes>
 </req>
 
 ## Renames and reference rewriting

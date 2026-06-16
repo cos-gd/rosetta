@@ -115,6 +115,7 @@ function makeConfigureEntry(targetFolder = 'configure'): SpecEntry {
     target: targetFolder,
     exclude: [],
     processors: [...BASE_PROCESSORS],
+    verbatim: true, // TODO-2: configure files must not have references rewritten
   };
 }
 
@@ -297,6 +298,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
         target: '.agents/configure',
         exclude: [],
         processors: [...BASE_PROCESSORS],
+        verbatim: true, // TODO-2: configure files must not have references rewritten
       },
       {
         source: 'templates/**',
@@ -390,6 +392,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
         target: '.cursor/configure',
         exclude: [],
         processors: [...BASE_PROCESSORS],
+        verbatim: true, // TODO-2: configure files must not have references rewritten
       },
     ],
     pluginProcessors: buildPipeline(hooksSource, outputDir, release, dryRun, pluginAssembleCursorBootstrap),
@@ -522,6 +525,7 @@ export function buildAllSpecs(ctx: SpecBuildContext): PluginSpec[] {
         target: '.github/configure',
         exclude: [],
         processors: [...BASE_PROCESSORS],
+        verbatim: true, // TODO-2: configure files must not have references rewritten
       },
     ],
     pluginProcessors: buildPipeline(hooksSource, outputDir, release, dryRun, pluginAssembleCopilotBootstrap),
