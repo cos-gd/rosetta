@@ -185,6 +185,108 @@ Setup actions:
 - Clone any read-only reference codebases into `refsrc/` as subfolders.
 - Initialize Rosetta (see [Quick Start](QUICKSTART.md)).
 
+<details>
+<summary><b>Detailed examples what should be in RefSrc folder</b></summary>
+
+1. Example what integration or e2e testing repository needs:
+
+```
+api-integration-testing
+|- src
+|  |- main.py
+|  |- tests
+|  |  |- test_api_integration.py
+|  |  |- test_api_integration_2.py
+|  |  |- test_api_integration_3.py
+|  |  |- test_api_integration_4.py
+|  |  |- test_api_integration_5.py
+|  |  |- test_api_integration_6.py
+|  |  |- test_api_integration_7.py
+|  |  |- test_api_integration_8.py
+|  |  |- test_api_integration_9.py
+|  |  |- test_api_integration_10.py
+|- requirements.txt
+|- README.md
+|- .gitignore
+|- .env
+|- refsrc
+|  |- backend-api
+|  |  |- api.py
+|  |  |- endpoints.py
+|  |  |- models.py
+|  |  |- schemas.py
+|  |  |- utils.py
+|  |  |- tests
+|  |  |  |- test_api.py
+|  |  |  |- test_api_2.py
+|  |  |  |- test_api_3.py
+|  |  |  |- test_api_4.py
+|  |  |  |- test_api_5.py
+|- docs
+```
+
+2. Example what frontend repository will need:
+
+```
+frontend-app
+|- src
+|  |- main.js
+|  |- index.html
+|  |- style.css
+|  |- script.js
+|- refsrc
+|  |- backend-api
+|  |  |- api.py
+|  |  |- endpoints.py
+|  |  |- models.py
+|  |  |- schemas.py
+|  |  |- utils.py
+|  |  |- tests
+|  |  |  |- test_api.py
+|  |  |  |- test_api_2.py
+|  |  |  |- test_api_3.py
+|  |  |  |- test_api_4.py
+|  |  |  |- test_api_5.py
+|  |- corporate-bootstrap-theme
+|  |  |- src
+|  |  |  |- assets
+|  |  |  |  |- css
+|  |  |  |  |  |- js
+|  |  |  |  |  |- images
+|  |  |  |  |  |- fonts
+|  |  |  |  |  |- index.html
+```
+
+3. Example what backend repository will need:
+
+```
+backend-api
+|- src
+|  |- main.py
+|  |- tests
+|  |  |- test_api.py
+|  |  |- test_api_2.py
+|  |  |- test_api_3.py
+|  |  |- test_api_4.py
+|  |  |- test_api_5.py
+|- refsrc
+|  |- iac-terraform
+|  |  |- main.tf
+|  |  |- variables.tf
+|  |  |- outputs.tf
+|  |  |- README.md
+|  |- iac-values
+|  |  |- values.yaml
+|  |  |- values-dev.yaml
+|  |  |- values-prod.yaml
+|  |- jenkins-pipeline
+|  |  |- Jenkinsfile
+|  |  |- Jenkinsfile-dev
+|  |  |- Jenkinsfile-prod
+```
+
+</details>
+
 ---
 
 **Option 2 — Composite Workspace with Submodules.** A top-level envelope repository holds each sub-repository as a git submodule. This integrates cleanly with standard git tooling and avoids manual gitignore maintenance. This layout needs the `large-workspace-handling` skill.
