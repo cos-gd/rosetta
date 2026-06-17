@@ -178,6 +178,10 @@ Complete the OAuth flow when prompted. Then ask:
 
 STDIO transport is available for air-gapped environments. [All IDEs and detailed setup](INSTALLATION.md). Read more in the [Quickstart](QUICKSTART.md).
 
+## Tech Demo
+
+https://github.com/user-attachments/assets/fc0ef06a-2f9c-49fa-bc05-68001dadd286
+
 ## Contributing
 
 Use Rosetta plugins to develop Rosetta.
