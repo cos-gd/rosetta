@@ -15,67 +15,43 @@ Last updated: 2026-06-16
 - **TODO-2 — configure frame scoping**: Two-layer fix implemented. (1) `verbatim: true` capability flag on `SpecEntry`/`FileProcessingFrame`; `makeConfigureEntry` sets it; `pluginRewriteReferences` skips verbatim frames (belt-and-suspenders). (2) Option 1 regex: `rewritePathToken` extended with a second lookbehind `(?<!\.[A-Za-z][A-Za-z0-9_-]*/)` that blocks matches preceded by any dot-directory segment (`.windsurf/`, `.cursor/`, `.github/`) — these are IDE-native paths, not Rosetta instruction cross-references. Root cause boundary: bare `workflows/coding-flow.md` (plugin-internal, must rewrite) vs `.windsurf/workflows/` (dot-directory-prefixed IDE documentation, must not). **Implemented.**
 - **FR-ARCH-0051 behavior**: missing anchor in `pluginInjectSections` → graceful skip (correct for r3 compatibility). Missing host frame → hard error. The requirement text was wrong; it has been fixed (see requirements).
 - **Parity**: TypeScript generator is now more correct than Python in several areas (configure verbatim, TOML escaping, model maps). These are new accepted buckets, not regressions.
+- **CODE-L1..L4 — dead code / correctness cleanup (implemented 2026-06-16)**:
+  - L1: Deleted dead export `wrapInPrintfDoubleQuoted` from `escaping/shell.ts` + its test block. Double-quoted printf was embedded directly in `CLAUDE_PLUGIN_ROOT_ENTRY.command`; function was never called.
+  - L2: Removed dead `once: true` field from `CLAUDE_PLUGIN_ROOT_ENTRY` in `spec/bootstrap-manifest.ts`. Field was never read; `once:true` behavior hardcoded in `buildClaudeBootstrapEntry`. Updated comment in `plugin-assemble-claude-bootstrap.ts` for consistency.
+  - L3: Added soft `GenError` in `plugin-render-templates.ts` catch block. Render failures now surface via `kind:'soft'` → exit code ≠ 0 so callers know generation was not fully successful (FR-GEN-0010).
+  - L4: Fixed stale "section 3" comment in `spec/targets.ts` line ~322. Cursor-standalone only has 2 injection sections.
 
 ---
 
 ## Open items
 
-| # | ID | Severity | Title |
-|---|---|---|---|
-| 1 | CODE-L1 | LOW | Dead export `wrapInPrintfDoubleQuoted` in `escaping/shell.ts` |
-| 2 | CODE-L2 | LOW | Dead `once: true` field on `CLAUDE_PLUGIN_ROOT_ENTRY` |
-| 3 | CODE-L3 | LOW | Render failures silently swallowed (`plugin-render-templates.ts`) |
-| 4 | CODE-L4 | LOW | Stale "section 3" comment in `targets.ts` |
-| 5 | REQ-GAP-2 | LOW | FR-COPY-0021 parity contract unclear |
-| 6 | REQ-GAP-3 | LOW | Codex no-effort behavior: requirement needed to match MODEL-TODO-4 fix |
+All open items resolved. See session decisions above for what was done.
 
 ---
 
-## CODE-L1 — Dead export `wrapInPrintfDoubleQuoted`
+## REQ-GAP-2 — FR-COPY-0021 defects — **Resolved 2026-06-16**
 
-**When:** Any developer reads `escaping/shell.ts` and sees an exported function.
-**What:** Exported, zero callers.
-**Why:** Creates false API surface.
-**How:** Delete or unexport. `grep -rn "wrapInPrintfDoubleQuoted" src/plugin-generator/src/` confirms no callers.
-
----
-
-## CODE-L2 — Dead `once: true` on `CLAUDE_PLUGIN_ROOT_ENTRY`
-
-**When:** Developer reads `bootstrap-manifest.ts` and assumes `once` controls behavior.
-**What:** `CLAUDE_PLUGIN_ROOT_ENTRY.once: true` is never read — only `.command` is accessed. The `once` flag is hardcoded inside `buildClaudeBootstrapEntry`.
-**Why:** Misleads: changing it has no effect.
-**How:** Remove `once: true` from the constant.
+- Defect 1: Artifact AC rephrased — Python/TypeScript names replaced with observable behavioral statement (all vocabularies produce current authoritative model IDs for supported tokens).
+- Defect 2: Statement updated to include `claude-` prefix as a claude-compatible token (maps to `inherit` when no tier substring).
+- Defect 3: Stray Cursor AC removed from FR-COPY-0021 — already present in FR-COPY-0020.
+- Bonus: `claude-opus-4-6` typo → `claude-opus-4-8` in FR-COPY-0020 AC; `CURSOR_MODEL_MAP` artifact ref removed.
+- FR-COPY-0020: `Draft` → `Approved`, `ToBeModified` → `Implemented`, implementationNotes cleaned.
+- FR-COPY-0021 implementationNotes: "Python authoritative maps" reference removed.
 
 ---
 
-## CODE-L3 — Render errors silently swallowed
+## REQ-GAP-3 — FR-COPY-0022 o3/o4 — **Resolved 2026-06-16**
 
-**When:** A `.tmpl` file fails to render (Handlebars syntax error, missing helper).
-**What:** Catch block in `plugin-render-templates.ts` continues with no warning. FR-GEN-0010 says "warn+continue."
-**Why:** Silent failure — plugin ships without the file the template was supposed to produce.
-**How:** Add `console.warn` or push a soft `GenError` in the catch block.
-
----
-
-## CODE-L4 — Stale "section 3" comment
-
-**When:** Developer reads `cursorStandaloneInjectionText` in `targets.ts`.
-**What:** Comment references "section 3" but cursor-standalone only has 2 injection sections.
-**Why:** Confuses future maintenance.
-**How:** Update comment to match actual section count.
+- FR-COPY-0022 already existed and was Approved — no new requirement needed.
+- o3/o4 code removed: deleted `lower.startsWith('o3') || lower.startsWith('o4')` from `normalizeCodex()` in `model-maps.ts:155`. FR-ARCH-0057 explicitly excludes these; no requirement backed them. 439 tests pass.
+- Requirements were already clean — no dead gpt-4/o3/o4 entries in FR-COPY.md or FR-ARCH.md.
+- FR-COPY-0022 correctly referenced in source: `file-normalize-codex-models.ts:1`, `model-maps.ts:1,141`.
 
 ---
 
-## REQ-GAP-2 — FR-COPY-0021 parity contract
+## CODE-L5 — Dead `renameExt` parameter — **Resolved 2026-06-16**
 
-**What:** Comment in `model-maps.ts` line 11 references `FR-COPY-0021` as governing Claude Code model IDs. The requirement should specify that TypeScript maps must stay in sync with the Python generator's authoritative maps. Verify the requirement exists and covers this; update if not.
-
----
-
-## REQ-GAP-3 — Codex no-effort behavior needs a requirement
-
-**What:** MODEL-TODO-4 fix (no effort suffix → no `model_reasoning_effort` line) was implemented at the code level. No requirement currently specifies this behavior. FR-COPY-0022 or equivalent should state: when a gpt token appears without a trailing effort suffix in Codex normalization, the `model_reasoning_effort` field is omitted entirely.
+Deleted `renameExt?: [string, string]` and its dead `if (renameExt)` branch from both `makeWorkflowsEntry` and `makeAgentsEntry` in `spec/targets.ts`. Copilot agents entry remains inline. 439 tests pass.
 
 ---
 

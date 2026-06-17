@@ -69,34 +69,24 @@ function makeRulesEntry(normalizeModels: FileProcessor): SpecEntry {
 function makeWorkflowsEntry(
   normalizeModels: FileProcessor,
   targetFolder = 'workflows',
-  renameExt?: [string, string],
 ): SpecEntry {
-  const processors = [...BASE_PROCESSORS, normalizeModels];
-  if (renameExt) {
-    processors.push(fileRename(renameExt[0], renameExt[1]));
-  }
   return {
     source: 'workflows/**',
     target: targetFolder,
     exclude: [],
-    processors,
+    processors: [...BASE_PROCESSORS, normalizeModels],
   };
 }
 
 function makeAgentsEntry(
   normalizeModels: FileProcessor,
   targetFolder = 'agents',
-  renameExt?: [string, string],
 ): SpecEntry {
-  const processors = [...BASE_PROCESSORS, normalizeModels];
-  if (renameExt) {
-    processors.push(fileRename(renameExt[0], renameExt[1]));
-  }
   return {
     source: 'agents/**',
     target: targetFolder,
     exclude: [],
-    processors,
+    processors: [...BASE_PROCESSORS, normalizeModels],
   };
 }
 

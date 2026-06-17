@@ -152,7 +152,7 @@ export function normalizeCodex(modelField: string): CodexModelResult | null {
   const tokens = modelField.split(',').map((t) => t.trim());
   for (const token of tokens) {
     const lower = token.toLowerCase();
-    if (lower.startsWith('gpt-') || lower.startsWith('o3') || lower.startsWith('o4')) {
+    if (lower.startsWith('gpt-')) {
       // Split effort suffix
       const effortMatch = token.match(/^(.+)-(?:(high|medium|low))$/);
       if (effortMatch) {
