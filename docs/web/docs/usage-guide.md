@@ -157,15 +157,16 @@ Builds a custom workflow when no fixed Rosetta workflow fits the request. It com
 **Use when:** the task is small or unusual, spans several concerns, needs adaptive planning, or requires lightweight structure without forcing a specialized workflow.
 
 **Phases:**
-1. Build plan — create a plan-manager plan with sequenced steps, roles, models, dependencies, and expected outputs
-2. Review plan — for medium/large tasks, reviewer checks completeness, sequencing, dependencies, and prompt clarity; you approve before execution
-3. Execute plan — loop through plan-manager steps, delegate to subagents or execute directly, and update status after each step
-4. Review and summarize — validate against original intent, update memory when needed, and summarize outcomes
+1. Prep and classify — complete Rosetta prep, classify task size, and choose building blocks such as discover, requirements, reasoning, plan, execute, review, validate, simulate, or HITL
+2. Build plan — create a plan-manager plan with sequenced steps, roles, models, dependencies, and expected outputs
+3. Review plan — for medium/large tasks, reviewer checks completeness, sequencing, dependencies, and prompt clarity; you approve before execution
+4. Execute plan — loop through plan-manager steps, delegate to subagents or execute directly, and update status after each step
+5. Review and summarize — validate against original intent, update memory when needed, and summarize outcomes
 
 **Expect:** a tailored plan rather than a fixed artifact set. Depending on selected blocks, outputs may include a plan, specs, requirements notes, validation results, code changes, or memory updates. Your responsibility is to keep intent clear, approve or reject the plan, and decide when discoveries should change scope.
 
 ```
-/adhoc-flow write a quick script to parse these CSV files
+/adhoc-flow Write a quick script to parse these CSV files
 /adhoc-flow Refactor the logging across three services
 ```
 
