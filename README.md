@@ -19,7 +19,7 @@
 
 ## What is Rosetta
 
-<table>
+<table border="0" cellspacing="0" cellpadding="0">
   <tr>
     <td width="50%">
       <video src="https://github.com/user-attachments/assets/6df6e217-3e5c-4691-84ed-7440701a87de" controls width="100%"></video>
