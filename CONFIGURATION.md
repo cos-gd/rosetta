@@ -42,10 +42,11 @@ Read and record the non-technical and engineering behavior facts about the proje
 - Any compliance or regulatory requirements.
 - Accepted SDLC, DoD, and processes related to the project.
 - References to documentation and ways to access it (example, acli or mcp for atlassian).
+- Example DoD: ACs fully met, all builds are without errors and warnings, changes covered with unit+integration+e2e tests at 85%+, database correct and migration present, backend starts and succeeds with expected responses for affected areas validated directly, frontend/mobile/app starts and affected areas fully functional validated directly, validation perform using manual QA by AI using fresh subagent
 
 Interview me relentlessly about every aspect of this plan until we reach a full shared understanding.
 Walk down each branch of the design tree, resolving dependencies between decisions one-by-one.
-For each question, provide recommended and alternative answers.
+For each question, provide recommended and alternative answers, which are enterprise-ready, strict, specific, following best practices.
 Ask the questions one at a time.
 If a question can be answered by web search, exploring the codebase, do it first.
 Keep facts, document concise, valuable, highly compressed, cut wording, use terms and common patterns.
@@ -71,10 +72,11 @@ Read and record the technical facts about the project in `docs/ARCHITECTURE.md`:
 - The build and CI/CD pipeline.
 - Recommended allowed tooling (gh cli, MCPs, see https://raw.githubusercontent.com/griddynamics/rosetta/refs/heads/main/CONFIGURATION.md)
 - Name standards for coding, linting, formatting (e.g. Google Java Style, Microsoft .NET code style) — not the rules!
+- Architecture defines how to build/lint/test/run overall solution in concise unambigous manner
 
 Interview me relentlessly about every aspect of this plan until we reach a full shared understanding.
 Walk down each branch of the design tree, resolving dependencies between decisions one-by-one.
-For each question, provide recommended and alternative answers.
+For each question, provide recommended and alternative answers, which are enterprise-ready, strict, specific, following best practices.
 Ask the questions one at a time.
 If a question can be answered by web search, exploring the codebase, do it first.
 Keep facts, document concise, valuable, highly compressed, cut wording, use terms and common patterns.
