@@ -495,7 +495,7 @@ Codex Plugin: only OpenAI `gpt-*` models are supported.
 
 Plugins are an alternative delivery mechanism to MCP. They deliver instructions directly to the user's profile or repository — no MCP connection or server needed. Instructions are copied at install time, so the agent works entirely from local files.
 
-Each plugin contains core instructions: 20 skills, 7 agents, 4 workflows, and bootstrap rules. The content is identical across plugins — only the format differs per IDE.
+Each plugin contains core instructions: 35 skills, 7 agents, 12 workflows, and bootstrap rules. The content is identical across plugins — only the format differs per IDE.
 
 | Plugin | IDE | Mode |
 |---|---|---|
@@ -554,7 +554,7 @@ Each hook is bundled separately per IDE via esbuild so each bundle contains only
 | `loose-files.js` | PostToolUse (Write) | Nudges agent when `.py`/`.js` files are created without a module marker (`__init__.py` / `package.json`) |
 | `md-file-advisory.js` | PostToolUse (Write\|Edit) | Advises on markdown formatting/placement after `.md` edits |
 | `lint-format-advisory.js` | PostToolUse (Write\|Edit) | Suggests a syntax/type/lint/format check step after code edits |
-| `codemap-refresh.js` | PostToolUse (Write\|Edit) | Refreshes the active code-map backend when source files change. Current implementation reindexes GitNexus when `.gitnexus/` is present. Manager must review the GitNexus license before use; Graphify is the MIT-licensed alternative. TBD: detect and invoke the right codemap backend automatically across GitNexus, Graphify, and project-specific scripts or commands. |
+| `codemap-refresh.js` | PostToolUse (Write\|Edit) | Refreshes the active code-map backend when source files change. Detects GitNexus (`.gitnexus/` marker, runs `npx gitnexus analyze --force`) and Graphify (`graphify-out/graph.json` marker, runs `graphify update .`); no-op when neither is installed. When both are present, each backend gets an independent debounced refresh. Manager must review the GitNexus license before use; Graphify is the MIT-licensed alternative. |
 
 **`hooks.json` locations and forms per plugin variant** (each form references the bundles using paths appropriate to its runtime):
 
@@ -634,11 +634,11 @@ Website: builds the Jekyll website from `docs/web/`, deploys to GitHub Pages.
 
 Where contributors add or change things:
 
-- **New skill:** Add `instructions/r2/core/skills/<name>/SKILL.md` (or under an org folder)
-- **New agent:** Add `instructions/r2/core/agents/<name>.md`
-- **New workflow:** Add `instructions/r2/core/workflows/<name>.md` (and phase files)
-- **New rule:** Add `instructions/r2/core/rules/<name>.md`
-- **Organization layer:** Create `instructions/r2/<org>/` with the same type structure
+- **New skill:** Add `instructions/r3/core/skills/<name>/SKILL.md` (or under an org folder; backport to `r2` if stable)
+- **New agent:** Add `instructions/r3/core/agents/<name>.md`
+- **New workflow:** Add `instructions/r3/core/workflows/<name>.md` (and phase files)
+- **New rule:** Add `instructions/r3/core/rules/<name>.md`
+- **Organization layer:** Create `instructions/r3/<org>/` with the same type structure
 - **MCP tools:** Modify `ims-mcp-server/ims_mcp/server.py`
 - **Tool prompts:** Modify `ims-mcp-server/ims_mcp/tool_prompts.py`
 - **CLI commands:** Add to `rosetta-cli/rosetta_cli/commands/`
