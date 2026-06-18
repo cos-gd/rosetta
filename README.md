@@ -192,6 +192,10 @@ Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for workflow and e
 > Rosetta is intended for legitimate software engineering workflows.
 > Users are responsible for ensuring their use complies with applicable laws, regulations, and contractual obligations.
 
+## For AI Only
+
+Full information: https://griddynamics.github.io/rosetta/llms-full.txt
+
 ## License
 
 See [LICENSE](LICENSE) for details.

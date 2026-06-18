@@ -39,7 +39,7 @@ Supported IDEs/agents: Cursor · Claude Code · VS Code/GitHub Copilot · JetBra
 - VFS              Virtual file system of instruction resource paths (org prefix stripped).
 - Tag              Primary access key for instructions (folder/file names + composites).
 - Bundler          Merges docs at same VFS path (core + org layers) into one XML payload.
-- P-RPA            Prepare → Research → Plan → Act (every workflow's spine).
+- P-RPA-V          Prepare → Research → Plan → Act → Validate (every workflow's spine).
 
 ================================================================================
 3 · WHY IT EXISTS (business / problem)
@@ -60,7 +60,7 @@ Observed savings/task: with ≈25 min (5 type + 5 review + 15 AI exec) vs withou
 Not reactive like gateways. Not static like prompt libraries. Verified, project-specific, tool-agnostic. Grounded in production, not theory.
 
 ================================================================================
-4 · WHAT ROSETTA ADDS TO AGENTS (12 capability fixes, each = observed failure mode)
+4 · WHAT ROSETTA ADDS TO AGENTS (12 capability fixes, each = observed failure mode in practice)
 ================================================================================
 1  Deep project context vs blind guessing. Default agent reads few line-ranges + guesses architecture/rules/conventions/deps → surface-correct, constraint-violating code. Rosetta: at init, agent reverse-engineers arch/stack/business/ patterns/deps into workspace files; reads them before every task; loads progressively (bootstrap→context→only needed skills/workflow). Query >5 docs → switch to listing so agent picks exact files. Lean context, sharp reasoning.
 2  Guardrails / enforced safe behavior. Agents don't question actions or access (DBs/cloud/S3); leak PII/creds/regulated data; don't gauge danger. Rosetta forces: critically review every request pre-exec; risk-assess env+tools; detect/block dangerous/irreversible actions; mask sensitive data; transparency + behavior boundaries; orchestration contracts; deviation handling. Loaded at bootstrap, cannot be turned off.
