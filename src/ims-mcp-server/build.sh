@@ -12,9 +12,9 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}=== Rosetta MCP Package Build ===${NC}"
 
-# Get script directory (src/ims-mcp-server/)
+# Get script directory (src/ims-mcp-server/) and repo root (two levels up: src/ims-mcp-server -> src -> repo root)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 # Source and destination paths
 SOURCE_ICON="$PROJECT_ROOT/docs/images/Rosetta-Icon-Only.png"
