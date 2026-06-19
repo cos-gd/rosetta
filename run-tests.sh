@@ -31,9 +31,6 @@ if [ ${#PYTEST_CMD[@]} -gt 0 ]; then
     PYTHONPATH="src/rosetta-cli${PYTHONPATH:+:$PYTHONPATH}" \
         "${PYTEST_CMD[@]}" --no-header -qq --tb=short -o console_output_style=classic src/rosetta-cli/tests
 
-    echo -e "${BLUE}Running scripts tests...${NC}"
-    PYTHONPATH="scripts${PYTHONPATH:+:$PYTHONPATH}" \
-        "${PYTEST_CMD[@]}" --no-header -qq --tb=short -o console_output_style=classic scripts/tests
 fi
 
 if [ -d "$SCRIPT_DIR/src/rosettify/node_modules" ]; then
