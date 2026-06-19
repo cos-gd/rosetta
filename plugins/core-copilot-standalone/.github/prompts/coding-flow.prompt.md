@@ -89,14 +89,14 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 3. Required skills: `coding`
 4. Recommended skills: `reasoning`, `debugging`, `sensitive-data`, `testing`, `dangerous-actions`
 5. Update `coding-flow-state.md`
-6. If SMALL also ask to validate by running locally once code review is done and there are no major issues
+6. If SMALL must also validate by running locally and check implementation actually works, once code review is done and there are no major issues
 
 </review_code>
 
 <impl_validation phase="7" applies="MEDIUM,LARGE" subagent="validator" role="Validation specialist" subagent_required_model="gpt-5.4-medium, gemini-3.1-pro-preview, claude-sonnet-4-6">
 
 1. Validate implementation against specs: git changes, spec coverage, gaps, perform search and MCP fact-checking.
-2. Additionally locally execute code and check it works
+2. Then it must run locally and check it actually works if there are no major issues
 3. Input: implementation diff, specs, plan, review findings. Demand subagent to read and verify specs/plan fully. Do not repeat contents => reference instead. Output: validation findings.
 4. SMALL: orchestrator performs quick inline check.
 5. Recommended skills: `reverse-engineering`, `debugging`, `sensitive-data`, `testing`, `dangerous-actions`
