@@ -295,11 +295,7 @@ Run this after any Python code change.
 ### Git pre-commit hook
 
 The repository ships a native Git pre-commit hook shim in `.githooks/pre-commit`.
-It runs the Python entrypoint at `scripts/pre_commit.py`, which first regenerates plugin payloads and then executes type validation.
-The generated plugin trees are:
-
-- `plugins/core-claude` — mirrored from `instructions/r2/core` with Claude `model:` frontmatter normalized to `opus`, `sonnet`, `haiku`, or `inherit`
-- `plugins/core-cursor` — mirrored from `instructions/r2/core` without model rewriting
+It runs the Python entrypoint at `scripts/pre_commit.py`, which first regenerates all plugin payloads (via `npx rosettify-plugins@latest`) and then executes type validation.
 
 Use the root repo virtualenv for hook execution:
 

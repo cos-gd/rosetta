@@ -15,7 +15,7 @@ The plugin generator produces ready-to-install IDE plugin distributions from a s
 ## Out of Scope (Non-Goals)
 
 - Authoring or editing instruction content (skills, agents, workflows, rules, templates).
-- Building the hook source bundles. The generator consumes pre-built bundles from `src/hooks/dist/`; compiling TypeScript hook sources is a separate concern (`scripts/plugin_generator.py:1184` reads, does not build).
+- Building the hook source bundles. The generator consumes pre-built bundles from `src/hooks/dist/`; compiling TypeScript hook sources is a separate concern.
 - The pre-commit orchestration that invokes the generator (`scripts/pre_commit.py`).
 - Publishing instructions to the Rosetta server / RAGFlow (the CLI's job).
 - Installing or distributing the generated plugins into IDEs or marketplaces.
@@ -28,8 +28,7 @@ The plugin generator produces ready-to-install IDE plugin distributions from a s
 
 ## Entry Points
 
-- CLI: `plugin_generator.py [--release …] [--domain …] [--repo-root …] [--output-dir …]` (`scripts/plugin_generator.py:1239`).
-- Importable API: `sync_generated_plugins(repo_root, release, output_dir)` (`scripts/plugin_generator.py:1026`).
+- CLI: `npx rosettify-plugins@latest [--release …] [--domain …] [--source …] [--output …]`.
 
 ## Global Constraints
 

@@ -15,9 +15,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 TYPECHECK_SCRIPT = REPO_ROOT / "validate-types.sh"
 TEST_SCRIPT = REPO_ROOT / "run-tests.sh"
 MYPY_CONFIG = REPO_ROOT / "mypy.ini"
-PLUGIN_GENERATOR = REPO_ROOT / "scripts" / "plugin_generator.py"
-
-
 @dataclass(frozen=True)
 class Check:
     name: str
@@ -84,7 +81,7 @@ def run_tests() -> int:
 def main() -> int:
     checks = [
         Check(name="hooks build",     runner=build_hooks),
-        Check(name="plugin sync",     runner=lambda: run_command([sys.executable, str(PLUGIN_GENERATOR)])),
+        Check(name="plugin sync",     runner=lambda: run_command(["npx", "rosettify-plugins@latest"])),
         Check(name="type validation", runner=run_type_validation),
         Check(name="tests",           runner=run_tests),
     ]
