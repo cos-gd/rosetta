@@ -18,7 +18,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 <workflow_phases>
 
 - All Rosetta prep steps MUST be FULLY completed, load-context skill loaded and fully executed
-- No rush, take your time, MUST FOLLOW WORKFLOW ENTIRELY, no skipping
+- No rush, take your time, MUST FOLLOW WORKFLOW ENTIRELY, no skipping, if in doubt - select the safest / longest path, no deviation is allowed
 - Phases are sequential. Independent tasks can run in parallel
 - When debugging is needed, INVOKE SUBAGENT `engineer` with `debugging` skill to save LLM context
 - INVOKE SUBAGENT `executor` for building, running tests, installing packages, and similar mechanical actions.

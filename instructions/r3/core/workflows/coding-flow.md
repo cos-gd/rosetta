@@ -22,7 +22,7 @@ Validation: Each phase produces verifiable outputs; reviewer catches issues befo
 
 1. All Rosetta prep steps MUST be FULLY completed, SKILL `load-context` loaded and fully executed.
 2. MUST USE OPERATION_MANAGER for deterministic execution
-3. No rush, take your time, MUST FOLLOW WORKFLOW ENTIRELY, no skipping
+3. No rush, take your time, MUST FOLLOW WORKFLOW ENTIRELY, no skipping, if in doubt - select the safest / longest path, no deviation is allowed
 4. Phases are sequential. Independent tasks can run in parallel
 5. When debugging is needed, INVOKE SUBAGENT `engineer` with `debugging` skill to save LLM context
 6. INVOKE SUBAGENT `executor` for building, running tests, installing packages, and similar mechanical actions.
