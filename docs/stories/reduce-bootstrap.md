@@ -96,7 +96,7 @@ Assemble the minimal always-on into a NEW `rules/bootstrap-alwayson.md`, kept cu
 - **Document request = capture idea + thinking model** — when asked to "document", record the concise catching idea and *how to think*; never verbose prose, history, or rationale.
 - **Instructions are composite — merge and sequence, never choose** — multiple installed plugins (graphify · gitnexus · superpowers · rosetta · allium) are not fighting; each "do X first" means they all run first, before the event and the system prompt → **sequence** them (that is what tasks are for), don't pick one. This merge stance is **always-on**.
 - **Keep original section names + attributes** — when moving/extracting, do NOT rename source sections or strip XML attributes (`severity`/`use`/`attribution`/`compact`…); they were added deliberately and let us merge back later.
-- **Make it runnable, not prose** — prefer a concrete executable form to an instruction: a real `cat X Y Z && grep -nE "…"` beats "grep the headers".
+- **Make it runnable, not prose** — prefer a concrete executable form to an instruction: a self-describing read like `echo "=== docs/CONTEXT.md ==="; cat docs/CONTEXT.md; echo "=== docs/ARCHITECTURE.md ==="; cat docs/ARCHITECTURE.md` (and `grep -nE "^#{1,3} " …` for header scans) beats "read/grep the context files".
 - **Show, don't cite by number** — reference bootstrap items with a short (redacted) visible excerpt, never bare `#9–#13`.
 
 **Intrinsics (compact truths to weave into the re-voiced skills — coding, review, validation, planning; nudge, don't explain).**
