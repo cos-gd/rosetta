@@ -30,6 +30,7 @@
 - debugging
 - codemap
 - load-context
+- load-project-context
 - load-workflow
 - load-context-instructions
 - deviation

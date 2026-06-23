@@ -7,6 +7,9 @@ Content: brief, grep-friendly, MECE across sections. Style: one-liner per entry,
 
 ## Preventive Rules
 
+### Fixing Someone's Artifact = Touch Only The Named Defect; Never Reword Their Notes Or Resolve Their Open Questions [ACTIVE]
+When asked to "fix issues/inconsistencies" in a user's artifact (diagram, doc, code), change ONLY the specific defects and preserve the author's wording, decided content, and especially their "to think/discuss"/open-question notes — verbatim. Their notes and questions are never mine to resolve or rephrase. A vague "fix it" is NOT license to rewrite in my voice or auto-resolve open questions; when scope is unclear do the minimal literal fix or ask, and never use `replace_all` on a shared label without confirming blast radius. Root cause: on a broad "fix inconsistencies" directive I rewrote the user's "To think/discuss" note and rephrased several diagram cells in my own words, mangling an un-versioned artifact. Rule: edit the named defect only; leave authored prose, notes, and questions untouched.
+
 ### Answered Decisions And Style Edits Are Review, Not Approval To Implement [ACTIVE]
 A user answering design questions, picking options, or giving wording/style edits is REVIEWING — it is not authorization to write artifacts. "Design resolved" and "approved to implement" are separate gates. Treat as approval ONLY an explicit approval sentence; anything else (questions, picks, edits, refinements) keeps status pre-approval. Before any create/edit/delete of artifacts, hold for explicit approval. Root cause: I collapsed AskUserQuestion answers + style feedback into a green light and edited a skill and the always-on bootstrap unapproved. Rule: never conflate the decision gate with the approval gate; on mismatch stop immediately and revert my own just-made unapproved writes.
 
