@@ -614,10 +614,23 @@ See [Plugins](/rosetta/docs/plugins/) for install commands.
 
 ## Compaction
 
-It is **NOT** recommended to perform compaction, but if there is reason and you cannot leave session - use this as a starting point:
+It is **NOT** recommended to perform compaction, but if there is reason and you cannot leave session, use `/compact` with a prompt like this:
 
-```
-/compact Compact context by high token compression using terms, patterns, unicode characters, terse phrases, remove formatting-except-essential/duplicates/wrong-decisions/wrong-thinking/incorrect/non-relevant information, keep regulation/policies/hitl/catalogs compressed, user intent and q&a mostly verbatim, decisions/key-points/tasks/workflows mostly verbatim, still relevant files/tool calls compressed, and etc. Main goal: able to fully continue execution without noise, keep it factual, exact, specific, actionable, etc. Avoid general summarization that looses value.
+```text
+/compact
+Compact context by high token compression using:
+- terms, patterns, unicode characters, and terse phrases
+- remove non-essential formatting, duplicates, wrong decisions, wrong thinking,
+  incorrect information, and non-relevant information
+- keep regulation, policies, HITL, and catalogs compressed
+- keep user intent and Q&A mostly verbatim
+- keep decisions, key points, tasks, and workflows mostly verbatim
+- keep still-relevant files and tool calls compressed
+
+Main goal:
+- fully continue execution without noise
+- keep it factual, exact, specific, and actionable
+- avoid general summarization that loses value
 ```
 
 ## Video Tutorials
