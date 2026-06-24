@@ -114,7 +114,7 @@ Compact context by high token compression using:
 - keep regulation, policies, HITL, and catalogs compressed
 - keep user intent and Q&A mostly verbatim
 - keep decisions, key points, tasks, and workflows mostly verbatim
-- keep still-relevant files and tool calls compressed
+- keep still-relevant files as-is and tool calls compressed
 
 Main goal:
 - fully continue execution without noise
