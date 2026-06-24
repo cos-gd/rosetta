@@ -4,18 +4,24 @@ exports.getSessionId = exports.getCwd = exports.getFilePath = exports.lookupTool
 const EVENTS = {
     PostToolUse: 'postToolUse',
     PreToolUse: 'preToolUse',
+    PreRead: 'beforeReadFile',
     SessionStart: 'sessionStart',
-    PrePromptSubmit: 'userPromptSubmitted',
+    SessionEnd: 'sessionEnd',
+    PreCompact: 'preCompact',
+    PrePromptSubmit: 'beforeSubmitPrompt',
 };
 const TOOL_KINDS = {
     write: ['Write'],
-    edit: ['Edit'],
+    edit: ['Edit', 'Write'],
     create: ['Write'],
-    replace: ['Edit'],
-    bash: ['Bash'],
+    replace: ['Edit', 'Write'],
+    bash: ['Bash', 'Shell'],
     read: ['Read'],
+    'mcp-call': ['__mcp_sentinel__'],
 };
 const lookupEvent = (raw) => {
+    if (raw === 'beforeTabFileRead')
+        return 'PreRead';
     for (const [k, v] of Object.entries(EVENTS))
         if (v === raw)
             return k;
@@ -23,6 +29,8 @@ const lookupEvent = (raw) => {
 };
 exports.lookupEvent = lookupEvent;
 const lookupToolKind = (raw) => {
+    if (raw.startsWith('mcp__'))
+        return 'mcp-call';
     for (const [k, v] of Object.entries(TOOL_KINDS))
         if (v.includes(raw))
             return k;

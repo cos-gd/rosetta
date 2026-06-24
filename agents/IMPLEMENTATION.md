@@ -192,6 +192,16 @@ For detailed change history, use git history and PRs instead of expanding this f
 - **SKILL.md alignment**: `dangerous-actions/SKILL.md` documents two-tier model and correct token; `hitl/SKILL.md` removes the now-incorrect AI-marker prohibition.
 - 461 hooks tests pass (7 new coverage additions: Edit/MultiEdit dangerous path, partial Write, reconsider+marker retry, MCP query field, curl|sh hard-deny).
 
+### Hooks — read-once + shared coordination runtime
+
+- Added a preventive `read-once` hook family in `src/hooks/src/hooks/` with shared logic in `read-once-shared.ts`; the original upstream reference is retained in source comments.
+- Shared runtime support now includes reusable file-backed coordination primitives in `src/hooks/src/runtime/file-coordination.ts` and refactors `throttle.ts`, `state-store.ts`, and `codemap-refresh.ts` onto the same low-level lock/timestamp/path helpers.
+- Runtime normalization expanded for current generated surfaces: lifecycle events now include read/session/compact boundaries, lifecycle hooks no longer require fake tool kinds, and adapters capture extra normalized context fields used by hook logic.
+- Codex read-once scope is intentionally limited to intercepted MCP-style file reads with a real file path; built-in generic `Read` is not treated as a read-once source.
+- New reset bundles cover `SessionStart`, `SessionEnd`, `PreCompact`, and `PostCompact` where the generated target exposes grounded lifecycle hooks; Windsurf remains generator-out-of-scope.
+- Generator/template wiring now ships the `read-once` bundle set for Claude, Codex, Cursor, Copilot, and the standalone Cursor/Copilot outputs.
+- Validation: `src/hooks` passed `npm run check` + `npm test` (`655` tests), and `src/rosettify-plugins` passed `npm run typecheck` + `npm run build` + `npm test` (`439` tests).
+
 ### Website — Right-side In-document TOC
 
 Added sticky right-side table of contents to all doc pages (`layout: docs`). Extracts H2/H3 headers from page content, builds anchor links, highlights active section via `IntersectionObserver`. At ≥1280px: sticky column. At 769–1280px: fixed overlay, `opacity: 0.25` default → `0.9` on hover (`0.5s` transition). At ≤768px: hidden. Panel suppressed when <2 headings. Files changed: `docs/web/_layouts/docs.html`, `docs/web/assets/styles.css`.

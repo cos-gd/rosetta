@@ -2,7 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSessionId = exports.getCwd = exports.getFilePath = exports.lookupToolKind = exports.lookupEvent = void 0;
 const EVENTS = {
-    PostToolUse: 'PostToolUse', PreToolUse: 'PreToolUse', SessionStart: 'SessionStart',
+    PostToolUse: 'PostToolUse',
+    PreToolUse: 'PreToolUse',
+    SessionStart: 'SessionStart',
+    SessionEnd: 'SessionEnd',
+    PreCompact: 'PreCompact',
+    PostCompact: 'PostCompact',
+    PrePromptSubmit: 'UserPromptSubmit',
 };
 const TOOL_KINDS = {
     write: ['Write', 'create_file'],

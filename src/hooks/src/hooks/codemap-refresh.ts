@@ -35,6 +35,12 @@ import { defineHook } from '../runtime/define-hook';
 import { runAsCli } from '../runtime/run-hook';
 import { sideEffect } from '../runtime/result-helpers';
 import { debugLog } from '../runtime/debug-log';
+import {
+  ensureDirectory,
+  hashedFilePath,
+  releaseLockFile,
+  tryAcquireTimedLock,
+} from '../runtime/file-coordination';
 import { walkUp } from '../runtime/path-utils';
 
 export const DEBOUNCE_MS = 5000;
@@ -48,7 +54,7 @@ const STALE_LOCK_MS = DEBOUNCE_MS + 60_000;
 
 const ensureCacheDir = (): string => {
   const dir = path.join(os.homedir(), '.cache', 'codemap');
-  fs.mkdirSync(dir, { recursive: true });
+  ensureDirectory(dir);
   return dir;
 };
 
@@ -69,8 +75,7 @@ const lockPathForBackendRepo = (
   backend: string,
   repoRoot: string,
 ): string => {
-  const key = Buffer.from(`${backend}:${repoRoot}`).toString('base64').replace(/[/+=]/g, '_');
-  return path.join(cacheDir, `${key}.pending`);
+  return hashedFilePath(cacheDir, `codemap-refresh:${backend}:${repoRoot}`, '.pending');
 };
 
 // Atomically create the lock. Returns true IFF this call acquired it — i.e. no
@@ -78,38 +83,11 @@ const lockPathForBackendRepo = (
 // the cross-process atomic primitive; on contention only one caller wins. A
 // stale lock (older than STALE_LOCK_MS) is reclaimed once.
 const tryAcquireSchedule = (lockPath: string): boolean => {
-  const create = (): boolean => {
-    try {
-      const fd = fs.openSync(lockPath, 'wx');
-      fs.writeSync(fd, String(Date.now()));
-      fs.closeSync(fd);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  if (create()) return true;
-
-  // Lock exists → a refresh is already scheduled, unless the lock is stale.
-  try {
-    const created = parseInt(fs.readFileSync(lockPath, 'utf-8').trim(), 10);
-    if (Number.isFinite(created) && Date.now() - created > STALE_LOCK_MS) {
-      fs.unlinkSync(lockPath);
-      return create(); // reclaim once
-    }
-  } catch {
-    // a racing peer mutated/removed the lock — treat as already scheduled
-  }
-  return false;
+  return tryAcquireTimedLock(lockPath, { staleAfterMs: STALE_LOCK_MS });
 };
 
 const releaseSchedule = (lockPath: string): void => {
-  try {
-    fs.unlinkSync(lockPath);
-  } catch {
-    // already gone — fine
-  }
+  releaseLockFile(lockPath);
 };
 
 // ---------------------------------------------------------------------------

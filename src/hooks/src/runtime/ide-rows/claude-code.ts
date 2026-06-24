@@ -1,7 +1,13 @@
 import type { SemanticEvent, SemanticKind } from '../ide-registry';
 
 const EVENTS: Partial<Record<SemanticEvent, string>> = {
-  PostToolUse: 'PostToolUse', PreToolUse: 'PreToolUse', SessionStart: 'SessionStart',
+  PostToolUse: 'PostToolUse',
+  PreToolUse: 'PreToolUse',
+  SessionStart: 'SessionStart',
+  SessionEnd: 'SessionEnd',
+  PreCompact: 'PreCompact',
+  PostCompact: 'PostCompact',
+  PrePromptSubmit: 'UserPromptSubmit',
 };
 
 const TOOL_KINDS: Partial<Record<SemanticKind, readonly string[]>> = {

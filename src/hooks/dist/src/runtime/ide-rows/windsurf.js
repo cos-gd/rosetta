@@ -4,6 +4,7 @@ exports.getSessionId = exports.getCwd = exports.getFilePath = exports.lookupTool
 const EVENTS = {
     PostToolUse: 'PostToolUse',
     PreToolUse: 'PreToolUse',
+    PreRead: 'PreRead',
     PrePromptSubmit: 'PrePromptSubmit',
 };
 const TOOL_KINDS = {
@@ -13,6 +14,7 @@ const TOOL_KINDS = {
     replace: ['Write'],
     bash: ['Bash'],
     read: ['Read'],
+    'mcp-call': ['__mcp_sentinel__'],
 };
 const lookupEvent = (raw) => {
     for (const [k, v] of Object.entries(EVENTS))
@@ -22,6 +24,11 @@ const lookupEvent = (raw) => {
 };
 exports.lookupEvent = lookupEvent;
 const lookupToolKind = (raw) => {
+    if (raw.startsWith('mcp__')) {
+        if (/(^|__)read(_|$)/i.test(raw))
+            return 'read';
+        return 'mcp-call';
+    }
     for (const [k, v] of Object.entries(TOOL_KINDS))
         if (v.includes(raw))
             return k;

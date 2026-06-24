@@ -25,6 +25,12 @@ const toHookContext = (norm: NormalizedInput): HookContext => ({
   filePath:     norm.file_path ?? '',
   cwd:          (norm.cwd as string) ?? '',
   sessionId:    (norm.session_id as string) ?? null,
+  agentId:      ((norm.agent_id as string) ?? (norm.subagent_id as string)) ?? null,
+  turnId:       ((norm.turn_id as string) ?? (norm.generation_id as string) ?? (norm.execution_id as string)) ?? null,
+  transcriptPath: (norm.transcript_path as string) ?? null,
+  source:       (norm.source as string) ?? null,
+  reason:       (norm.reason as string) ?? null,
+  trigger:      (norm.trigger as string) ?? null,
   toolInput:    norm.tool_input,
   toolResponse: norm.tool_response,
 });
@@ -94,8 +100,9 @@ export const runHook = async (
 
     debugLog(`[runHook:${def.name}]`, { ide, event: norm.event, toolKind: norm.toolKind });
 
-    if (norm.event !== def.on.event) return;
-    if (!def.on.toolKinds.includes(norm.toolKind as never)) return;
+    const events = Array.isArray(def.on.event) ? def.on.event : [def.on.event];
+    if (!events.includes(norm.event as never)) return;
+    if (def.on.toolKinds && !def.on.toolKinds.includes(norm.toolKind as never)) return;
 
     const ctx0 = toHookContext(norm);
 

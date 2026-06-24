@@ -26,6 +26,12 @@ const toHookContext = (norm) => ({
     filePath: norm.file_path ?? '',
     cwd: norm.cwd ?? '',
     sessionId: norm.session_id ?? null,
+    agentId: (norm.agent_id ?? norm.subagent_id) ?? null,
+    turnId: (norm.turn_id ?? norm.generation_id ?? norm.execution_id) ?? null,
+    transcriptPath: norm.transcript_path ?? null,
+    source: norm.source ?? null,
+    reason: norm.reason ?? null,
+    trigger: norm.trigger ?? null,
     toolInput: norm.tool_input,
     toolResponse: norm.tool_response,
 });
@@ -86,9 +92,10 @@ const runHook = async (def, opts = {}) => {
         const ide = (0, adapter_1.detectIDE)(raw);
         const norm = (0, adapter_1.normalize)(raw);
         (0, debug_log_1.debugLog)(`[runHook:${def.name}]`, { ide, event: norm.event, toolKind: norm.toolKind });
-        if (norm.event !== def.on.event)
+        const events = Array.isArray(def.on.event) ? def.on.event : [def.on.event];
+        if (!events.includes(norm.event))
             return;
-        if (!def.on.toolKinds.includes(norm.toolKind))
+        if (def.on.toolKinds && !def.on.toolKinds.includes(norm.toolKind))
             return;
         const ctx0 = toHookContext(norm);
         if (def.on.filePath && !evalFilePath(def.on.filePath, ctx0.filePath))

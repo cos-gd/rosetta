@@ -3,25 +3,31 @@ import type { SemanticEvent, SemanticKind } from '../ide-registry';
 const EVENTS: Partial<Record<SemanticEvent, string>> = {
   PostToolUse:     'postToolUse',
   PreToolUse:      'preToolUse',
+  PreRead:         'beforeReadFile',
   SessionStart:    'sessionStart',
-  PrePromptSubmit: 'userPromptSubmitted',
+  SessionEnd:      'sessionEnd',
+  PreCompact:      'preCompact',
+  PrePromptSubmit: 'beforeSubmitPrompt',
 };
 
 const TOOL_KINDS: Partial<Record<SemanticKind, readonly string[]>> = {
   write:   ['Write'],
-  edit:    ['Edit'],
+  edit:    ['Edit', 'Write'],
   create:  ['Write'],
-  replace: ['Edit'],
-  bash:    ['Bash'],
+  replace: ['Edit', 'Write'],
+  bash:    ['Bash', 'Shell'],
   read:    ['Read'],
+  'mcp-call': ['__mcp_sentinel__'],
 };
 
 export const lookupEvent = (raw: string): SemanticEvent | null => {
+  if (raw === 'beforeTabFileRead') return 'PreRead';
   for (const [k, v] of Object.entries(EVENTS)) if (v === raw) return k as SemanticEvent;
   return null;
 };
 
 export const lookupToolKind = (raw: string): SemanticKind | null => {
+  if (raw.startsWith('mcp__')) return 'mcp-call';
   for (const [k, v] of Object.entries(TOOL_KINDS) as [SemanticKind, readonly string[]][])
     if (v.includes(raw)) return k;
   return null;

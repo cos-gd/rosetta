@@ -4,8 +4,12 @@ exports.PROPERTIES = exports.reverseLookupToolKind = exports.TOOL_KINDS = export
 exports.EVENTS = {
     PostToolUse: { 'claude-code': 'PostToolUse', 'codex': 'PostToolUse', 'cursor': 'postToolUse', 'windsurf': 'PostToolUse', 'copilot': null },
     PreToolUse: { 'claude-code': 'PreToolUse', 'codex': 'PreToolUse', 'cursor': 'preToolUse', 'windsurf': 'PreToolUse', 'copilot': null },
-    SessionStart: { 'claude-code': 'SessionStart', 'codex': null, 'cursor': 'sessionStart', 'windsurf': null, 'copilot': 'SessionStart' },
-    PrePromptSubmit: { 'claude-code': null, 'codex': null, 'cursor': 'userPromptSubmitted', 'windsurf': 'PrePromptSubmit', 'copilot': 'userPromptSubmitted' },
+    PreRead: { 'claude-code': null, 'codex': null, 'cursor': 'beforeReadFile', 'windsurf': 'PreRead', 'copilot': null },
+    SessionStart: { 'claude-code': 'SessionStart', 'codex': 'SessionStart', 'cursor': 'sessionStart', 'windsurf': null, 'copilot': 'sessionStart' },
+    SessionEnd: { 'claude-code': 'SessionEnd', 'codex': null, 'cursor': 'sessionEnd', 'windsurf': null, 'copilot': 'sessionEnd' },
+    PreCompact: { 'claude-code': 'PreCompact', 'codex': 'PreCompact', 'cursor': 'preCompact', 'windsurf': null, 'copilot': 'preCompact' },
+    PostCompact: { 'claude-code': 'PostCompact', 'codex': 'PostCompact', 'cursor': null, 'windsurf': null, 'copilot': null },
+    PrePromptSubmit: { 'claude-code': 'UserPromptSubmit', 'codex': 'UserPromptSubmit', 'cursor': 'beforeSubmitPrompt', 'windsurf': 'PrePromptSubmit', 'copilot': 'userPromptSubmitted' },
 };
 const reverseLookupEvent = (ide, raw) => {
     for (const [key, map] of Object.entries(exports.EVENTS)) {
@@ -62,28 +66,31 @@ exports.TOOL_KINDS = {
     bash: {
         'claude-code': ['Bash'],
         'codex': ['Bash', 'shell'],
-        'cursor': ['Bash'],
+        'cursor': ['Bash', 'Shell'],
         'windsurf': ['Bash'],
-        'copilot': null,
+        'copilot': ['bash', 'powershell'],
     },
     read: {
         'claude-code': ['Read'],
-        'codex': ['Read'],
+        'codex': null,
         'cursor': ['Read'],
         'windsurf': ['Read'],
-        'copilot': null,
+        'copilot': ['view', 'Read'],
     },
     'mcp-call': {
         'claude-code': ['__mcp_sentinel__'],
-        'codex': null,
-        'cursor': null,
-        'windsurf': null,
+        'codex': ['__mcp_sentinel__'],
+        'cursor': ['__mcp_sentinel__'],
+        'windsurf': ['__mcp_sentinel__'],
         'copilot': null,
     },
 };
 const reverseLookupToolKind = (ide, raw) => {
-    if (raw.startsWith('mcp__'))
+    if (raw.startsWith('mcp__')) {
+        if (ide !== 'codex' && /(^|__)read(_|$)/i.test(raw))
+            return 'read';
         return 'mcp-call';
+    }
     for (const [key, map] of Object.entries(exports.TOOL_KINDS)) {
         const names = map[ide];
         if (Array.isArray(names) && names.includes(raw))
@@ -102,7 +109,9 @@ const parseToolArgsFilePath = (raw) => {
     if (!toolArgs)
         return null;
     try {
-        const parsed = JSON.parse(toolArgs);
+        const parsed = typeof toolArgs === 'string'
+            ? JSON.parse(toolArgs)
+            : toolArgs;
         return parsed?.filePath ?? parsed?.file_path ?? null;
     }
     catch {
@@ -144,6 +153,6 @@ exports.PROPERTIES = {
         'codex': (raw) => raw.session_id ?? null,
         'cursor': (raw) => raw.conversation_id ?? null,
         'windsurf': (raw) => raw.trajectory_id ?? null,
-        'copilot': (_raw) => null,
+        'copilot': (raw) => raw.sessionId ?? raw.session_id ?? null,
     },
 };

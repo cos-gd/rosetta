@@ -1,7 +1,12 @@
 import type { SemanticEvent, SemanticKind } from '../ide-registry';
 
 const EVENTS: Partial<Record<SemanticEvent, string>> = {
-  PostToolUse: 'PostToolUse', PreToolUse: 'PreToolUse',
+  PostToolUse: 'PostToolUse',
+  PreToolUse: 'PreToolUse',
+  SessionStart: 'SessionStart',
+  PreCompact: 'PreCompact',
+  PostCompact: 'PostCompact',
+  PrePromptSubmit: 'UserPromptSubmit',
 };
 
 // Matches "*** (Update|Add|Create) File: <path>" in apply_patch command strings
@@ -14,7 +19,7 @@ const TOOL_KINDS: Partial<Record<SemanticKind, readonly string[]>> = {
   replace: ['apply_patch', 'functions.apply_patch'],
   patch:   ['apply_patch', 'functions.apply_patch'],
   bash:    ['Bash', 'shell'],
-  read:    ['Read'],
+  'mcp-call': ['__mcp_sentinel__'],
 };
 
 export const lookupEvent = (raw: string): SemanticEvent | null => {
@@ -23,6 +28,7 @@ export const lookupEvent = (raw: string): SemanticEvent | null => {
 };
 
 export const lookupToolKind = (raw: string): SemanticKind | null => {
+  if (raw.startsWith('mcp__')) return 'mcp-call';
   for (const [k, v] of Object.entries(TOOL_KINDS) as [SemanticKind, readonly string[]][])
     if (v.includes(raw)) return k;
   return null;
@@ -34,6 +40,10 @@ export const getFilePath = (raw: Record<string, unknown>): string | null => {
     const cmd = ((raw.tool_input as Record<string, unknown>)?.command as string) ?? '';
     const match = PATCH_FILE_RE.exec(cmd);
     return match?.[1]?.trim() ?? null;
+  }
+  if (tool.startsWith('mcp__')) {
+    const ti = (raw.tool_input as Record<string, unknown>) ?? {};
+    return (ti.file_path as string) ?? (ti.filePath as string) ?? (ti.path as string) ?? null;
   }
   return ((raw.tool_input as Record<string, unknown>)?.file_path as string) ?? null;
 };
