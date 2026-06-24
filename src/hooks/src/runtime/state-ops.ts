@@ -1,5 +1,5 @@
 import path from 'path';
-import { debugLog } from './debug-log';
+import { debugLogBranch } from './debug-log';
 
 export type TimestampedEntries = Record<string, number>;
 
@@ -8,14 +8,28 @@ export interface TimestampedSetOptions {
   maxEntries?: number;
 }
 
-export const normalizeNamespaceKey = (...parts: readonly string[]): string =>
-  parts
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join(':');
+export const normalizeNamespaceKey = (...parts: readonly string[]): string => {
+  const trimmedParts = parts.map((part) => part.trim());
+  const nonEmptyParts = trimmedParts.filter(Boolean);
+  const normalized = nonEmptyParts.join(':');
+  debugLogBranch('state-ops', 'normalize-namespace-key', {
+    parts,
+    trimmedParts,
+    nonEmptyParts,
+    normalized,
+  });
+  return normalized;
+};
 
-export const normalizeSessionKey = (ide: string, sessionId: string | null | undefined): string =>
-  normalizeNamespaceKey('session', ide, sessionId ?? 'no-session');
+export const normalizeSessionKey = (ide: string, sessionId: string | null | undefined): string => {
+  const normalized = normalizeNamespaceKey('session', ide, sessionId ?? 'no-session');
+  debugLogBranch('state-ops', 'normalize-session-key', {
+    ide,
+    sessionId: sessionId ?? null,
+    normalized,
+  });
+  return normalized;
+};
 
 export const normalizeAgentSessionKey = (
   ide: string,
@@ -24,22 +38,46 @@ export const normalizeAgentSessionKey = (
 ): string => {
   const sessionKey = normalizeSessionKey(ide, sessionId);
   if (!agentId) {
-    debugLog('[state-ops] agent-session-key-downgraded', {
+    debugLogBranch('state-ops', 'agent-session-key-downgraded', {
       ide,
       sessionId: sessionId ?? 'no-session',
+      sessionKey,
       reason: 'missing-agent-id',
     });
     return sessionKey;
   }
-  return normalizeNamespaceKey('agent-session', ide, sessionId ?? 'no-session', agentId);
+  const normalized = normalizeNamespaceKey('agent-session', ide, sessionId ?? 'no-session', agentId);
+  debugLogBranch('state-ops', 'normalize-agent-session-key', {
+    ide,
+    sessionId: sessionId ?? null,
+    agentId,
+    sessionKey,
+    normalized,
+    downgraded: false,
+  });
+  return normalized;
 };
 
-export const normalizeTurnKey = (turnId: string | null | undefined): string | null =>
-  turnId ? normalizeNamespaceKey('turn', turnId) : null;
+export const normalizeTurnKey = (turnId: string | null | undefined): string | null => {
+  const normalized = turnId ? normalizeNamespaceKey('turn', turnId) : null;
+  debugLogBranch('state-ops', 'normalize-turn-key', {
+    turnId: turnId ?? null,
+    normalized,
+    reason: turnId ? 'turn-present' : 'turn-missing',
+  });
+  return normalized;
+};
 
 export const normalizeResourceKey = (cwd: string, filePath: string): string => {
   const resolved = path.isAbsolute(filePath) ? filePath : path.resolve(cwd || process.cwd(), filePath);
-  return path.normalize(resolved);
+  const normalized = path.normalize(resolved);
+  debugLogBranch('state-ops', 'normalize-resource-key', {
+    cwd,
+    filePath,
+    resolved,
+    normalized,
+  });
+  return normalized;
 };
 
 export const pruneTimestampedEntries = (
@@ -48,6 +86,12 @@ export const pruneTimestampedEntries = (
   opts: TimestampedSetOptions = {},
 ): TimestampedEntries => {
   const ttlMs = opts.ttlMs ?? null;
+  debugLogBranch('state-ops', 'prune-timestamped-entries-start', {
+    entries,
+    now,
+    ttlMs,
+    maxEntries: opts.maxEntries ?? null,
+  });
   let next = Object.fromEntries(
     Object.entries(entries).filter(([, ts]) => ttlMs == null || now - ts < ttlMs),
   ) as TimestampedEntries;
@@ -55,7 +99,18 @@ export const pruneTimestampedEntries = (
   if (opts.maxEntries && Object.keys(next).length > opts.maxEntries) {
     const sorted = Object.entries(next).sort((a, b) => b[1] - a[1]).slice(0, opts.maxEntries);
     next = Object.fromEntries(sorted) as TimestampedEntries;
+    debugLogBranch('state-ops', 'prune-timestamped-entries-trimmed', {
+      now,
+      maxEntries: opts.maxEntries,
+      trimmedEntries: next,
+    });
   }
+  debugLogBranch('state-ops', 'prune-timestamped-entries-result', {
+    now,
+    ttlMs,
+    maxEntries: opts.maxEntries ?? null,
+    next,
+  });
   return next;
 };
 
@@ -64,7 +119,19 @@ export const hasTimestampedEntry = (
   key: string,
   now: number,
   opts: TimestampedSetOptions = {},
-): boolean => Object.prototype.hasOwnProperty.call(pruneTimestampedEntries(entries, now, opts), key);
+): boolean => {
+  const pruned = pruneTimestampedEntries(entries, now, opts);
+  const present = Object.prototype.hasOwnProperty.call(pruned, key);
+  debugLogBranch('state-ops', 'has-timestamped-entry', {
+    entries,
+    key,
+    now,
+    opts,
+    pruned,
+    present,
+  });
+  return present;
+};
 
 export const setTimestampedEntry = (
   entries: TimestampedEntries,
@@ -73,7 +140,22 @@ export const setTimestampedEntry = (
   opts: TimestampedSetOptions = {},
 ): TimestampedEntries => {
   const pruned = pruneTimestampedEntries(entries, now, opts);
-  return { ...pruned, [key]: now };
+  const next = { ...pruned, [key]: now };
+  debugLogBranch('state-ops', 'set-timestamped-entry', {
+    entries,
+    key,
+    now,
+    opts,
+    pruned,
+    next,
+  });
+  return next;
 };
 
-export const clearTimestampedEntries = (): TimestampedEntries => ({});
+export const clearTimestampedEntries = (): TimestampedEntries => {
+  const cleared = {};
+  debugLogBranch('state-ops', 'clear-timestamped-entries', {
+    cleared,
+  });
+  return cleared;
+};

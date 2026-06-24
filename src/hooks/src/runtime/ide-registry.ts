@@ -1,3 +1,5 @@
+import { debugLogBranch } from './debug-log';
+
 export type IdeName = 'claude-code' | 'codex' | 'cursor' | 'windsurf' | 'copilot';
 export type IdeMap<T> = Record<IdeName, T | null>;
 
@@ -16,8 +18,23 @@ export type SemanticEvent = keyof typeof EVENTS;
 
 export const reverseLookupEvent = (ide: IdeName, raw: string): SemanticEvent | null => {
   for (const [key, map] of Object.entries(EVENTS)) {
-    if (map[ide] === raw) return key as SemanticEvent;
+    if (map[ide] === raw) {
+      const result = key as SemanticEvent;
+      debugLogBranch('ide-registry', 'reverse-lookup-event', {
+        ide,
+        raw,
+        result,
+        reason: 'matched-map',
+      });
+      return result;
+    }
   }
+  debugLogBranch('ide-registry', 'reverse-lookup-event', {
+    ide,
+    raw,
+    result: null,
+    reason: 'no-match',
+  });
   return null;
 };
 
@@ -92,14 +109,42 @@ export type SemanticKind = keyof typeof TOOL_KINDS;
 
 export const reverseLookupToolKind = (ide: IdeName, raw: string): SemanticKind | null => {
   if (raw.startsWith('mcp__')) {
-    if (ide !== 'codex' && /(^|__)read(_|$)/i.test(raw)) return 'read';
+    if (ide !== 'codex' && /(^|__)read(_|$)/i.test(raw)) {
+      debugLogBranch('ide-registry', 'reverse-lookup-tool-kind', {
+        ide,
+        raw,
+        result: 'read',
+        reason: 'mcp-read-special-case',
+      });
+      return 'read';
+    }
+    debugLogBranch('ide-registry', 'reverse-lookup-tool-kind', {
+      ide,
+      raw,
+      result: 'mcp-call',
+      reason: 'mcp-prefix',
+    });
     return 'mcp-call';
   }
   for (const [key, map] of Object.entries(TOOL_KINDS)) {
     const names = map[ide];
-    if (Array.isArray(names) && (names as readonly string[]).includes(raw))
-      return key as SemanticKind;
+    if (Array.isArray(names) && (names as readonly string[]).includes(raw)) {
+      const result = key as SemanticKind;
+      debugLogBranch('ide-registry', 'reverse-lookup-tool-kind', {
+        ide,
+        raw,
+        result,
+        reason: 'matched-map',
+      });
+      return result;
+    }
   }
+  debugLogBranch('ide-registry', 'reverse-lookup-tool-kind', {
+    ide,
+    raw,
+    result: null,
+    reason: 'no-match',
+  });
   return null;
 };
 
@@ -107,18 +152,41 @@ const PATCH_FILE_RE = /^\*\*\* (?:Update|Add|Create) File: (.+)$/m;
 
 const extractFromPatch = (raw: Record<string, unknown>): string | null => {
   const command = (raw.tool_input as Record<string, unknown> | undefined)?.command as string ?? '';
-  return PATCH_FILE_RE.exec(command)?.[1]?.trim() ?? null;
+  const result = PATCH_FILE_RE.exec(command)?.[1]?.trim() ?? null;
+  debugLogBranch('ide-registry', 'extract-from-patch', {
+    command,
+    result,
+  });
+  return result;
 };
 
 const parseToolArgsFilePath = (raw: Record<string, unknown>): string | null => {
   const { toolArgs } = raw;
-  if (!toolArgs) return null;
+  if (!toolArgs) {
+    debugLogBranch('ide-registry', 'parse-tool-args-file-path', {
+      result: null,
+      reason: 'missing-toolArgs',
+    });
+    return null;
+  }
   try {
     const parsed = typeof toolArgs === 'string'
       ? JSON.parse(toolArgs) as Record<string, unknown>
       : toolArgs as Record<string, unknown>;
-    return (parsed?.filePath as string) ?? (parsed?.file_path as string) ?? null;
-  } catch { return null; }
+    const result = (parsed?.filePath as string) ?? (parsed?.file_path as string) ?? null;
+    debugLogBranch('ide-registry', 'parse-tool-args-file-path', {
+      result,
+      reason: 'parsed-toolArgs',
+      parsed,
+    });
+    return result;
+  } catch {
+    debugLogBranch('ide-registry', 'parse-tool-args-file-path', {
+      result: null,
+      reason: 'toolArgs-parse-failed',
+    });
+    return null;
+  }
 };
 
 export const PROPERTIES = {

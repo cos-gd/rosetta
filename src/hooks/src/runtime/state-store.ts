@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { debugLog } from './debug-log';
+import { debugLogBranch } from './debug-log';
 import {
   ensureDirectory,
   hashedFilePath,
@@ -31,8 +31,21 @@ export const readNamespacedState = <T>(namespace: string, fallback: T): T => {
   ensureStateRoot();
   const file = statePathFor(namespace);
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf-8')) as T;
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf-8')) as T;
+    debugLogBranch('state-store', 'read', {
+      namespace,
+      file,
+      stateRoot: STATE_ROOT,
+      hit: true,
+    });
+    return parsed;
   } catch {
+    debugLogBranch('state-store', 'read', {
+      namespace,
+      file,
+      stateRoot: STATE_ROOT,
+      hit: false,
+    });
     return fallback;
   }
 };
@@ -43,6 +56,13 @@ export const writeNamespacedState = <T>(namespace: string, value: T): void => {
   const temp = `${file}.tmp`;
   fs.writeFileSync(temp, JSON.stringify(value, null, 2));
   fs.renameSync(temp, file);
+  debugLogBranch('state-store', 'write', {
+    namespace,
+    file,
+    temp,
+    stateRoot: STATE_ROOT,
+    value,
+  });
 };
 
 export const mutateNamespacedState = async <T>(
@@ -52,26 +72,43 @@ export const mutateNamespacedState = async <T>(
 ): Promise<T> => {
   ensureStateRoot();
   const lockPath = lockPathFor(namespace);
+  debugLogBranch('state-store', 'mutate-begin', {
+    namespace,
+    stateRoot: STATE_ROOT,
+    lockPath,
+    lockTtlMs: LOCK_TTL_MS,
+    lockRetryMs: LOCK_RETRY_MS,
+    lockRetryLimit: LOCK_RETRY_LIMIT,
+  });
   let acquired = false;
   for (let i = 0; i < LOCK_RETRY_LIMIT; i++) {
     if (tryAcquireTimedLock(lockPath, { staleAfterMs: LOCK_TTL_MS })) {
       acquired = true;
+      debugLogBranch('state-store', 'lock-acquired', { namespace, lockPath, attempt: i + 1 });
       break;
     }
+    debugLogBranch('state-store', 'lock-retry', { namespace, lockPath, attempt: i + 1 });
     await sleep(LOCK_RETRY_MS);
   }
 
   if (!acquired) {
-    debugLog('[state-store] lock-timeout', { namespace });
+    debugLogBranch('state-store', 'lock-timeout', { namespace });
     throw new Error(`state_lock_timeout:${namespace}`);
   }
 
   try {
     const current = readNamespacedState(namespace, fallback);
     const next = mutate(current);
+    debugLogBranch('state-store', 'mutate-apply', {
+      namespace,
+      lockPath,
+      current,
+      next,
+    });
     writeNamespacedState(namespace, next);
     return next;
   } finally {
     releaseLockFile(lockPath);
+    debugLogBranch('state-store', 'mutate-end', { namespace, lockPath });
   }
 };

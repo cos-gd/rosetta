@@ -3,7 +3,7 @@ import path from 'path';
 import { defineHook } from '../runtime/define-hook';
 import { runAsCli } from '../runtime/run-hook';
 import { advise } from '../runtime/result-helpers';
-import { debugLog } from '../runtime/debug-log';
+import { debugLogHookBranch } from '../runtime/debug-log';
 
 const MONITORED_EXTENSIONS = [
   '.html', '.css', '.js', '.ts', '.jsx', '.tsx',
@@ -29,11 +29,14 @@ export const lintFormatAdvisoryHook = defineHook({
     },
   },
   throttle: { dedupBy: ['session', 'filePath'] },
-  // run() is reached only after all gating + throttle pass, so this marks a real fire.
-  // Logged via debugLog (gated on ROSETTA_DEBUG=1); .cursor/hooks.json sets it.
   run: (ctx) => {
-    debugLog('[lint-format-advisory] APPLIED', { filePath: ctx.filePath });
-    return advise(advisoryMessage(ctx.filePath));
+    const message = advisoryMessage(ctx.filePath);
+    debugLogHookBranch('lint-format-advisory', 'advisory-issued', {
+      filePath: ctx.filePath,
+      basename: path.basename(ctx.filePath),
+      message,
+    });
+    return advise(message);
   },
 });
 

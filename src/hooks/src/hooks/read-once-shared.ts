@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { advise, deny, sideEffect } from '../runtime/result-helpers';
-import { debugLog } from '../runtime/debug-log';
+import { collectEnvironment, debugLogHookBranch } from '../runtime/debug-log';
 import { mutateNamespacedState, readNamespacedState } from '../runtime/state-store';
 import { normalizeAgentSessionKey, normalizeResourceKey } from '../runtime/state-ops';
 import type { HookContext, HookResult } from '../runtime/types';
@@ -10,6 +10,12 @@ import type { HookContext, HookResult } from '../runtime/types';
 // https://github.com/Bande-a-Bonnot/Boucle-framework/tree/main/tools/read-once
 export const READ_ONCE_NAMESPACE = 'hook:read-once';
 const DEFAULT_TTL_MS = 20 * 60 * 1000;
+const READ_OVERRIDE_TOKEN = 'READ-OVERRIDE';
+const READ_ONCE_ENV_NAMES = [
+  'READ_ONCE_MODE',
+  'READ_ONCE_TTL',
+  'READ_ONCE_DISABLED',
+] as const;
 
 export interface ReadOnceEntry {
   seenAt: number;
@@ -74,38 +80,111 @@ const unquote = (value: string): string =>
   value.replace(/^['"]|['"]$/g, '');
 
 const tokenizeCommand = (command: string): string[] | null => {
-  if (!command.trim() || SHELL_SPLIT_RE.test(command)) return null;
+  if (!command.trim()) {
+    debugLogHookBranch('read-once', 'bash-command-empty', { command });
+    return null;
+  }
+  if (SHELL_SPLIT_RE.test(command)) {
+    debugLogHookBranch('read-once', 'bash-command-complex-pass-through', { command });
+    return null;
+  }
   const tokens = command.match(/"[^"]*"|'[^']*'|\S+/g);
-  return tokens?.map(unquote) ?? null;
+  const normalizedTokens = tokens?.map(unquote) ?? null;
+  debugLogHookBranch('read-once', 'bash-command-tokenized', {
+    command,
+    tokens: normalizedTokens,
+  });
+  return normalizedTokens;
 };
 
 const extractSimpleShellReadPath = (command: string): string | null => {
   const tokens = tokenizeCommand(command);
-  if (!tokens || tokens.length < 2) return null;
+  if (!tokens) return null;
+  if (tokens.length < 2) {
+    debugLogHookBranch('read-once', 'bash-command-too-short', { command, tokens });
+    return null;
+  }
 
   const [program, ...rest] = tokens;
-  if (!SIMPLE_SHELL_READ_RE.test(program)) return null;
+  if (!SIMPLE_SHELL_READ_RE.test(program)) {
+    debugLogHookBranch('read-once', 'bash-command-not-supported-reader', {
+      command,
+      program,
+      tokens,
+    });
+    return null;
+  }
 
   const fileTokens = rest.filter((token) => !token.startsWith('-'));
-  if (fileTokens.length !== 1) return null;
+  if (fileTokens.length !== 1) {
+    debugLogHookBranch('read-once', 'bash-command-ambiguous-paths', {
+      command,
+      program,
+      tokens,
+      fileTokens,
+    });
+    return null;
+  }
+  debugLogHookBranch('read-once', 'bash-command-simple-read-detected', {
+    command,
+    program,
+    readPath: fileTokens[0],
+  });
   return fileTokens[0];
 };
 
 const classifyReadPath = (ctx: HookContext): string | null => {
   if (ctx.event === 'PreRead') {
-    if (!ctx.filePath) return null;
-    if (!isFullRead(ctx)) return null;
+    if (!ctx.filePath) {
+      debugLogHookBranch('read-once', 'pre-read-missing-file-path', {
+        toolName: ctx.toolName,
+      });
+      return null;
+    }
+    if (!isFullRead(ctx)) {
+      debugLogHookBranch('read-once', 'pre-read-partial-pass-through', {
+        filePath: ctx.filePath,
+        toolInput: ctx.toolInput,
+      });
+      return null;
+    }
+    debugLogHookBranch('read-once', 'pre-read-full-detected', {
+      filePath: ctx.filePath,
+    });
     return ctx.filePath;
   }
 
-  if (ctx.event !== 'PreToolUse') return null;
+  if (ctx.event !== 'PreToolUse') {
+    debugLogHookBranch('read-once', 'non-read-event-pass-through', {
+      event: ctx.event,
+      toolKind: ctx.toolKind,
+      toolName: ctx.toolName,
+    });
+    return null;
+  }
 
   if (ctx.toolKind === 'read' && ctx.filePath) {
-    if (!isFullRead(ctx)) return null;
+    if (!isFullRead(ctx)) {
+      debugLogHookBranch('read-once', 'tool-read-partial-pass-through', {
+        filePath: ctx.filePath,
+        toolInput: ctx.toolInput,
+      });
+      return null;
+    }
+    debugLogHookBranch('read-once', 'tool-read-full-detected', {
+      filePath: ctx.filePath,
+      toolName: ctx.toolName,
+    });
     return ctx.filePath;
   }
 
-  if (ctx.toolKind !== 'bash') return null;
+  if (ctx.toolKind !== 'bash') {
+    debugLogHookBranch('read-once', 'tool-kind-pass-through', {
+      toolKind: ctx.toolKind,
+      toolName: ctx.toolName,
+    });
+    return null;
+  }
 
   const command = (ctx.toolInput.command as string) ?? '';
   return extractSimpleShellReadPath(command);
@@ -113,11 +192,37 @@ const classifyReadPath = (ctx: HookContext): string | null => {
 
 const estimateTokens = (size: number): number => Math.max(1, Math.ceil(size / 4));
 
+const hasOverrideToken = (value: unknown): boolean => {
+  if (typeof value === 'string') return value.includes(READ_OVERRIDE_TOKEN);
+  if (Array.isArray(value)) return value.some((item) => hasOverrideToken(item));
+  if (value && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).some((item) => hasOverrideToken(item));
+  }
+  return false;
+};
+
+const hasReadOverride = (ctx: HookContext): boolean => {
+  const overridden = hasOverrideToken(ctx.toolInput);
+  debugLogHookBranch('read-once', 'override-check', {
+    toolName: ctx.toolName,
+    toolKind: ctx.toolKind,
+    overridden,
+    token: READ_OVERRIDE_TOKEN,
+  });
+  return overridden;
+};
+
 const statFile = (resourceKey: string): { mtimeMs: number; size: number } | null => {
   try {
     const stat = fs.statSync(resourceKey);
+    debugLogHookBranch('read-once', 'stat-ok', {
+      resourceKey,
+      mtimeMs: stat.mtimeMs,
+      size: stat.size,
+    });
     return { mtimeMs: stat.mtimeMs, size: stat.size };
   } catch {
+    debugLogHookBranch('read-once', 'stat-miss-pass-through', { resourceKey });
     return null;
   }
 };
@@ -157,6 +262,7 @@ const describeSameSessionHit = (
     `(read ${ageMinutes}m ago, unchanged).`,
     `Re-read allowed after ${Math.floor(ttlMs / 60000)}m.`,
     `Session savings: ~${tokensSaved} tokens.`,
+    `If truly needed, retry via shell with exact comment # ${READ_OVERRIDE_TOKEN}.`,
   ].join(' ');
 };
 
@@ -174,17 +280,31 @@ const mutateReadOnceState = async (
   try {
     return await mutateNamespacedState(READ_ONCE_NAMESPACE, fallback, mutate);
   } catch (err) {
-    debugLog('[read-once] state-mutate-failed', { error: (err as Error).message });
+    debugLogHookBranch('read-once', 'state-mutate-failed', { error: (err as Error).message });
     return null;
   }
 };
 
 export const handleReadOnce = async (ctx: HookContext): Promise<HookResult> => {
   const config = getReadOnceConfig();
-  if (config.disabled) return null;
+  debugLogHookBranch('read-once', 'config', {
+    config,
+    env: collectEnvironment(READ_ONCE_ENV_NAMES),
+  });
+  if (config.disabled) {
+    debugLogHookBranch('read-once', 'disabled-pass-through', {});
+    return null;
+  }
 
   const readPath = classifyReadPath(ctx);
-  if (!readPath) return null;
+  if (!readPath) {
+    debugLogHookBranch('read-once', 'not-a-trackable-read-pass-through', {
+      event: ctx.event,
+      toolKind: ctx.toolKind,
+      toolName: ctx.toolName,
+    });
+    return null;
+  }
 
   const agentSessionKey = normalizeAgentSessionKey(ctx.ide, ctx.sessionId, ctx.agentId);
   const resourceKey = normalizeResourceKey(ctx.cwd, readPath);
@@ -196,13 +316,67 @@ export const handleReadOnce = async (ctx: HookContext): Promise<HookResult> => {
     defaultState(),
     (current) => pruneState(current, now, config.ttlMs),
   );
-  if (!next) return null;
+  if (!next) {
+    debugLogHookBranch('read-once', 'state-unavailable-pass-through', {
+      agentSessionKey,
+      resourceKey,
+    });
+    return null;
+  }
 
   const sessionEntries = next.sessions[agentSessionKey] ?? {};
   const sessionEntry = sessionEntries[resourceKey];
   const globalEntry = next.global[resourceKey];
+  const overridden = hasReadOverride(ctx);
+  debugLogHookBranch('read-once', 'state-snapshot', {
+    agentSessionKey,
+    resourceKey,
+    sessionEntry: sessionEntry ?? null,
+    globalEntry: globalEntry ?? null,
+    overridden,
+    stats: next.stats,
+  });
 
   if (sessionEntry && sessionEntry.mtimeMs === fileStat.mtimeMs) {
+    if (overridden) {
+      const overrideEntry: ReadOnceEntry = {
+        seenAt: now,
+        mtimeMs: fileStat.mtimeMs,
+        size: fileStat.size,
+        tokens: estimateTokens(fileStat.size),
+      };
+      await mutateReadOnceState(next, (current) => {
+        const pruned = pruneState(current, now, config.ttlMs);
+        return {
+          ...pruned,
+          sessions: {
+            ...pruned.sessions,
+            [agentSessionKey]: {
+              ...(pruned.sessions[agentSessionKey] ?? {}),
+              [resourceKey]: overrideEntry,
+            },
+          },
+          global: {
+            ...pruned.global,
+            [resourceKey]: {
+              ...overrideEntry,
+              agentSessionKey,
+            },
+          },
+          stats: {
+            ...pruned.stats,
+            totalReads: pruned.stats.totalReads + 1,
+          },
+        };
+      });
+      debugLogHookBranch('read-once', 'same-session-override-allow', {
+        agentSessionKey,
+        resourceKey,
+        token: READ_OVERRIDE_TOKEN,
+      });
+      return null;
+    }
+
     const message = describeSameSessionHit(
       resourceKey,
       sessionEntry,
@@ -218,7 +392,13 @@ export const handleReadOnce = async (ctx: HookContext): Promise<HookResult> => {
         tokensSaved: current.stats.tokensSaved + sessionEntry.tokens,
       },
     }));
-    debugLog('[read-once] same-session-hit', { agentSessionKey, resourceKey, mode: config.mode });
+    debugLogHookBranch('read-once', 'same-session-hit', {
+      agentSessionKey,
+      resourceKey,
+      mode: config.mode,
+      token: READ_OVERRIDE_TOKEN,
+      message,
+    });
     return config.mode === 'deny' ? deny(message) : advise(message);
   }
 
@@ -259,21 +439,46 @@ export const handleReadOnce = async (ctx: HookContext): Promise<HookResult> => {
       },
     };
   });
+  debugLogHookBranch('read-once', 'state-recorded', {
+    agentSessionKey,
+    resourceKey,
+    entry,
+    previousSessionEntry: sessionEntry ?? null,
+    previousGlobalEntry: globalEntry ?? null,
+  });
 
   if (
     globalEntry &&
     globalEntry.agentSessionKey !== agentSessionKey &&
     globalEntry.mtimeMs === fileStat.mtimeMs
   ) {
-    debugLog('[read-once] cross-session-advisory', { agentSessionKey, resourceKey });
-    return advise(describeCrossSessionAdvisory(resourceKey, globalEntry));
+    const message = describeCrossSessionAdvisory(resourceKey, globalEntry);
+    debugLogHookBranch('read-once', 'cross-session-advisory', {
+      agentSessionKey,
+      resourceKey,
+      message,
+    });
+    return advise(message);
   }
 
+  debugLogHookBranch('read-once', 'first-or-changed-read-allow', {
+    agentSessionKey,
+    resourceKey,
+    previousSessionEntry: sessionEntry ?? null,
+    previousGlobalEntry: globalEntry ?? null,
+  });
   return null;
 };
 
 export const resetReadOnceSession = async (ctx: HookContext): Promise<HookResult> => {
-  if (!ctx.sessionId) return sideEffect();
+  if (!ctx.sessionId) {
+    debugLogHookBranch('read-once-reset', 'missing-session-id-noop', {
+      ide: ctx.ide,
+      agentId: ctx.agentId,
+      event: ctx.event,
+    });
+    return sideEffect();
+  }
   const agentSessionKey = normalizeAgentSessionKey(ctx.ide, ctx.sessionId, ctx.agentId);
   await mutateReadOnceState(
     defaultState(),
@@ -283,7 +488,7 @@ export const resetReadOnceSession = async (ctx: HookContext): Promise<HookResult
       return next;
     },
   );
-  debugLog('[read-once] reset-session', {
+  debugLogHookBranch('read-once-reset', 'session-cleared', {
     agentSessionKey,
     ide: ctx.ide,
     event: ctx.event,

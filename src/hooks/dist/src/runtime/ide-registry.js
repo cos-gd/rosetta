@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PROPERTIES = exports.reverseLookupToolKind = exports.TOOL_KINDS = exports.reverseLookupEvent = exports.EVENTS = void 0;
+const debug_log_1 = require("./debug-log");
 exports.EVENTS = {
     PostToolUse: { 'claude-code': 'PostToolUse', 'codex': 'PostToolUse', 'cursor': 'postToolUse', 'windsurf': 'PostToolUse', 'copilot': null },
     PreToolUse: { 'claude-code': 'PreToolUse', 'codex': 'PreToolUse', 'cursor': 'preToolUse', 'windsurf': 'PreToolUse', 'copilot': null },
@@ -13,9 +14,23 @@ exports.EVENTS = {
 };
 const reverseLookupEvent = (ide, raw) => {
     for (const [key, map] of Object.entries(exports.EVENTS)) {
-        if (map[ide] === raw)
-            return key;
+        if (map[ide] === raw) {
+            const result = key;
+            (0, debug_log_1.debugLogBranch)('ide-registry', 'reverse-lookup-event', {
+                ide,
+                raw,
+                result,
+                reason: 'matched-map',
+            });
+            return result;
+        }
     }
+    (0, debug_log_1.debugLogBranch)('ide-registry', 'reverse-lookup-event', {
+        ide,
+        raw,
+        result: null,
+        reason: 'no-match',
+    });
     return null;
 };
 exports.reverseLookupEvent = reverseLookupEvent;
@@ -87,34 +102,81 @@ exports.TOOL_KINDS = {
 };
 const reverseLookupToolKind = (ide, raw) => {
     if (raw.startsWith('mcp__')) {
-        if (ide !== 'codex' && /(^|__)read(_|$)/i.test(raw))
+        if (ide !== 'codex' && /(^|__)read(_|$)/i.test(raw)) {
+            (0, debug_log_1.debugLogBranch)('ide-registry', 'reverse-lookup-tool-kind', {
+                ide,
+                raw,
+                result: 'read',
+                reason: 'mcp-read-special-case',
+            });
             return 'read';
+        }
+        (0, debug_log_1.debugLogBranch)('ide-registry', 'reverse-lookup-tool-kind', {
+            ide,
+            raw,
+            result: 'mcp-call',
+            reason: 'mcp-prefix',
+        });
         return 'mcp-call';
     }
     for (const [key, map] of Object.entries(exports.TOOL_KINDS)) {
         const names = map[ide];
-        if (Array.isArray(names) && names.includes(raw))
-            return key;
+        if (Array.isArray(names) && names.includes(raw)) {
+            const result = key;
+            (0, debug_log_1.debugLogBranch)('ide-registry', 'reverse-lookup-tool-kind', {
+                ide,
+                raw,
+                result,
+                reason: 'matched-map',
+            });
+            return result;
+        }
     }
+    (0, debug_log_1.debugLogBranch)('ide-registry', 'reverse-lookup-tool-kind', {
+        ide,
+        raw,
+        result: null,
+        reason: 'no-match',
+    });
     return null;
 };
 exports.reverseLookupToolKind = reverseLookupToolKind;
 const PATCH_FILE_RE = /^\*\*\* (?:Update|Add|Create) File: (.+)$/m;
 const extractFromPatch = (raw) => {
     const command = raw.tool_input?.command ?? '';
-    return PATCH_FILE_RE.exec(command)?.[1]?.trim() ?? null;
+    const result = PATCH_FILE_RE.exec(command)?.[1]?.trim() ?? null;
+    (0, debug_log_1.debugLogBranch)('ide-registry', 'extract-from-patch', {
+        command,
+        result,
+    });
+    return result;
 };
 const parseToolArgsFilePath = (raw) => {
     const { toolArgs } = raw;
-    if (!toolArgs)
+    if (!toolArgs) {
+        (0, debug_log_1.debugLogBranch)('ide-registry', 'parse-tool-args-file-path', {
+            result: null,
+            reason: 'missing-toolArgs',
+        });
         return null;
+    }
     try {
         const parsed = typeof toolArgs === 'string'
             ? JSON.parse(toolArgs)
             : toolArgs;
-        return parsed?.filePath ?? parsed?.file_path ?? null;
+        const result = parsed?.filePath ?? parsed?.file_path ?? null;
+        (0, debug_log_1.debugLogBranch)('ide-registry', 'parse-tool-args-file-path', {
+            result,
+            reason: 'parsed-toolArgs',
+            parsed,
+        });
+        return result;
     }
     catch {
+        (0, debug_log_1.debugLogBranch)('ide-registry', 'parse-tool-args-file-path', {
+            result: null,
+            reason: 'toolArgs-parse-failed',
+        });
         return null;
     }
 };

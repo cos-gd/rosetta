@@ -125,6 +125,8 @@ describe('read-once', () => {
       permissionDecision: 'allow',
     });
     expect((result?.hookSpecificOutput as Record<string, unknown>).additionalContext).toContain('already in context');
+    expect((result?.hookSpecificOutput as Record<string, unknown>).additionalContext).toContain('retry via shell');
+    expect((result?.hookSpecificOutput as Record<string, unknown>).additionalContext).toContain('# READ-OVERRIDE');
   });
 
   test('second same-session read denies in deny mode', async () => {
@@ -250,6 +252,38 @@ describe('read-once', () => {
       permissionDecision: 'allow',
     });
     expect((result?.hookSpecificOutput as Record<string, unknown>).additionalContext).toContain('already in context');
+  });
+
+  test('same-session read override allows a repeated bash read without advisory', async () => {
+    const first = {
+      hook_event_name: 'PreToolUse',
+      session_id: 'claude-session-001',
+      tool_name: 'Bash',
+      tool_input: { command: `cat "${filePath}"` },
+      cwd: tempDir,
+    };
+    const second = {
+      ...first,
+      tool_input: { command: `cat "${filePath}" # READ-OVERRIDE` },
+    };
+
+    await runHookWithRaw(readOnceHook, first);
+    const result = await runHookWithRaw(readOnceHook, second);
+
+    expect(result).toBeNull();
+  });
+
+  test('same-session read override bypasses deny mode too', async () => {
+    process.env.READ_ONCE_MODE = 'deny';
+
+    await runHookWithRaw(readOnceHook, makeClaudeRead(filePath));
+    const result = await runHookWithRaw(readOnceHook, makeClaudeRead(
+      filePath,
+      'claude-session-001',
+      { comment: 'READ-OVERRIDE' },
+    ));
+
+    expect(result).toBeNull();
   });
 
   test('complex bash commands pass through without read-once blocking', async () => {

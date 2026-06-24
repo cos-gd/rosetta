@@ -33,11 +33,14 @@ exports.lintFormatAdvisoryHook = (0, define_hook_1.defineHook)({
         },
     },
     throttle: { dedupBy: ['session', 'filePath'] },
-    // run() is reached only after all gating + throttle pass, so this marks a real fire.
-    // Logged via debugLog (gated on ROSETTA_DEBUG=1); .cursor/hooks.json sets it.
     run: (ctx) => {
-        (0, debug_log_1.debugLog)('[lint-format-advisory] APPLIED', { filePath: ctx.filePath });
-        return (0, result_helpers_1.advise)((0, exports.advisoryMessage)(ctx.filePath));
+        const message = (0, exports.advisoryMessage)(ctx.filePath);
+        (0, debug_log_1.debugLogHookBranch)('lint-format-advisory', 'advisory-issued', {
+            filePath: ctx.filePath,
+            basename: path_1.default.basename(ctx.filePath),
+            message,
+        });
+        return (0, result_helpers_1.advise)(message);
     },
 });
 (0, run_hook_1.runAsCli)(exports.lintFormatAdvisoryHook, module);

@@ -1,20 +1,37 @@
 import path from 'path';
 import { readStdin, detectIDE, normalize, formatOutput, dedupKey } from '../adapter';
 import { acquireOnce } from './throttle';
-import { debugLog } from './debug-log';
+import { collectEnvironment, debugLogBranch, debugLogHook } from './debug-log';
 import { toRelative, walkUp } from './path-utils';
 import type { HookDefinition, HookContext, HookResult, FilePathPredicate, ToolInputPredicate } from './types';
 import type { NormalizedInput, CanonicalOutput } from '../types';
 
+interface HookExecutionReport {
+  exitCode: number;
+  wroteOutput: boolean;
+  status: 'completed' | 'skipped' | 'error';
+  reason?: string;
+  stderrMessage?: string;
+}
+
+const HOOK_ENV_NAMES = [
+  'ROSETTA_DEBUG',
+  'CLAUDE_PLUGIN_ROOT',
+  'TMPDIR',
+  'TMP',
+  'TEMP',
+  'HOME',
+  'PWD',
+  'USERPROFILE',
+] as const;
+
 export const runAsCli = (def: HookDefinition, mod: NodeModule): void => {
   if (require.main !== mod) return;
-  runHook(def).then(
-    () => process.exit(0),
-    (err: Error) => {
-      process.stderr.write(`${def.name} hook error: ${err.message}\n`);
-      process.exit(1);
-    },
-  );
+  executeHook(def).then((report) => {
+    if (report.stderrMessage) process.stderr.write(report.stderrMessage);
+    debugLogHook(def.name, 'cli-exit', report);
+    process.exit(report.exitCode);
+  });
 };
 
 const toHookContext = (norm: NormalizedInput): HookContext => ({
@@ -49,42 +66,149 @@ const makeDedupKey = (
   dedupBy: readonly ('session' | 'filePath' | 'ide' | 'toolName' | 'toolInput')[],
   ctx: HookContext,
   name: string,
-): string => [
-  name,
-  ...(dedupBy.includes('session')   ? [ctx.sessionId ?? 'no-session'] : []),
-  ...(dedupBy.includes('filePath')  ? [ctx.filePath]                  : []),
-  ...(dedupBy.includes('ide')       ? [ctx.ide]                       : []),
-  ...(dedupBy.includes('toolName')  ? [ctx.toolName]                  : []),
-  ...(dedupBy.includes('toolInput') ? [JSON.stringify(ctx.toolInput)] : []),
-].join(':');
+): string => {
+  const key = [
+    name,
+    ...(dedupBy.includes('session')   ? [ctx.sessionId ?? 'no-session'] : []),
+    ...(dedupBy.includes('filePath')  ? [ctx.filePath]                  : []),
+    ...(dedupBy.includes('ide')       ? [ctx.ide]                       : []),
+    ...(dedupBy.includes('toolName')  ? [ctx.toolName]                  : []),
+    ...(dedupBy.includes('toolInput') ? [JSON.stringify(ctx.toolInput)] : []),
+  ].join(':');
+  debugLogBranch('run-hook', 'make-dedup-key', {
+    hookName: name,
+    dedupBy,
+    key,
+    sessionId: ctx.sessionId,
+    filePath: ctx.filePath,
+    ide: ctx.ide,
+    toolName: ctx.toolName,
+  });
+  return key;
+};
 
 const evalFilePath = (fp: FilePathPredicate, filePath: string): boolean => {
   const p  = filePath;
   const pl = p.toLowerCase();
   const rel = toRelative(p);
-  if (fp.extOneOf        && !fp.extOneOf.some(e => p.endsWith(e)))                  return false;
-  if (fp.extOneOfCi      && !fp.extOneOfCi.some(e => pl.endsWith(e.toLowerCase()))) return false;
-  if (fp.notContainsAny  &&  fp.notContainsAny.some(s => p.includes(s)))            return false;
+  debugLogBranch('run-hook', 'eval-file-path-start', {
+    filePath,
+    predicate: fp,
+    relativePath: rel,
+  });
+  if (fp.extOneOf && !fp.extOneOf.some(e => p.endsWith(e))) {
+    debugLogBranch('run-hook', 'eval-file-path-result', {
+      filePath,
+      result: false,
+      reason: 'extOneOf-mismatch',
+      extOneOf: fp.extOneOf,
+    });
+    return false;
+  }
+  if (fp.extOneOfCi && !fp.extOneOfCi.some(e => pl.endsWith(e.toLowerCase()))) {
+    debugLogBranch('run-hook', 'eval-file-path-result', {
+      filePath,
+      result: false,
+      reason: 'extOneOfCi-mismatch',
+      extOneOfCi: fp.extOneOfCi,
+    });
+    return false;
+  }
+  if (fp.notContainsAny && fp.notContainsAny.some(s => p.includes(s))) {
+    const matched = fp.notContainsAny.filter((s) => p.includes(s));
+    debugLogBranch('run-hook', 'eval-file-path-result', {
+      filePath,
+      result: false,
+      reason: 'notContainsAny-blocked',
+      matched,
+    });
+    return false;
+  }
   if (fp.notTokenSegmentAny) {
     const segs = pl.split('/');
     const blocked = segs.some(seg =>
       seg.split(/[-_.]/).some(tok => fp.notTokenSegmentAny!.includes(tok)),
     );
-    if (blocked) return false;
+    if (blocked) {
+      debugLogBranch('run-hook', 'eval-file-path-result', {
+        filePath,
+        result: false,
+        reason: 'notTokenSegmentAny-blocked',
+        segments: segs,
+        notTokenSegmentAny: fp.notTokenSegmentAny,
+      });
+      return false;
+    }
   }
-  if (fp.notStartsWithAny && fp.notStartsWithAny.some(s => rel.startsWith(s) || p.includes('/' + s))) return false;
-  if (fp.notBasenameOneOf && fp.notBasenameOneOf.includes(path.basename(p)))    return false;
+  if (fp.notStartsWithAny && fp.notStartsWithAny.some(s => rel.startsWith(s) || p.includes('/' + s))) {
+    const matched = fp.notStartsWithAny.filter((s) => rel.startsWith(s) || p.includes('/' + s));
+    debugLogBranch('run-hook', 'eval-file-path-result', {
+      filePath,
+      result: false,
+      reason: 'notStartsWithAny-blocked',
+      matched,
+      relativePath: rel,
+    });
+    return false;
+  }
+  if (fp.notBasenameOneOf && fp.notBasenameOneOf.includes(path.basename(p))) {
+    debugLogBranch('run-hook', 'eval-file-path-result', {
+      filePath,
+      result: false,
+      reason: 'notBasenameOneOf-blocked',
+      basename: path.basename(p),
+      notBasenameOneOf: fp.notBasenameOneOf,
+    });
+    return false;
+  }
+  debugLogBranch('run-hook', 'eval-file-path-result', {
+    filePath,
+    result: true,
+    reason: 'passed',
+  });
   return true;
 };
 
 const evalToolInput = (ti: ToolInputPredicate, ctx: HookContext): boolean => {
+  debugLogBranch('run-hook', 'eval-tool-input-start', {
+    predicate: ti,
+    toolName: ctx.toolName,
+    toolInput: ctx.toolInput,
+  });
   if (ti.commandMatchWhen) {
     const { tools, re } = ti.commandMatchWhen;
     if (tools.includes(ctx.toolName)) {
       const command = (ctx.toolInput.command as string) ?? '';
-      if (!re.test(command)) return false;
+      const matched = re.test(command);
+      debugLogBranch('run-hook', 'eval-tool-input-command-match-when', {
+        toolName: ctx.toolName,
+        tools,
+        command,
+        matched,
+        pattern: re.source,
+        flags: re.flags,
+      });
+      if (!matched) {
+        debugLogBranch('run-hook', 'eval-tool-input-result', {
+          result: false,
+          reason: 'commandMatchWhen-mismatch',
+          toolName: ctx.toolName,
+        });
+        return false;
+      }
+    } else {
+      debugLogBranch('run-hook', 'eval-tool-input-command-match-when-skipped', {
+        toolName: ctx.toolName,
+        tools,
+        reason: 'tool-not-targeted',
+      });
     }
   }
+  debugLogBranch('run-hook', 'eval-tool-input-result', {
+    result: true,
+    reason: 'passed',
+    toolName: ctx.toolName,
+  });
   return true;
 };
 
@@ -92,46 +216,200 @@ export const runHook = async (
   def: HookDefinition,
   opts: { stdin?: NodeJS.ReadableStream; stdout?: NodeJS.WritableStream } = {},
 ): Promise<void> => {
+  await executeHook(def, opts);
+};
+
+const executeHook = async (
+  def: HookDefinition,
+  opts: { stdin?: NodeJS.ReadableStream; stdout?: NodeJS.WritableStream } = {},
+): Promise<HookExecutionReport> => {
   const { stdin = process.stdin, stdout = process.stdout } = opts;
   try {
-    const raw   = await readStdin(stdin);
-    const ide   = detectIDE(raw);
-    const norm  = normalize(raw);
+    debugLogHook(def.name, 'received', {
+      activation: def.on,
+      throttle: def.throttle ?? null,
+      runtime: {
+        processCwd: process.cwd(),
+        argv: process.argv,
+        execPath: process.execPath,
+        nodeVersion: process.version,
+        platform: process.platform,
+        env: collectEnvironment(HOOK_ENV_NAMES),
+      },
+    });
 
-    debugLog(`[runHook:${def.name}]`, { ide, event: norm.event, toolKind: norm.toolKind });
+    const raw = await readStdin(stdin);
+    debugLogHook(def.name, 'raw-input', { rawInput: raw });
+
+    const ide = detectIDE(raw);
+    const norm = normalize(raw);
+
+    debugLogHook(def.name, 'normalized', {
+      ide,
+      event: norm.event,
+      toolKind: norm.toolKind,
+      toolName: norm.tool_name ?? null,
+      normalizedInput: norm,
+    });
 
     const events = Array.isArray(def.on.event) ? def.on.event : [def.on.event];
-    if (!events.includes(norm.event as never)) return;
-    if (def.on.toolKinds && !def.on.toolKinds.includes(norm.toolKind as never)) return;
+    if (!events.includes(norm.event as never)) {
+      debugLogHook(def.name, 'skipped', {
+        reason: 'event-mismatch',
+        allowedEvents: events,
+        actualEvent: norm.event,
+      });
+      return { exitCode: 0, wroteOutput: false, status: 'skipped', reason: 'event-mismatch' };
+    }
+    debugLogHook(def.name, 'event-gate', {
+      matched: true,
+      allowedEvents: events,
+      actualEvent: norm.event,
+    });
+    if (def.on.toolKinds && !def.on.toolKinds.includes(norm.toolKind as never)) {
+      debugLogHook(def.name, 'skipped', {
+        reason: 'tool-kind-mismatch',
+        allowedToolKinds: def.on.toolKinds,
+        actualToolKind: norm.toolKind,
+      });
+      return { exitCode: 0, wroteOutput: false, status: 'skipped', reason: 'tool-kind-mismatch' };
+    }
+    debugLogHook(def.name, 'tool-kind-gate', {
+      matched: true,
+      constrained: Boolean(def.on.toolKinds),
+      allowedToolKinds: def.on.toolKinds ?? null,
+      actualToolKind: norm.toolKind,
+    });
 
     const ctx0 = toHookContext(norm);
+    debugLogHook(def.name, 'context', { hookContext: ctx0 });
 
-    if (def.on.filePath  && !evalFilePath(def.on.filePath, ctx0.filePath)) return;
-    if (def.on.toolInput && !evalToolInput(def.on.toolInput, ctx0))        return;
+    if (def.on.filePath && !evalFilePath(def.on.filePath, ctx0.filePath)) {
+      debugLogHook(def.name, 'skipped', {
+        reason: 'file-path-predicate-failed',
+        predicate: def.on.filePath,
+        filePath: ctx0.filePath,
+      });
+      return { exitCode: 0, wroteOutput: false, status: 'skipped', reason: 'file-path-predicate-failed' };
+    }
+    if (def.on.toolInput && !evalToolInput(def.on.toolInput, ctx0)) {
+      debugLogHook(def.name, 'skipped', {
+        reason: 'tool-input-predicate-failed',
+        predicate: def.on.toolInput,
+        toolName: ctx0.toolName,
+        toolInput: ctx0.toolInput,
+      });
+      return { exitCode: 0, wroteOutput: false, status: 'skipped', reason: 'tool-input-predicate-failed' };
+    }
 
     let markerRoot: string | undefined;
     if (def.on.fs?.nearestMarker) {
       const found = walkUp(ctx0.cwd || process.cwd(), def.on.fs.nearestMarker);
-      if (!found) return;
+      debugLogHook(def.name, 'fs-gate', {
+        nearestMarker: def.on.fs.nearestMarker,
+        cwd: ctx0.cwd || process.cwd(),
+        found: found ?? null,
+      });
+      if (!found) {
+        debugLogHook(def.name, 'skipped', {
+          reason: 'nearest-marker-not-found',
+          nearestMarker: def.on.fs.nearestMarker,
+          cwd: ctx0.cwd || process.cwd(),
+        });
+        return { exitCode: 0, wroteOutput: false, status: 'skipped', reason: 'nearest-marker-not-found' };
+      }
+      debugLogHook(def.name, 'fs-gate-passed', {
+        nearestMarker: def.on.fs.nearestMarker,
+        cwd: ctx0.cwd || process.cwd(),
+        markerRoot: found,
+      });
       markerRoot = found;
     }
 
     const ctx = markerRoot !== undefined ? { ...ctx0, markerRoot } : ctx0;
+    debugLogHook(def.name, 'context-final', { hookContext: ctx });
 
     // Platform-level dedup: collapses duplicate events from IDEs that fire multiple times per call.
     const platformKey = dedupKey(raw, def.name);
-    if (platformKey !== null && !acquireOnce(platformKey)) return;
+    if (platformKey !== null && !acquireOnce(platformKey)) {
+      debugLogHook(def.name, 'skipped', {
+        reason: 'platform-dedup',
+        platformKey,
+      });
+      return { exitCode: 0, wroteOutput: false, status: 'skipped', reason: 'platform-dedup' };
+    }
+    debugLogHook(def.name, 'platform-dedup', { platformKey });
 
     if (def.throttle && 'dedupBy' in def.throttle) {
-      if (!acquireOnce(makeDedupKey(def.throttle.dedupBy, ctx, def.name))) return;
+      const dedupKeyValue = makeDedupKey(def.throttle.dedupBy, ctx, def.name);
+      if (!acquireOnce(dedupKeyValue)) {
+        debugLogHook(def.name, 'skipped', {
+          reason: 'throttle-dedup',
+          throttle: def.throttle,
+          dedupKey: dedupKeyValue,
+        });
+        return { exitCode: 0, wroteOutput: false, status: 'skipped', reason: 'throttle-dedup' };
+      }
+      debugLogHook(def.name, 'throttle-dedup', {
+        throttle: def.throttle,
+        dedupKey: dedupKeyValue,
+      });
     }
 
+    debugLogHook(def.name, 'all-gates-passed', {
+      event: ctx.event,
+      toolKind: ctx.toolKind,
+      toolName: ctx.toolName,
+      filePath: ctx.filePath,
+      markerRoot: ctx.markerRoot ?? null,
+    });
+
     const result = await def.run(ctx);
+    debugLogHook(def.name, 'result', { hookResult: result });
 
-    if (!result || result.kind === 'side-effect') return;
+    if (!result) {
+      debugLogHook(def.name, 'completed', {
+        exitCode: 0,
+        wroteOutput: false,
+        reason: 'null-result',
+      });
+      return { exitCode: 0, wroteOutput: false, status: 'completed', reason: 'null-result' };
+    }
+    if (result.kind === 'side-effect') {
+      debugLogHook(def.name, 'completed', {
+        exitCode: 0,
+        wroteOutput: false,
+        reason: 'side-effect',
+      });
+      return { exitCode: 0, wroteOutput: false, status: 'completed', reason: 'side-effect' };
+    }
 
-    stdout.write(JSON.stringify(formatOutput(toCanonical(result, ctx), ide)));
+    const canonicalOutput = toCanonical(result, ctx);
+    const formattedOutput = formatOutput(canonicalOutput, ide);
+    const outputText = JSON.stringify(formattedOutput);
+    debugLogHook(def.name, 'output', {
+      hookResult: result,
+      canonicalOutput,
+      formattedOutput,
+      outputText,
+      outputBytes: Buffer.byteLength(outputText, 'utf8'),
+    });
+    stdout.write(outputText);
+    debugLogHook(def.name, 'completed', {
+      exitCode: 0,
+      wroteOutput: true,
+      outputBytes: Buffer.byteLength(outputText, 'utf8'),
+    });
+    return { exitCode: 0, wroteOutput: true, status: 'completed' };
   } catch (err) {
-    debugLog(`[runHook:${def.name}] error`, { err: (err as Error).message });
+    const error = err as Error;
+    debugLogHook(def.name, 'error', { error });
+    return {
+      exitCode: 1,
+      wroteOutput: false,
+      status: 'error',
+      reason: error.message,
+      stderrMessage: `${def.name} hook error: ${error.message}\n`,
+    };
   }
 };
