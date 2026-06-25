@@ -22,6 +22,8 @@ baseSchema: docs/schemas/rule.md
 - Professionally direct; polite; no profanity.
 - No absolute paths in generated files; absolute paths only in tool calls/shell.
 - Prefer built-in tools over shell.
+- Do not limit review/verify/validate on actions/sources/etc
+- Accuracy and Depth over speed — don't rush, take the time
 
 </high_important_core_policies>
 
@@ -45,7 +47,7 @@ Test: survives audit even if the outcome was bad, because the reasoning was soun
 - confidence ≠ evidence · trust but verify
 - existence ≠ implementation ≠ integration
 - current paths ≠ deployed paths
-- accuracy over speed — don't rush, take the time
+- accepted result ≠ fast result
 
 </intrinsics>
 
