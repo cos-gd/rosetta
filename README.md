@@ -153,7 +153,6 @@ Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for workflow and e
 | I want to...                                         | Read                                       |
 | ---------------------------------------------------- | ------------------------------------------ |
 | Set up Rosetta                                       | [QUICKSTART.md](QUICKSTART.md)             |
-| Feed Rosetta to an AI agent (full project context)   | [llms-full.txt](llms-full.txt)             |
 | Understand what Rosetta is and how to think about it | [OVERVIEW.md](OVERVIEW.md)                 |
 | Learn how to use Rosetta flows                       | [USAGE_GUIDE.md](USAGE_GUIDE.md)           |
 | Deploy Rosetta for my organization                   | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) |
