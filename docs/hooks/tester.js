@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Rosetta hooks diagnostics — a dump-first tester usable with ANY hook.
-// Reads stdin, then IMMEDIATELY (before parsing) appends a full dump — argv, cwd, raw stdin,
-// every env var — to ~/.rosetta/hooks.log, one `[<ISO-ms-timestamp>] [<pid>] <message>` line each.
+// Reads stdin, then IMMEDIATELY (before parsing) appends a full dump — full invocation string,
+// argv, cwd, script dir, raw stdin, every env var — to ~/.rosetta/hooks.log, one
+// `[<ISO-ms-timestamp>] [<pid>] <message>` line each.
 // Then it JSON-parses the input and runs flag-selected processors. Each `--flag` maps to ONE
 // processor fn(input, argValue, output) that mutates `output` ({ text, exitCode }); the runner
 // writes output.text to stdout and exits with output.exitCode. Add copilot/codex-specific
@@ -82,8 +83,10 @@ function main() {
 
   // 1) DUMP FIRST — before any parsing, so a malformed payload is still fully captured.
   log('===== hook invocation =====');
+  log('INVOCATION: ' + process.argv.join(' '));
   log('ARGV: ' + JSON.stringify(argv));
   log('CWD: ' + process.cwd());
+  log('SCRIPT DIR (__dirname): ' + __dirname);
   log('RAW STDIN:');
   log(raw.length ? raw : '<empty>');
   log('ENV:');

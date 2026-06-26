@@ -461,6 +461,34 @@ Affects 4 files in `src/rosettify-plugins` + 1 file in `src/hooks/src/adapters` 
 
 ---
 
+## Live Hook Test — `docs/hooks/copilot/hooks.json` + context-injection probe (MANUAL, user-run)
+
+**Goal:** empirically learn, for real GitHub Copilot, (a) which hook events actually fire and under which **capitalization** (camelCase R1/CLI vs PascalCase R4/VS Code), and (b) whether `SessionStart` `additionalContext` injection actually reaches the model's context — and at which **placement** (top-level vs nested `hookSpecificOutput`).
+
+**Config:** `docs/hooks/copilot/hooks.json` (CLI format per `instructions/r3/core/configure/github-copilot.md:510`). Registers every event of interest in BOTH capitalizations — `sessionStart`/`SessionStart`, `preToolUse`/`PreToolUse`, `postToolUse`/`PostToolUse`, `agentStop`/`Stop`, `subagentStop`/`SubagentStop`, `sessionEnd`. Every entry runs `node docs/hooks/tester.js`, which dumps to `~/.rosetta/hooks.log`. The two `SessionStart` entries additionally `--output` an injection payload (plain stdout does NOT reach the AI — must be JSON, per configure guide line 531).
+
+**Context-injection probe strategy:** predefine secrets GUARANTEED absent from the model's context (random nonces), inject them via the hook, then ask the model — WITHOUT acting, reading, or searching, only from what is ALREADY in context — to recite any secret tokens it sees. Presence proves injection reached context; absence (cross-checked against the log showing the hook fired) proves it did not. Two distinct nonces isolate placement:
+
+| Probe secret | Injected at | Reciting it proves |
+|---|---|---|
+| `ROSETTA-PROBE-TOPLEVEL-a1b2c3d4` | top-level `additionalContext` | top-level placement reaches context |
+| `ROSETTA-PROBE-NESTED-e5f6a7b8` | nested `hookSpecificOutput.additionalContext` | nested placement reaches context |
+
+`PreToolUse`/`PostToolUse`/`Stop`/etc. entries inject nothing (dump only) — so the ONLY path for these secrets into context is SessionStart injection. Clean signal.
+
+**Test prompt (user pastes into Copilot):**
+> Do these two things, in order:
+> 1. Run the shell command `echo rosetta-hook-probe` and show me its output. (If you can, also use a sub-agent / Task to list files under `docs/hooks/`.)
+> 2. Then, WITHOUT running any tool, reading any file, or searching anything — based ONLY on what is already present in your current context right now — list verbatim every secret-looking token or value you can see (e.g. anything resembling `ROSETTA-PROBE-...` or `KEY=VALUE`). If there are none, say "none".
+
+**Setup notes (manual):** Copilot loads hook configs from e.g. `.github/hooks/*.json` or `~/.copilot/hooks/` — copy/symlink `hooks.json` there. The command path `node docs/hooks/tester.js` assumes the hook runs with cwd = repo root; adjust the path if Copilot resolves cwd elsewhere.
+
+**User runs this manually and reports back:**
+1. `~/.rosetta/hooks.log` — which event keys appear (each `===== hook invocation =====` block + its `ARGV`) → reveals which events fired and which **capitalization** the runtime accepted.
+2. Whether the model recited `ROSETTA-PROBE-TOPLEVEL-...` and/or `ROSETTA-PROBE-NESTED-...` → injection works + which placement.
+
+---
+
 ## Key Source Files
 
 - `src/hooks/src/runtime/run-hook.ts` — hook executor, exit code decision
