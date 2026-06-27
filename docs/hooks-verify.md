@@ -5,6 +5,19 @@ Session: 2026-06-24. Status: findings complete, implementation NOT started.
 
 ---
 
+## Core Principle — NOTHING IS APPROVED UNTIL VERIFIED
+
+**The goal of this effort is a VERIFIED SOURCE OF TRUTH for hook contracts.** Build order is one-directional:
+
+> **doc-grounded spec (DRAFT / hypothesis) → empirical live-hook test → VERIFIED truth → only then: code / requirements / configure changes.**
+
+- A spec grounded only in manufacturer docs is a **hypothesis**, never truth. Docs can be wrong, stale, or runtime-dependent.
+- **Nothing is "approved" or "confirmed" until it is empirically verified** against the real agent via the live-hook test (`tester.js` + `~/.rosetta/hooks.log`). The hook protocol is model-independent — verify the contract once; the model does not change it.
+- HITL approval of a DRAFT spec means only "**this hypothesis is worth testing**" — it does NOT make the spec truth.
+- Verified facts (the `Observed` columns) are the source of truth. Code, requirements, and configure guides are reconciled TO that truth — never the reverse, and never ahead of it.
+
+---
+
 ## User Intent
 
 Verify all hook output formats used in Rosetta hooks. Check public docs per IDE/agent one at a time.
@@ -17,20 +30,50 @@ Check usage in `docs/requirements`, `rosettify-plugins`, and `instructions` (r2 
 For each IDE/agent, in this exact order:
 
 1. **Spec doc**: Create/update `docs/hooks/<ide>.md` — EXACT contract: input model, output model, field-by-field meaning, constraints, direct links to official docs. No prose. Specs only.
-2. **HITL — spec review**: Present spec to user. Resolve all uncertainties. Wait for **explicit approval** before proceeding.
-3. Check `src/hooks` (grep/search — no full reads)
-4. Check `docs/REQUIREMENTS` (grep; reset requirement status to `Draft` AFTER implementation, not before)
-5. Check `src/rosettify-plugins` (grep for all affected usages)
-6. Check `instructions/r*/configure/*.md` (grep; both r2 + r3)
-7. **HITL gate**: present all findings — wait for **explicit approval** before touching code or docs
-8. Update `hooks-verify.md` with confirmed decisions
-9. Make changes across all areas
-10. Update `hooks-verify.md` with post-change summary
+2. **HITL — spec review (DRAFT, NOT truth)**: Present the doc-grounded spec. Resolve all uncertainties. Wait for **explicit approval to PROCEED TO VERIFICATION** — this approves the spec only as a *hypothesis worth testing*, NOT as a confirmed contract. The spec stays **DRAFT** until step 3.
+3. **Empirical live-hook verification (collaborative — THIS is what produces the source of truth).** A doc-grounded spec is NOT confirmed until proven against the real agent. Build `docs/hooks/<ide>/hooks.json` wiring every event to `docs/hooks/tester.js`; the **user runs it in the real agent** and captures `~/.rosetta/hooks.log`. (The hook protocol is model-independent — one run verifies the contract; the model does not change it.) **The assistant guides the user** (setup + which probe prompt to paste + what to report), then **verifies against the logs, not the model's word** (see "Live Hook Test" + "Verification Process" sections — that methodology is the canonical how-to). Fold confirmed results into the spec's `Observed` columns; only now is the spec VERIFIED truth. **HITL gate:** present empirical results; wait for **explicit approval** before any code work.
+4. Check `src/hooks` (grep/search — no full reads)
+5. Check `docs/REQUIREMENTS` (grep; reset requirement status to `Draft` AFTER implementation, not before)
+6. Check `src/rosettify-plugins` (grep for all affected usages)
+7. Check `instructions/r*/configure/*.md` (grep; both r2 + r3)
+8. **HITL gate**: present all findings — wait for **explicit approval** before touching code or docs
+9. Update `hooks-verify.md` with confirmed decisions
+10. Make changes across all areas
+11. Update `hooks-verify.md` with post-change summary
 
 **Constraint:** ONE agent at a time. No jumping ahead.
-**Spec files:** `docs/hooks/copilot.md`, `docs/hooks/claude.md`, `docs/hooks/cursor.md`, `docs/hooks/codex.md`, `docs/hooks/windsurf.md` — one per IDE, created before any code work on that IDE.
-**Target hook events (all IDEs):** `SessionStart`, `SessionStop`, `AgentStop`/`SubagentStop`, `PreToolUse`, `PostToolUse` — only these five. Each spec covers: exact input JSON model, exact output JSON model, field-by-field types/meanings/constraints, direct doc links. No prose.
+**HITL is mandatory at every gate (steps 2, 3, 8).** Do NOT proceed past a gate — and do NOT touch code, requirements, plugins, or configure guides — without the user's explicit approval. The live-hook test (step 3) is the proof step: never mark a spec "confirmed" from docs alone.
+### Spec file role — `docs/hooks/<ide>.md` (READ THIS before creating/editing one)
+
+**What it is:** the single **authoritative, manufacturer-grounded hook contract** for ONE IDE/agent — `docs/hooks/copilot.md`, `docs/hooks/claude.md`, `docs/hooks/cursor.md`, `docs/hooks/codex.md`, `docs/hooks/windsurf.md`. One file per IDE.
+
+**Role in the flow:** it is the **output of step 1** and the artifact the rest of the protocol (empirical test → code/requirements/configure changes) is verified *against*. Created **before any code work** on that IDE. The spec is the source of truth for what the manufacturer guarantees; code and configure guides must conform to it, never the reverse.
+
+**SPECS ONLY — FACTS ONLY.** The spec contains ONLY the contract: exact input JSON model, exact output JSON model, field-by-field types/meanings/constraints (with a `Ref` column citing the manufacturer source per field), matchers + wiring, exit codes, direct links to official docs. **NO change log. NO reasoning/justification. NO decision history. NO speculation.** Just the facts as the manufacturer documents them. Obey the **Spec Authoring Rules** below.
+
+**What it is NOT:**
+- **NOT a copy of another IDE's spec.** Every name/field/shape comes DIRECTLY from that manufacturer's docs — never inferred from another IDE (e.g. Codex ≠ Copilot). Do not import another IDE's quirks (merged-emit, double-fire, casing variants) unless that manufacturer documents them.
+- **NOT a scratchpad.** Cross-references to internal files, adapter analysis, decisions, open items, and run logs live HERE in `hooks-verify.md`, not in the spec. The spec stays a clean, self-contained contract (it may name Rosetta and its own test config, since the spec serves Rosetta).
+- **NOT "confirmed" from docs alone.** It starts doc-grounded (DRAFT); empirical live-hook results (step 3) get folded into its `Observed` columns and only then is it sealed COMPLETE (see `copilot.md` for the finished shape).
+
+**Authority vs configure guides:** per INT-IDE-0002 the `instructions/*/configure/*.md` guides are authoritative for hook output format in *generated plugins*; the `docs/hooks/<ide>.md` spec is the verification reference those guides are reconciled against during the changes phase.
+
+**Target hook events (all IDEs):** `SessionStart`, `SessionStop`, `AgentStop`/`SubagentStop`, `PreToolUse`, `PostToolUse` — only these five (documented under each manufacturer's EXACT event names — e.g. Codex's are `SessionStart`/`Stop`/`SubagentStop`/`PreToolUse`/`PostToolUse`). Each spec covers: exact input JSON model, exact output JSON model, field-by-field types/meanings/constraints, direct doc links. No prose.
 **Matchers:** Document per-IDE matchers and wiring inside the respective `docs/hooks/<ide>.md`.
+
+### THINKING MODEL — what each spec section may contain (READ before adding/keeping ANY non-table section)
+
+Added 2026-06-26 after repeated mis-authoring on Codex. **Every spec section must be GENUINE FOR THIS IDE — never ported from another IDE's spec just because it exists there.** Before writing a section, classify the content:
+
+1. **Manufacturer I/O contract?** (events, input fields, output fields, exit codes, matchers) → belongs ONLY in the per-event TABLES (with `Ref`). Never restate it elsewhere.
+2. **A "Practical Conclusion"?** A practical conclusion is ONLY one of:
+   - a behavior that genuinely SURPRISES a careful reader of the I/O tables (e.g. Codex: *any* extra/misplaced field invalidates the WHOLE output → the hook runs unhooked), or
+   - a high-impact, easy-to-miss gotcha with SILENT-FAILURE consequences (e.g. `systemMessage` is user-only and never enters model context — put model guidance there and the model silently never sees it).
+   It is NOT field placement, which events exist, registration, tool interception, or exit-code values — those are already pinned in the tables. **If you can derive it from the tables, it is NOT a conclusion.** Keep conclusions to the few that are genuinely earned.
+3. **A section that only makes sense because of ANOTHER IDE's complexity?** Then it may not belong here, or belongs in a smaller form. Copilot earned a capability MATRIX and a wire-example APPENDIX because it spans **3 input standards × 2 runtimes** with opposite behaviors. An IDE with ONE standard / ONE runtime may need neither — or a different version (e.g. a matrix that tracks verification STATUS, not runtime divergence). Include a matrix/appendix ONLY if it carries information the tables cannot.
+4. **Raw run evidence or test methodology, not the contract?** → does NOT go in the spec as prose. Wire captures, env signatures, which events fired, per-run pass/fail → `hooks-verify-run-logs.md`. How to probe, prompt wording, UI-display caveats, model-recall quirks → `hooks-verify.md`. **The model used does NOT change the protocol — never gate the contract on a model.**
+
+**Failure modes this prevents (all committed 2026-06-26 on Codex):** copying Copilot's merged-emit / double-fire / both-placements framing into a single-standard IDE; writing "practical conclusions" that merely restate the tables; jamming Practical Conclusions + matrix + wire dump + env signatures into one cross-linked blob; deleting a genuine section in overcorrection; gating verification on "all models" when the protocol is model-independent.
 
 ---
 
@@ -118,15 +161,23 @@ Exit code semantics (official docs):
 
 ### Codex (OpenAI)
 
-**Docs:** https://platform.openai.com/docs/guides/codex/hooks  
-**Our adapter:** `src/hooks/src/adapters/codex.ts` — identity pass-through (same schema as Claude Code).
+**Spec doc:** `docs/hooks/codex.md` — **COMPLETE** (approved 2026-06-26): grounded in OpenAI's hooks reference AND empirically verified by live-hook runs (Codex CLI, run logs 1–3).
+**Docs (R1):** https://developers.openai.com/codex/hooks
+**Our adapter:** `src/hooks/src/adapters/codex.ts` — identity pass-through; event/tool maps in `src/hooks/src/runtime/ide-rows/codex.ts`.
 
-Wire format: identical to Claude Code `hookSpecificOutput` schema.  
-**Important:** `permissionDecision: "ask"` is NOT supported by Codex (parse failure). Claude Code allows it; Codex does not. Current hooks only emit `"deny"` so not triggered in practice.
+Empirically confirmed (folded into the spec's Practical Conclusions / Capability Matrix): **strict schema validation** — any unknown/misplaced field invalidates the WHOLE output → hook FAILS, runs unhooked (no partial honor); nested `additionalContext` reaches model context; `systemMessage` is user-facing only (UI warning, not model context); PreToolUse deny + `updatedInput` rewrite work via JSON at exit 0; Stop block-once works; **both `PreCompact` and `PostCompact` fire** (unlike Copilot CLI, PreCompact-only).
 
-Exit codes: `0` = success, `2` = failure with stderr reason.
+Facts now confirmed from OpenAI (supersede the earlier "same as Claude Code" shorthand):
+- **Events (single PascalCase set, no camelCase aliases, no double-fire):** `SessionStart`, `SubagentStart`, `PreToolUse`, `PermissionRequest`, `PostToolUse`, `PreCompact`, `PostCompact`, `UserPromptSubmit`, `SubagentStop`, `Stop`. (Codex has NO `agentStop`; `PermissionRequest`/`SubagentStart`/`PostCompact` are Codex-only vs Copilot.)
+- **Input:** snake_case only; `tool_input` is an already-parsed object. Codex extras: `model`, `permission_mode`, `turn_id` (turn-scoped).
+- **Output:** NESTED only (`hookSpecificOutput`). No top-level `additionalContext`/`permissionDecision` documented — **no Copilot-style merged-emit**.
+- **`permissionDecision: "ask"` and legacy `decision: "approve"` parsed but NOT supported.** For PreToolUse, `continue:false`/`stopReason`/`suppressOutput` also parsed-but-unsupported (hook run marked failed, tool call continues). For PostToolUse, `updatedMCPToolOutput`/`suppressOutput` likewise.
+- **Exit codes:** `0` success; `2` = block/continue with reason **from stderr** (per-event); other = failure, continues. (Exit-2 is an *alternative* to JSON deny, not only "failure".)
+- **Tool interception is partial:** Pre/PostToolUse intercept only `Bash`, `apply_patch` (`Edit`/`Write`), MCP tools.
 
-**Documentation gap:** `instructions/*/configure/codex.md` has no Output Contract section. Only event names and `hooks.json` registration are documented.
+**Adapter gap (CX-2):** `ide-rows/codex.ts` maps `PostToolUse`/`PreToolUse`/`SessionStart`/`PreCompact`/`PostCompact`/`UserPromptSubmit` — but **`Stop` and `SubagentStop` are NOT mapped**, though both are Rosetta target events.
+
+**Documentation gap:** `instructions/*/configure/codex.md` has no Output Contract section (only event names + `hooks.json` registration). To be addressed in the changes phase (after HITL).
 
 ---
 
@@ -531,132 +582,66 @@ Probe prompt (VS Code fires `*-PASCAL`; CLI fires both): "Continuing my sanction
 
 Interpret: marker the MODEL recites = that additionalContext placement reaches model context; `PTU-SYSMSG-*` appearing in the IDE UI (not the model answer) = systemMessage works but user-facing only. If the model recites no `PTU-*` additionalContext markers, VS Code PostToolUse does not inject model context → fall back to one-shot `decision:block`+`reason`.
 
-### Results — Run 1 (2026-06-26, user-run — **VS Code Copilot**, model gpt-5.4, session `e946202d…`)
+### Results → run logs
 
-> Scope note: all findings below are observations of THIS single run. NOT generalized to all VS Code Copilot, all models, or Copilot CLI (untested).
+All Copilot per-run result narratives (Runs 1–8) are in **`docs/hooks-verify-run-logs.md`** (APPEND-ONLY — do not read wholesale; `grep` the run you need). Confirmed conclusions are folded into `docs/hooks/copilot.md` (Observed columns).
+---
 
-Model's answer (context-only, no tool/read/search):
-- Recited tokens: `ROSETTA-PROBE-NESTED-e5f6a7b8` (Mode A **nested**), `DEF2` (Mode B **nested**), plus two NOT-ours: `ced35933ee83cc0935e6c700865b2ad4`, `e946202d-1afd-4ae7-9876-b7cfd1b60a6c`.
-- "Were you asked to report anything?" → "**Yes: Report DEF2.**"
+## Live Hook Test — Codex (`docs/hooks/codex/hooks.json`)
 
-**Finding — placement (SessionStart `additionalContext`):**
-- ✅ **NESTED** `hookSpecificOutput.additionalContext` reaches context AND is adopted as a live instruction (`DEF2` recited + acted on as a report request).
-- ❌ **TOP-LEVEL** `additionalContext` does NOT reach context — neither `ROSETTA-PROBE-TOPLEVEL-a1b2c3d4` nor `Report ABC1` appeared; model said it was asked to report only `DEF2`, not `ABC1`. Model listed 4 tokens (thorough), so top-level is genuinely absent.
-- ⇒ In THIS run: nested reached context; top-level did not. (This run only. CLI not tested — do not generalize.)
+Same methodology as the Copilot Live Hook Test above (generic `tester.js` → `~/.rosetta/hooks.log`, planted markers, sanctioned-test prompt, verify against the log not the model's word). **Connecting the dots for Codex** — what carries over and what is different:
 
-**Log facts (`~/.rosetta/hooks.log`, this session):**
-- Input **shape = snake_case**: `hook_event_name`, `session_id`, `tool_name`, `tool_input`, `tool_response`, `tool_use_id`, `transcript_path`. `tool_input` is an **object** (not a JSON string); `tool_response` is a **string**; `timestamp` is an **ISO string**.
-- Events that **fired** (input `hook_event_name`, all PascalCase): `SessionStart`, `PreToolUse`, `PostToolUse`, `SubagentStop`, `Stop`. `sessionEnd` did NOT fire in this run.
-- `SessionStart` fired exactly **2×** — the two entries of ONE capitalization key. So only one of the two registered keys (`sessionStart` / `SessionStart`) was honored; WHICH one is not determinable here (both keys hold identical payloads). To disambiguate next time, give the two keys distinct payloads.
-- Subagent step (mandatory-step prompt, SAME original session): AI delegated to the **Explore** subagent (`tool_name: runSubagent`) → **`SubagentStop` fired** (`agent_id`, `agent_type: Explore`, `stop_hook_active`). The subagent's returned text was a "What's new in context on this turn" block — `Last Command: echo rosetta-hook-probe`, `Cwd: …/spring-boot-react-mysql`, `Exit Code: 0`, plus "two zsh entries instead of one". This is VS Code-native subagent context, NOT from our hooks (our `SubagentStop` entry is dump-only; no `SubagentStart` hook registered).
-- Tool names are VS Code-specific: `run_in_terminal`, `runSubagent`, `list_dir` (not `Bash`/`Read`) — relevant to matchers.
+**What carries over:** the universal `docs/hooks/tester.js` is reused; Codex output shapes are selected with the **`--mode codex`** parameter on the shape-divergent commands (`--deny-on-match`, `--rewrite-command`, `--block-stop-once`). Markers + the `~/.rosetta/hooks.log` dump + per-event `--tag` work identically.
 
-**Fields seen in input but NOT in `copilot.md` (this run only):** `SessionStart` carried `model` (`"gpt-5.4"`). `SubagentStop` carried `agent_id`/`agent_type`/`stop_hook_active` but NO `agent_name`/`stop_reason`. `Stop` carried `stop_hook_active` but NO `stop_reason`.
+**What is DIFFERENT from Copilot:**
+- **(!) Codex validates output STRICTLY (confirmed — Codex Run 1).** Any key outside an event's exact documented schema makes the WHOLE output invalid → `hook returned invalid <event> JSON output`, the hook FAILS, and Codex runs unhooked (deny/rewrite/block do NOT apply). So there is **NO merged-emit** and **no "emit a top-level copy to see if it's ignored"** — a stray top-level key FAILS the hook, it is not ignored. `--mode codex` emits the exact shape: nested-only deny/rewrite (`hookSpecificOutput.{permissionDecision|updatedInput}`), top-level-only Stop (`{decision,reason}`), additionalContext nested-only (SessionStart/SubagentStart/PostToolUse/UserPromptSubmit).
+- **Register PascalCase keys only — ONE entry per event.** Single event-name set: no camelCase aliases, no double-fire, no capitalization to disambiguate.
+- **No result-rewrite.** Codex has no `modifiedResult`/`updatedMCPToolOutput`; the Copilot-only `--copilot-rewrite-result` is NOT used for Codex.
+- **Deny target is a shell read.** Codex PreToolUse intercepts `Bash`/`apply_patch`/MCP only — so the deny probe must run `cat docs/hooks/HOOK-DENY-PROBE.txt` (Bash), not an editor "read file" tool.
 
-**The two "unknown" tokens are identified (not injected by us):** `e946202d-1afd-4ae7-9876-b7cfd1b60a6c` = `session_id`; `ced35933ee83cc0935e6c700865b2ad4` = the VS Code `workspaceStorage` id (from `transcript_path`). The model had these in its own context independently of our hooks.
+**Config:** `docs/hooks/codex/hooks.json` (Codex native format: `event → [{matcher, hooks:[{type,command,timeout,statusMessage}]}]`). Registers all 10 events to `tester.js`. Planted markers:
 
-**Setup confirmed:** run executed in `…/5-min-demo/spring-boot-react-mysql` (hooks copied there); relative `docs/hooks/tester.js` resolved (cwd = that repo root).
-
-**Still open (not covered by this run):** which SessionStart capitalization key fired; `sessionEnd`; Copilot **CLI** behavior.
-
-### Results — Run 2 (2026-06-26, user-run — **JetBrains IDEA, Copilot CLI mode**, session `feb65716…`)
-
-> Scope: observations of this single run/setup. NOT generalized to all Copilot CLI or all setups.
-
-**Headline — the hooks did NOT fire; `~/.rosetta/hooks.log` has ZERO entries for this run.** The run's session id `feb65716-f062-4542-ab26-560db1762cf6` appears 0× in the log; the log's last entry is an unrelated validation test; and the new tagged SessionStart config (`--tag sessionStart`/`SessionStart`, `CAMEL*`/`PASCAL*`) has never fired in any real run.
-
-**All model output is consistent with hooks-not-running:**
-- echo, subagent listing, and the file read all completed normally — no dump, no deny.
-- Mode C: the read of `HOOK-DENY-PROBE.txt` was NOT blocked; the model showed the file contents → the PreToolUse deny never executed.
-- "Secret tokens in context" = only `feb65716-…`, which is the Copilot **session id** (native to context). NONE of the injected `CAMEL*`/`PASCAL*` secrets are present → SessionStart injection never ran.
-- "Asked to report → the block" = parroted from the CONTENT of `HOOK-DENY-PROBE.txt` (its text says "report the block"), read in step 3 — NOT from an injected `Report` nudge.
-
-**Interpretation (hypothesis, NOT a conclusion):** the JetBrains Copilot **CLI** did not load/execute `hooks.json` from where it was placed. This is NOT evidence that Copilot CLI lacks hook support — only that no hook ran in this setup. Per R1, Copilot CLI hook locations differ from the IDE (e.g. `~/.copilot/hooks/`, `.github/hooks/*.json`, policy paths); the config likely needs to live in the CLI's expected location.
-
-**Next step:** confirm the exact hook-config path Copilot CLI reads (Copilot CLI docs / `~/.copilot/`), place the config there, re-run, and re-check the log for entries from the new session.
-
-### Results — Run 3 (2026-06-26, user-run — **Copilot CLI direct** (`copilot-cli`), model Sonnet 4.6, session `8abb87fa…`)
-
-Run folder: `/Users/isolomatov/Sources/5-min-demo/spring-boot-react-mysql`. Hooks DID fire (Run 2's miss was JetBrains config-loading, not a CLI limitation). **Verbatim wire captures + env signatures + tool names are now in the spec: `docs/hooks/copilot.md` → "Appendix — Observed Wire Examples".**
-
-Findings (this run):
-- **Double-fire + dual-shape:** every event fired TWICE — camelCase key → R1 camelCase payload (`toolArgs` JSON string, `toolResult` object); PascalCase key → R3 snake_case payload (`tool_input` object). Registering both conventions ⇒ duplicate fires.
-- **Runtime is env-detectable:** CLI sets `COPILOT_CLI=1` (no `VSCODE_*`); VS Code sets `VSCODE_*` (no `COPILOT_CLI`).
-- **Mode C deny WORKED:** camelCase `preToolUse` fire for tool `view` reading `HOOK-DENY-PROBE.txt` emitted deny (textLen 821); CLI blocked the read; model quoted the reason and continued. Block + reason-delivery + instruction-follow all confirmed.
-- **Placement OPPOSITE of VS Code:** model surfaced `PASCALTOP-5d3e` + `PT2` = TOP-LEVEL additionalContext (snake_case SessionStart fire); nested did NOT surface. CLI top-level works; VS Code nested works (Run 1). Two runtimes, opposite placement ⇒ supports emitting BOTH (merged emit). (2 data points — not generalized further.)
-- **All target events fired**, incl. `sessionEnd` (camelCase, `reason: user_exit`).
-- **Field contrasts (both snake_case but differ):** CLI PostToolUse `tool_result`{result_type,text_result_for_llm} object vs VS Code `tool_response` string; CLI SubagentStop `agent_name`/`agent_display_name`/`stop_reason` vs VS Code `agent_id`/`agent_type`/`stop_hook_active`; CLI SessionStart no `model`, VS Code has `model`. `timestamp` is unix-ms number in camelCase shape, ISO string in snake_case shape.
-- **Security:** Sonnet 4.6 flagged the earlier step-3 wording ("follow its instructions exactly") as prompt injection; complied but cautioned. Prompt reworded (sanctioned-test framing, planted-markers, quote-don't-obey).
-
-### Results — Run 4 (2026-06-26, user-run — **VS Code Copilot**, NEW config + reworded prompt, model gpt-5.4, session `f46082a6…`)
-
-Run folder: `/Users/isolomatov/Sources/5-min-demo/spring-boot-react-mysql`. Clean run with the per-capitalization config (Run 1 used the old config).
-
-- **VS Code fires ONLY PascalCase keys — single-fire, no double-fire.** Log shows only `--tag SessionStart`, `--tag PreToolUse`, `--tag PostToolUse`, `--tag SubagentStop`, `--tag Stop`. The camelCase keys (`sessionStart`/`preToolUse`/…) did NOT fire at all. (Contrast Run 3 CLI: fired BOTH conventions, double-fire.) Resolves Run 1's open question: VS Code honors PascalCase keys.
-- **SessionStart injection: NESTED reached context; top-level did not.** Model surfaced `PASCALNEST-9f6a` + `PN7` (nested string), NOT `PASCALTOP`/`PT2`. Confirms Run 1, now pinned to PascalCase-key + nested placement.
-- **Mode C deny WORKED.** `PreToolUse` for `read_file` (`tool_input.filePath` = `…/HOOK-DENY-PROBE.txt`, with `startLine`/`endLine`) → deny emitted (textLen 821); model reported the read was blocked and quoted the reason. (Note: VS Code `read_file` uses a camelCase `filePath` key INSIDE the snake_case `tool_input` object.)
-- **Subagent → SubagentStop fired** (`agent_id`/`agent_type: Explore`/`stop_hook_active`). snake_case throughout; `model: gpt-5.4`; fired `Stop` (not `agentStop`); no `sessionEnd` (session continued).
-
-**Cross-run synthesis (4 runs):** VS Code Copilot = PascalCase keys only, snake_case payloads, **nested** additionalContext reaches context. Copilot CLI = fires BOTH conventions (double-fire), camelCase→R1 + PascalCase→R3 payloads, **top-level** additionalContext reaches context. ⇒ Implication (for the implementation decision, HITL): registering **PascalCase keys only** serves both runtimes (VS Code honors them; CLI's PascalCase fire works) and avoids CLI double-fire; emitting **both** additionalContext placements (top-level + nested) remains required since the two runtimes honor opposite placements. Mode C deny works in both runtimes.
-
-### Results — Run 5 (2026-06-26, user-run — **VS Code Copilot**, follow-up probes, session `f46082a6…`)
-
-Confirmed against log (RESULT textLen + tool_input/tool_response + model report):
-- **Stop `decision:"block"` WORKS; block-once confirmed.** 1st Stop emitted block (textLen 605); model quoted the reason verbatim and finished; 2nd Stop allowed (textLen 0, marker present). No loop.
-- **PreToolUse `modifiedArgs`/`updatedInput` WORKS.** Hook rewrote `echo REWRITE_ME_PRETOOLUSE` → the command actually executed was `echo PRETOOLUSE-HOOK-REWROTE-THIS` (the following PostToolUse `tool_input.command` + `tool_response` both show the rewritten string). Hook textLen 179.
-- **PostToolUse `additionalContext` — recorded here as "not reaching", but ⚠️ SUPERSEDED by Run 7 (this was a FALSE NEGATIVE).** The model did not volunteer `PT*` under the generic "list secrets" prompt; Run 7 (direct per-marker question) proved nested PostToolUse additionalContext DOES reach the model in VS Code (wrapped in `<PostToolUse-context>`).
-- **PostToolUse `modifiedResult` does NOT work.** Hook emitted modifiedResult (textLen 268, matched `REWRITE_RESULT_POST`) but the model saw the original result. ⇒ VS Code ignores modifiedResult (consistent with R1/CLI-only field).
-- **Compaction hooks did NOT fire.** User compacted the conversation; ZERO `PreCompact`/`preCompact`/`PostCompact`/`postCompact` entries logged. ⇒ VS Code did not invoke our compaction hooks (event names may differ, or unsupported in this build).
-
-**VS Code capability summary (confirmed):** SessionStart additionalContext (nested) ✓ · PreToolUse deny ✓ · PreToolUse modifiedArgs ✓ · Stop block ✓ · PostToolUse additionalContext (nested) ✓ **[corrected in Run 7 — was false-negative here]** · PostToolUse modifiedResult ✗ · compaction hooks ✗.
-
-### Results — Run 6 (2026-06-26, user-run — **Copilot CLI** (`copilot-cli`), follow-up probes, session `8abb87fa…`)
-
-Confirmed against log:
-- **PreToolUse `modifiedArgs`/`updatedInput` WORKS.** `echo REWRITE_ME_PRETOOLUSE` executed as `PRETOOLUSE-HOOK-REWROTE-THIS` (model + log). Hook textLen 179 on the matching fire.
-- **PostToolUse `additionalContext` WORKS — top-level.** Model recalled `PTCAMELTOP-3a9f` + `PTPASCALTOP-5d1b` (both TOP-LEVEL, camelCase + PascalCase fires); nested (`PT*NEST`) did NOT surface. Mirrors SessionStart (CLI honors top-level). (VS Code honors **nested** instead — see Run 7.)
-- **PostToolUse `modifiedResult` WORKS.** Model saw `POSTTOOLUSE-HOOK-REWROTE-RESULT` (not original); hook textLen 266/268 on matching fires. Contrast VS Code (✗).
-- **Stop/agentStop `decision:"block"` fires + block-once works.** Block (textLen 605) when marker absent, allow (textLen 0) when present; `agentStop` fires just before `Stop` and sets the shared per-session marker, so the pair blocks once total. ("S failed" was operational — stale config + marker cleared between attempts — not a hook failure; model-side handling not captured for CLI.)
-- **Compaction: `PreCompact` FIRES (both capitalizations); `PostCompact` does NOT.** `preCompact` (camelCase: `sessionId`, `transcriptPath`, `trigger:"manual"`, `customInstructions`) and `PreCompact` (snake_case: `hook_event_name`, `session_id`, `transcript_path`, `trigger:"manual"`, `custom_instructions`) both fired on manual compaction. No `PostCompact`/`postCompact` entries. ⇒ CLI has a pre-compaction hook only; NEW input fields `trigger` + `customInstructions`/`custom_instructions`; no post-compaction event under our candidate names.
-
-### Cross-runtime capability matrix (Runs 1–6, empirical 2026-06-26)
-
-| Behavior | VS Code Copilot (gpt-5.4) | Copilot CLI (Sonnet 4.6) |
+| Event | Marker(s) | What it proves |
 |---|---|---|
-| Keys fired | PascalCase only, single-fire | both conventions, **double-fire** |
-| Input shape | snake_case | camelCase (camel keys) + snake_case (Pascal keys) |
-| SessionStart `additionalContext` | ✅ **nested** only | ✅ **top-level** only |
-| PostToolUse `additionalContext` | ✅ **nested** (Run 7; wrapped `<PostToolUse-context>`) | ✅ **top-level** (both keys) |
-| PreToolUse `deny` + reason | ✅ | ✅ |
-| PreToolUse `modifiedArgs`/`updatedInput` | ✅ | ✅ |
-| PostToolUse `modifiedResult` | ❌ ignored | ✅ |
-| Stop `decision:"block"` (once) | ✅ | ✅ (`Stop`+`agentStop`, shared marker) |
-| Compaction hook | ❌ none fired | ✅ `PreCompact` only (no PostCompact); `trigger`+`custom_instructions` |
-| Exit code used | 0 (JSON) | 0 (JSON) |
+| `SessionStart` | `CODEX-SS-NEST-3c4d`/`CSN2` (nested) | SessionStart nested `additionalContext` reaches model context |
+| `SubagentStart` | `CODEX-SUBSTART-NEST-5e6f`/`CSS3` | SubagentStart `additionalContext` reaches the subagent |
+| `PreToolUse` | deny on `HOOK-DENY-PROBE`; rewrite `REWRITE_ME_PRETOOLUSE` → `echo PRETOOLUSE-HOOK-REWROTE-THIS` | deny blocks the call + reason reaches model; `updatedInput` rewrites args |
+| `PostToolUse` | `CODEX-PTU-NEST`/`CPN4` (nested ctx), `CODEX-PTU-SYSMSG` (systemMessage) | PostToolUse `additionalContext` reaches model; `systemMessage` user-facing only |
+| `UserPromptSubmit` | `CODEX-UPS-NEST-7a8b`/`CUP5` | UserPromptSubmit `additionalContext` injection |
+| `PermissionRequest` | (`--tag` dump only) | event fires + input shape (`tool_input.description`) |
+| `PreCompact` / `PostCompact` | (`--tag` dump only) | which compaction events fire + `trigger` value |
+| `SubagentStop` | (`--tag` dump only) | event fires + input shape (`agent_id`/`agent_type`/`agent_transcript_path`) |
+| `Stop` | `--block-stop-once` (`decision:"block"`) | Stop block + reason; block-once (no loop) |
 
-Implication: emit `additionalContext` at BOTH placements (VC=nested, CLI=top-level), for BOTH SessionStart and PostToolUse. `modifiedResult` only helps CLI. Compaction guard is CLI-only via `PreCompact`; there is no observed post-compaction hook.
+**Target test repo (canonical, shared with the Copilot runs):** `/Users/isolomatov/Sources/5-min-demo/spring-boot-react-mysql`.
 
-### Results — Run 7 (2026-06-26, user-run — **VS Code Copilot**, PostToolUse all-options probe, session `f46082a6…`) — CORRECTS Run 5
+**(!) ALWAYS copy + OVERWRITE the harness from the rosetta repo before every run — it changes; never assume the copy in the test repo is current.** Copy `tester.js`, `HOOK-DENY-PROBE.txt`, `codex/hooks.json`, and the active `.codex/hooks.json` + `.codex/config.toml` (`[features] hooks = true`) fresh each time:
+```bash
+SRC=<rosetta-repo>; DST=/Users/isolomatov/Sources/5-min-demo/spring-boot-react-mysql
+cp "$SRC/docs/hooks/tester.js" "$DST/docs/hooks/tester.js"
+cp "$SRC/docs/hooks/HOOK-DENY-PROBE.txt" "$DST/docs/hooks/HOOK-DENY-PROBE.txt"
+mkdir -p "$DST/docs/hooks/codex" "$DST/.codex"
+cp "$SRC/docs/hooks/codex/hooks.json" "$DST/docs/hooks/codex/hooks.json"
+cp "$SRC/docs/hooks/codex/hooks.json" "$DST/.codex/hooks.json"   # overwrites active config
+```
 
-Log confirms VS Code (PascalCase `--tag PostToolUse`, snake_case), combined payload emitted (textLen 299: systemMessage + top-level + nested additionalContext).
+**(!) Conflict-avoidance — rename to `*-disabled` between runs.** Hook/agent config dirs left active in the test repo fire during normal dev and can conflict with the project's own tooling. Convention: keep the dir active (`.codex/`, `.github/`) ONLY while running a test; **rename to `.codex-disabled` / `.github-disabled` when done.** (The Copilot config is already parked as `.github-disabled` there.) To re-run Codex: rename `.codex-disabled` → `.codex`; to park it: rename back. Only ONE agent's config should be active at a time.
 
-- ✅ **VS Code PostToolUse NESTED `additionalContext` REACHES the model.** On a DIRECT per-marker question the model reported `PTU-NESTED-PASCAL`, stating it came from a `<PostToolUse-context>` block injected after the tool result. ⇒ PostToolUse context-injection WORKS in VS Code via nested placement. **This corrects Run 5's "✗"** — a false negative caused by the generic "list secrets" prompt (model first answered "none", then confirmed the marker on direct ask).
-- ❌ **Top-level `additionalContext` does NOT reach the model** in VS Code (`PTU-TOPLEVEL-PASCAL` not seen).
-- ✅ **`systemMessage` is shown to the USER but NOT embedded into the model's context.** Copilot DID display `PTU-SYSMSG-PASCAL` as an IDE warning (user saw it), yet the model never had it in context (didn't recite it even on direct ask). So: Copilot *saw/showed* systemMessage, but did NOT merge it into model context — user-facing only.
-- Stop block fired once again this turn (textLen 605), expected (marker had been cleared).
+**Run procedure (manual, user-run):**
+1. **Copy + overwrite the harness** from the rosetta repo (command above) — do NOT trust the existing copy. Then ensure `.codex/` is active (rename `.codex-disabled` → `.codex` if parked).
+2. **Clean logs — archive the old log (rename, NEVER delete)** so each run's log is clean and attributable to one run/model. `~/.rosetta/hooks.log` is append-only, so a stale log mixes runs:
+   ```bash
+   [ -f ~/.rosetta/hooks.log ] && mv ~/.rosetta/hooks.log "~/.rosetta/hooks.log.archived-$(date +%Y%m%dT%H%M%S)"
+   ```
+3. Hooks are enabled via `.codex/config.toml` (`[features] hooks = true`). New/changed hooks need trust review via `/hooks`.
+4. Run Codex from the repo root (so `node docs/hooks/tester.js` resolves). The hook protocol is model-independent — one run verifies the contract; re-run only if you change the harness/config (archive the log first, step 2).
+5. Paste the sanctioned-test prompt. Steps 1–3: run `echo rosetta-hook-probe`, `echo REWRITE_ME_PRETOOLUSE`, then `cat docs/hooks/HOOK-DENY-PROBE.txt` (Bash — the deny should block it; quote the block and continue). Step 4 = recall, asked as **per-token YES/NO** to dodge the secret-refusal (see Lesson 2):
+   > For each token answer only YES or NO — is it present anywhere available to you (including any injected developer/system context)? (a) `CODEX-SS-NEST-3c4d` (b) `CODEX-UPS-NEST-7a8b` (c) `CODEX-PTU-NEST`. For each YES, give the trailing `Report` code.
+   Do NOT ask it to "list" or "quote" the markers — the model treats injected developer-context as not-user-quotable and refuses (false negative).
+6. **Report back:** (a) which `--tag` values + `hook_event_name`s appear in `~/.rosetta/hooks.log` (which events fired); (b) which `CODEX-*` markers / `Report` codes the model recited (which `additionalContext` reached context); (c) whether the `cat` of `HOOK-DENY-PROBE.txt` was blocked and the reason quoted; (d) whether the rewrite took effect (`PRETOOLUSE-HOOK-REWROTE-THIS`); (e) whether `systemMessage` showed in the UI but not in model context; (f) which model/session.
+7. **Park when done:** rename `.codex` → `.codex-disabled` so it does not fire during normal dev. To reset the Stop block between runs: `rm ~/.rosetta/.block-stop-once-*`.
 
-**Net (corrected): VS Code PostToolUse → nested additionalContext ✓ (model, via `<PostToolUse-context>`), top-level ✗, systemMessage = user only.** Combined with CLI (top-level ✓): emitting BOTH placements covers both runtimes for PostToolUse too — same rule as SessionStart.
-
-**Method lesson:** context-injection recall must ask DIRECTLY about each specific marker; a generic "list any secrets" prompt UNDER-REPORTS injected context (the model treats a `<PostToolUse-context>` block as ambient, not a "secret to list"). See "Testing Methodology Lessons" below.
-
-### Results — Run 8 (2026-06-26, user-run — **Copilot CLI**, PostToolUse all-options probe, session `8abb87fa…`, `source:"resume"`)
-
-Log confirms: CLI, both keys fired the combined payload (`postToolUse` textLen 296, `PostToolUse` textLen 299: systemMessage + top-level + nested).
-- ✅ **CLI PostToolUse TOP-LEVEL `additionalContext` reaches the model.** Model recalled `PTU-TOPLEVEL-CAMEL` + `PTU-TOPLEVEL-PASCAL`, quoting the injection: *"Additional guidance from postToolUse hooks: …"*. (Both keys, double-fire.)
-- ❌ Nested (`PTU-NESTED-*`) did NOT reach the model; ❌ `systemMessage` (`PTU-SYSMSG-*`) not in model context.
-- **New observation:** SessionStart fired with `source:"resume"` (session was resumed) — first non-`"new"` value seen.
-
-**PostToolUse `additionalContext` — FULLY RESOLVED both runtimes:** VS Code = **nested** (`<PostToolUse-context>`, Run 7); Copilot CLI = **top-level** ("Additional guidance from postToolUse hooks", Run 8). Same opposite-placement split as SessionStart ⇒ emit BOTH placements and PostToolUse context injects in both. `systemMessage` is user-facing only.
+**Results — Codex:** DONE — runs 1–3 (Codex CLI) captured in **`docs/hooks-verify-run-logs.md`** (do not read wholesale — `grep "Codex Run"`); confirmed results folded into `docs/hooks/codex.md` (Practical Conclusions + Capability Matrix), spec marked COMPLETE. Remaining `📄` capabilities (SubagentStart, PreToolUse advise, PermissionRequest, *block* outputs) are documented-but-not-exercised — optional follow-up, non-blocking.
 
 ---
 
@@ -664,12 +649,12 @@ Log confirms: CLI, both keys fired the combined payload (`postToolUse` textLen 2
 
 How Copilot hooks were verified end-to-end. Reusable for the other IDEs/agents (Cursor, Codex, Windsurf, Claude).
 
-1. **Generic diagnostic hook** — `docs/hooks/tester.js`: dumps the full invocation (ms-timestamp, pid, invocation string, argv, cwd, script dir, raw stdin, env) to `~/.rosetta/hooks.log`, then runs flag-selected mutating processors. One processor per behavior: `--output`, `--exit-code`, `--tag`, `--deny-on-match`, `--rewrite-command` (modifiedArgs), `--rewrite-result` (modifiedResult), `--block-stop-once` (atomic per-session marker, can't loop).
+1. **Generic diagnostic hook** — `docs/hooks/tester.js`: dumps the full invocation (ms-timestamp, pid, invocation string, argv, cwd, script dir, raw stdin, env) to `~/.rosetta/hooks.log`, then runs flag-selected mutating processors. One processor per behavior: `--output`, `--exit-code`, `--tag`, `--deny-on-match`, `--rewrite-command`, `--block-stop-once` (atomic per-session marker, can't loop), `--copilot-rewrite-result` (Copilot `modifiedResult`). Shape-divergent commands (deny/rewrite/stop) take a `--mode <ide>` parameter (default `copilot`; `codex` = exact per-event shape).
 2. **Register every event, BOTH capitalizations** — `docs/hooks/copilot/hooks.json` maps each event (camelCase + PascalCase) to tester.js with a distinct `--tag`, so the log reveals which key the runtime actually fired (input `hook_event_name` is always PascalCase and can't tell you).
 3. **Probe design — distinct planted markers per (event × placement × key):**
    - Presence (secret recall) + instruction (nudge `Report XX`) via SessionStart/PostToolUse `additionalContext` at BOTH top-level AND nested.
    - Prevention: `--deny-on-match` → PreToolUse deny + reason.
-   - Arg/result rewrite: `--rewrite-command` (modifiedArgs) / `--rewrite-result` (modifiedResult).
+   - Arg/result rewrite: `--rewrite-command` (PreToolUse arg rewrite; `--mode` selects shape) / `--copilot-rewrite-result` (Copilot `modifiedResult`).
    - Stop block ONCE (`--block-stop-once`).
    - Compaction: register Pre/Post + both casings; discover which fire.
 4. **Run MANUALLY in each runtime** — paste the probe prompt into a real session (VS Code Copilot, Copilot CLI). Frame it as a sanctioned self-authored test (planted markers, nothing untrusted) to avoid prompt-injection refusals. Run the Stop-block prompt FIRST (it consumes the one-time block so it won't interrupt later steps).
@@ -683,6 +668,8 @@ How Copilot hooks were verified end-to-end. Reusable for the other IDEs/agents (
 ## Testing Methodology Lessons (this effort)
 
 1. **Probe injected context by asking "ANYWHERE" + per-marker — "in YOUR context" UNDER-REPORTS.** The question wording decides the answer. "Is X in YOUR context?" makes the model EXCLUDE hook-injected / system / ambient blocks (e.g. a `<PostToolUse-context>` wrapper) and answer "no" — a FALSE NEGATIVE. "Do you have X ANYWHERE — your context, the system/conversation context, any injected/ambient block — WITHOUT loading/reading/searching?" makes it confirm and cite where. Prefer a DIRECT per-marker question over a generic "list any secrets". Incident: VS Code PostToolUse `additionalContext` was wrongly recorded as not-reaching (Run 5); rephrasing + per-marker ask (Run 7) confirmed it DOES reach the model. Treat a narrow-scope "none" as inconclusive, never proof of absence. (The general "empower a verification subagent" lesson lives in `agents/MEMORY.md`.)
+
+2. **Ask recall as per-token YES/NO — "list/quote the markers" triggers a secret-refusal.** When `additionalContext` is injected as developer/system context, asking the model to "list verbatim any planted markers" makes it treat them as secrets and REFUSE ("can't quote hidden system/developer-context diagnostic markers") — a FALSE NEGATIVE even though the hook fired. Instead ask presence per token: *"Did you see this token we injected — YES/NO: `CODEX-SS-NEST-3c4d`?"* (optionally "if YES, give the trailing Report code"). The model answers a presence check without the secret-handling refusal. Incident: Codex Run 2 — deny/Stop reasons (framed as instructions) were quoted verbatim, but additionalContext recall was blocked by the refusal until reframed.
 
 ---
 

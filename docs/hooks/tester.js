@@ -4,12 +4,19 @@
 // argv, cwd, script dir, raw stdin, every env var — to ~/.rosetta/hooks.log, one
 // `[<ISO-ms-timestamp>] [<pid>] <message>` line each.
 // Then it JSON-parses the input and runs flag-selected processors. Each `--flag` maps to ONE
-// processor fn(input, argValue, output) that mutates `output` ({ text, exitCode }); the runner
-// writes output.text to stdout and exits with output.exitCode. Add copilot/codex-specific
-// handling later by adding a processor function + a PROCESSORS entry — nothing else changes.
+// processor fn(input, argValue, output, flags) that mutates `output` ({ text, exitCode }); the runner
+// writes output.text to stdout and exits with output.exitCode.
 // Usage: <hook stdin> | node tester.js [--exit-code <n>] [--output <text>] [--tag <label>]
-//        [--deny-on-match <substr>] [--rewrite-command <match>::<newCmd>]
-//        [--rewrite-result <match>::<newText>] [--block-stop-once]
+//        [--deny-on-match <substr>] [--rewrite-command <match>::<newCmd>] [--block-stop-once]
+//        [--mode <copilot|codex|claude|cursor|gemini|windsurf|...>]
+//        [--copilot-rewrite-result <match>::<newText>]
+// tester.js is UNIVERSAL. Commands whose OUTPUT SHAPE differs per IDE take a `--mode <ide>` PARAMETER
+// (default: copilot) and emit THAT IDE's EXACT shape: Copilot emits fields at BOTH top-level AND nested
+// hookSpecificOutput; Codex validates STRICTLY and accepts only the documented per-event shape (nested
+// for deny/rewrite, top-level for Stop), so any extra/misplaced field FAILS the whole hook. Commands
+// that exist for ONLY one IDE are named for it (e.g. --copilot-rewrite-result = Copilot `modifiedResult`;
+// Codex has no equivalent). Add IDEs by extending the `--mode` switch; add IDE-only behavior as its own
+// `--<ide>-<verb>` command — one processor fn + one PROCESSORS entry, nothing else.
 // (!) The env dump WILL capture secrets/tokens present in the hook environment. The log lives at
 //     ~/.rosetta/hooks.log (outside any repo) — do not share or commit it.
 
@@ -78,8 +85,16 @@ function stagedJson(output) {
   try { return JSON.parse(output.text); } catch (_) { return {}; }
 }
 
-// Processors: (input, argValue, output) => void. Each mutates `output`. Keyed by flag.
+// IDE output mode for shape-divergent commands, from the `--mode <ide>` parameter. Default 'copilot'
+// (back-compat: existing configs that pass no --mode keep the Copilot shape).
+function modeOf(flags) {
+  return String((flags && flags['--mode']) || 'copilot').toLowerCase();
+}
+
+// Processors: (input, argValue, output, flags) => void. Each mutates `output`. Keyed by flag.
 const PROCESSORS = {
+  // Parameter only — read by shape-divergent commands via modeOf(flags); no output of its own.
+  '--mode': () => {},
   // Set the process exit code to the provided value.
   '--exit-code': (input, value, output) => {
     const n = Number(value);
@@ -94,8 +109,8 @@ const PROCESSORS = {
   '--tag': () => {},
   // Conditional prevention test: if the (serialized) input contains <substr>, emit a PreToolUse
   // deny carrying a hook-test reason that asks the AI to report the block and then continue.
-  // No match => leaves output untouched (tool proceeds normally).
-  '--deny-on-match': (input, value, output) => {
+  // No match => leaves output untouched (tool proceeds normally). Shape per --mode.
+  '--deny-on-match': (input, value, output, flags) => {
     if (typeof value !== 'string' || !input) return;
     if (!JSON.stringify(input).includes(value)) return;
     const reason =
@@ -103,32 +118,38 @@ const PROCESSORS = {
       'because the request matched the test target. This is only a test of hook-based prevention. ' +
       'Please (1) tell the user verbatim that a hook blocked this action and quote this reason, ' +
       'then (2) continue with the rest of the task normally.';
-    output.text = JSON.stringify({
-      permissionDecision: 'deny',
-      permissionDecisionReason: reason,
-      hookSpecificOutput: {
-        hookEventName: 'PreToolUse',
-        permissionDecision: 'deny',
-        permissionDecisionReason: reason,
-      },
-    });
+    const nested = { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason };
+    switch (modeOf(flags)) {
+      case 'codex': // STRICT: nested hookSpecificOutput ONLY (top-level keys fail the whole hook).
+        output.text = JSON.stringify({ hookSpecificOutput: nested });
+        break;
+      case 'copilot':
+      default: // Copilot: emit BOTH top-level AND nested (each runtime reads the one it honors).
+        output.text = JSON.stringify({ permissionDecision: 'deny', permissionDecisionReason: reason, hookSpecificOutput: nested });
+    }
   },
   // PreToolUse arg-rewrite test. Arg: "<matchSubstr>::<newCommand>". If the input contains
-  // <matchSubstr>, emit modifiedArgs (R1) + hookSpecificOutput.updatedInput (R3) replacing the
-  // command — to see whether the runtime substitutes tool arguments before execution.
-  '--rewrite-command': (input, value, output) => {
+  // <matchSubstr>, rewrite the command so we can see whether the runtime substitutes tool args
+  // before execution. Shape per --mode.
+  '--rewrite-command': (input, value, output, flags) => {
     if (typeof value !== 'string' || !input) return;
     const [match, newCmd] = splitMatchPayload(value);
     if (!match || !JSON.stringify(input).includes(match)) return;
     const obj = stagedJson(output);
-    obj.modifiedArgs = { command: newCmd };
-    obj.hookSpecificOutput = Object.assign({ hookEventName: 'PreToolUse' }, obj.hookSpecificOutput, { updatedInput: { command: newCmd } });
+    switch (modeOf(flags)) {
+      case 'codex': // allow + rewrite via hookSpecificOutput.updatedInput ONLY (no top-level modifiedArgs).
+        obj.hookSpecificOutput = Object.assign({ hookEventName: 'PreToolUse' }, obj.hookSpecificOutput, { permissionDecision: 'allow', updatedInput: { command: newCmd } });
+        break;
+      case 'copilot':
+      default: // Copilot: modifiedArgs (top-level) + hookSpecificOutput.updatedInput.
+        obj.modifiedArgs = { command: newCmd };
+        obj.hookSpecificOutput = Object.assign({ hookEventName: 'PreToolUse' }, obj.hookSpecificOutput, { updatedInput: { command: newCmd } });
+    }
     output.text = JSON.stringify(obj);
   },
-  // PostToolUse result-rewrite test. Arg: "<matchSubstr>::<newResultText>". If the input contains
-  // <matchSubstr>, merge modifiedResult (R1) into the staged output — to see whether the runtime
-  // replaces the tool result the model sees. Composes with --output (additionalContext).
-  '--rewrite-result': (input, value, output) => {
+  // COPILOT-ONLY. PostToolUse result-rewrite (`modifiedResult`, Copilot/CLI). Arg: "<match>::<newText>".
+  // Codex has NO equivalent (PostToolUse cannot replace the result), so this is named for Copilot.
+  '--copilot-rewrite-result': (input, value, output) => {
     if (typeof value !== 'string' || !input) return;
     const [match, newText] = splitMatchPayload(value);
     if (!match || !JSON.stringify(input).includes(match)) return;
@@ -137,8 +158,8 @@ const PROCESSORS = {
     output.text = JSON.stringify(obj);
   },
   // Stop block test — blocks the turn-stop EXACTLY ONCE per session, then allows. Uses an atomic
-  // marker file (keyed by session id) so it can NEVER loop. No arg. Reset: delete the marker file.
-  '--block-stop-once': (input, value, output) => {
+  // marker file (keyed by session id) so it can NEVER loop. Reset: delete the marker file. Shape per --mode.
+  '--block-stop-once': (input, value, output, flags) => {
     if (!input) return;
     const sid = String(input.session_id || input.sessionId || 'global').replace(/[^A-Za-z0-9_.-]/g, '_');
     const marker = path.join(LOG_DIR, `.block-stop-once-${sid}`);
@@ -155,7 +176,11 @@ const PROCESSORS = {
     const obj = stagedJson(output);
     obj.decision = 'block';
     obj.reason = reason;
-    obj.hookSpecificOutput = Object.assign({ hookEventName: 'Stop' }, obj.hookSpecificOutput, { decision: 'block', reason: reason });
+    // Codex: top-level {decision, reason} ONLY (a hookSpecificOutput wrapper fails the hook).
+    // Copilot: also mirror into hookSpecificOutput.
+    if (modeOf(flags) !== 'codex') {
+      obj.hookSpecificOutput = Object.assign({ hookEventName: 'Stop' }, obj.hookSpecificOutput, { decision: 'block', reason: reason });
+    }
     output.text = JSON.stringify(obj);
   },
 };
@@ -200,7 +225,7 @@ function main() {
       continue;
     }
     log(`PROCESSOR: ${flag} (value=${JSON.stringify(flags[flag])})`);
-    proc(input, flags[flag], output);
+    proc(input, flags[flag], output, flags);
   }
 
   // 4) Emit: provided text -> stdout, then exit with the resolved code.
