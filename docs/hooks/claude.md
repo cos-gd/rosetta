@@ -4,7 +4,7 @@ Target agent: **Claude Code (Anthropic)** — CLI + IDE extensions + claude.ai/c
 
 Exact input/output contract for Claude Code lifecycle hooks. Facts only, sourced from Anthropic.
 
-**Status: DRAFT (doc-grounded hypothesis — NOT yet empirically verified).** Grounded in the Anthropic Claude Code hooks reference (R1). The `Observed` columns and the Capability Matrix `✅` marks are filled only after the live-hook run (`docs/hooks/claude/hooks.json` + `tester.js` → `~/.rosetta/hooks.log`). The hook protocol is **model-independent** — one run verifies the contract; the model does not change it.
+**Status: COMPLETE** — grounded in the Anthropic Claude Code hooks reference (R1) AND empirically verified by a live-hook run (Claude Code IDE, 2026-06-29; incl. manual `/compact` exercising `PreCompact`/`PostCompact`), approved 2026-06-29. The hook protocol is **model-independent** — verified behaviors are contract facts, not model quirks. Capabilities still marked 📄 in the matrix are documented-but-not-exercised (optional follow-up, non-blocking).
 
 ---
 
@@ -18,32 +18,33 @@ Findings NOT obvious from the per-event tables below:
 3. **(!) `systemMessage` is a USER-facing warning, NOT model context.** Put model-visible text in `additionalContext`; text placed only in `systemMessage` never enters the model's context.
 4. **(!) `continue:false` overrides everything and `stopReason` is USER-only.** `continue:false` takes precedence over any event-specific decision field and stops Claude entirely; its companion `stopReason` is shown to the user, NOT to Claude.
 5. **JSON is parsed only on exit 0.** On exit 0, stdout that is valid JSON is parsed as the output contract; stdout that is NOT valid JSON is treated as plain-text context. On exit 2, stdout is ignored entirely.
+6. **(!) Validation is LENIENT.** Unknown/extra fields (top-level AND nested inside `hookSpecificOutput`) are silently IGNORED; the valid documented fields are still honored. A stray-field output still injects its `additionalContext`. Emit only documented fields — extras do nothing.
 
 ---
 
 ## Capability Matrix (Claude Code)
 
-Verification status per capability. ✅ = confirmed by live-hook run; 📄 = documented (R1), not yet exercised. **All 📄 pending the DRAFT live-hook run.**
+Verification status per capability. ✅ = confirmed by live-hook run (Run 1); 📄 = documented (R1), not yet exercised.
 
 | Capability | Status |
 |---|---|
-| Identity pass-through (canonical = wire) | 📄 |
-| SessionStart — inject `additionalContext` (nested) | 📄 |
-| PreToolUse — `permissionDecision:"deny"` + reason (blocks tool) | 📄 |
-| PreToolUse — `permissionDecision:"allow"` / `"ask"` / `"defer"` | 📄 |
-| PreToolUse — `updatedInput` rewrite (args replaced before exec) | 📄 |
+| Identity pass-through (canonical = wire; nested deny/rewrite + top-level Stop accepted) | ✅ |
+| SessionStart — inject `additionalContext` (nested) | ✅ reaches model (CC-SS-CLEAN) |
+| PreToolUse — `permissionDecision:"deny"` + reason (blocks tool) | ✅ exit 0; blocked Read; reason → model |
+| PreToolUse — `permissionDecision:"allow"` / `"ask"` / `"defer"` | 📄 (`allow` exercised via rewrite) |
+| PreToolUse — `updatedInput` rewrite (args replaced before exec) | ✅ `echo` rewritten before exec |
 | PreToolUse — `additionalContext` advise (no block) | 📄 |
-| PostToolUse — inject `additionalContext` (nested) | 📄 |
+| PostToolUse — inject `additionalContext` (nested) | ✅ reaches model + subagent (CC-PTU-NEST) |
 | PostToolUse — `decision:"block"` + reason | 📄 |
 | PostToolUse — `updatedToolOutput` rewrite | 📄 |
-| Stop — `decision:"block"` + reason (continue turn) | 📄 |
-| SubagentStop — `decision:"block"` + reason (continue subagent) | 📄 |
-| PreCompact — block via exit 2 / `continue:false` | 📄 |
-| PostCompact — fires (side-effect only, cannot block) | 📄 |
+| Stop — `decision:"block"` + reason (continue turn) | ✅ block-once; reason → model |
+| SubagentStop — fires; input shape captured | ✅ (block output 📄) |
+| PreCompact — fires; input shape captured (`trigger`, `custom_instructions`) | ✅ fired (manual `/compact`); block output 📄 |
+| PostCompact — fires; input carries `compact_summary` | ✅ fired; side-effect only |
 | `systemMessage` → user UI warning (not model context) | 📄 |
 | `continue:false` + `stopReason` (stops Claude; reason user-only) | 📄 |
-| Exit 2 = first-class block, reason from stderr (PostToolUse cannot block) | 📄 |
-| Strict schema validation (extra/misplaced field fails the hook)? | ❓ unknown — NOT documented; **do NOT assume** (Codex-only behavior). To probe. |
+| Exit 2 = first-class block, reason from stderr (PostToolUse cannot block) | 📄 (Rosetta uses exit 0) |
+| **Strict schema validation?** → **NO — LENIENT.** Extra/misplaced fields ignored, valid parts honored | ✅ confirmed |
 
 ---
 
@@ -161,9 +162,9 @@ Delivered as snake_case JSON on stdin (command hooks). `tool_input` (where prese
 | `transcript_path` | string | R1 | path to session transcript |
 | `cwd` | string | R1 | session working directory |
 | `hook_event_name` | string | R1 | the firing event name (PascalCase) |
-| `permission_mode` | string | R1 | `default`\|`plan`\|`acceptEdits`\|`auto`\|`dontAsk`\|`bypassPermissions`; not present on all events |
-| `effort` | `{ level: string }` | R1 | `low`\|`medium`\|`high`\|`xhigh`\|`max`; only tool-use-context events (PreToolUse/PostToolUse/Stop/SubagentStop) and when the model supports effort |
-| `agent_id` | string | R1 | optional; present only inside subagents |
+| `permission_mode` | string | R1 | `default`\|`plan`\|`acceptEdits`\|`auto`\|`dontAsk`\|`bypassPermissions`. **Observed: present on PreToolUse/PostToolUse/Stop/SubagentStop; ABSENT on SessionStart (Run 1).** |
+| `effort` | `{ level: string }` | R1 | `low`\|`medium`\|`high`\|`xhigh`\|`max`. **Observed present on PreToolUse/PostToolUse/Stop/SubagentStop (Run 1).** |
+| `agent_id` | string | R1 | optional; present inside subagents. **Observed on SubagentStop (Run 1).** |
 | `agent_type` | string | R1 | optional; present with `--agent` or inside subagents |
 
 ---
@@ -191,9 +192,9 @@ Returned on **exit 0** as JSON on stdout (valid JSON → parsed as contract; non
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
-| (common input fields) | — | R1 | `permission_mode` present |
-| `source` | string | R1 | `"startup"` \| `"resume"` \| `"clear"` \| `"compact"` |
-| `model` | string | R1 | optional; active model slug |
+| (common input fields) | — | R1 | **Observed: `permission_mode` ABSENT here (Run 1)** |
+| `source` | string | R1 | `"startup"` \| `"resume"` \| `"clear"` \| `"compact"`. Observed `"startup"`. |
+| `model` | string | R1 | active model slug. Observed `"claude-opus-4-8[1m]"`. |
 
 ### Output (R1)
 
@@ -221,9 +222,10 @@ Returned on **exit 0** as JSON on stdout (valid JSON → parsed as contract; non
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
-| (common input fields) | — | R1 | `effort` may be present |
-| `tool_name` | string | R1 | e.g. `Bash`, `Edit`, `Write`, `Read`, `mcp__…` |
-| `tool_input` | object | R1 | tool-specific input parameters (parsed object) |
+| (common input fields) | — | R1 | `permission_mode` + `effort` observed |
+| `tool_name` | string | R1 | e.g. `Bash`, `Edit`, `Write`, `Read`, `mcp__…`. Observed `Read`, `Bash`. |
+| `tool_input` | object | R1 | tool-specific input parameters (parsed object). Bash also carries `description`. |
+| `tool_use_id` | string | R1 | **Observed (Run 1)**; tool-call identifier (`toolu_…`) |
 
 ### Output (R1) — choose ONE path
 
@@ -257,10 +259,12 @@ Returned on **exit 0** as JSON on stdout (valid JSON → parsed as contract; non
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
-| (common input fields) | — | R1 | `effort` may be present |
-| `tool_name` | string | R1 | |
-| `tool_input` | object | R1 | |
-| `tool_response` | object \| string | R1 | tool output. **(verify in live run — fetch was inconclusive between `tool_response` and `tool_result`; canonical Rosetta/Codex use `tool_response`)** |
+| (common input fields) | — | R1 | `permission_mode` + `effort` observed |
+| `tool_name` | string | R1 | Observed `Bash` |
+| `tool_input` | object | R1 | parsed object; Bash carries `command` + `description` |
+| `tool_response` | object \| string | R1 | **RESOLVED (Run 1): field name is `tool_response`** (NOT `tool_result`). Bash → object `{stdout, stderr, interrupted, isImage, noOutputExpected}`. |
+| `tool_use_id` | string | R1 | **Observed (Run 1)** (`toolu_…`) |
+| `duration_ms` | number | R1 | **Observed (Run 1)**; tool execution time |
 
 ### Output (R1)
 
@@ -289,10 +293,13 @@ or block:
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
-| (common input fields) | — | R1 | `effort` may be present |
-| `agent_type` | string | R1 | subagent type / name |
-| `stop_hook_active` | boolean | R1 | whether already continued **(verify in live run)** |
-| `last_assistant_message` | string | R1 | latest subagent message **(verify in live run)** |
+| (common input fields) | — | R1 | `permission_mode` + `effort` observed |
+| `agent_id` | string | R1 | **Observed (Run 1)**; subagent identifier |
+| `agent_type` | string | R1 | subagent type / name. Observed `"general-purpose"`. |
+| `stop_hook_active` | boolean | R1 | **Confirmed (Run 1)**; whether already continued |
+| `agent_transcript_path` | string | R1 | **Observed (Run 1)**; path to subagent transcript |
+| `last_assistant_message` | string | R1 | **Confirmed (Run 1)**; latest subagent message |
+| `background_tasks` / `session_crons` | array | R1 | **Observed (Run 1)** |
 
 ### Output (R1)
 
@@ -316,8 +323,10 @@ or block:
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
-| (common input fields) | — | R1 | `effort` may be present |
-| `output` | string | R1 | assistant's response. **(verify in live run; `stop_hook_active`/`last_assistant_message` may also be present)** |
+| (common input fields) | — | R1 | `permission_mode` + `effort` observed |
+| `stop_hook_active` | boolean | R1 | **RESOLVED (Run 1)**; whether already continued |
+| `last_assistant_message` | string | R1 | **RESOLVED (Run 1): Stop input carries `last_assistant_message`, NOT `output`** (the doc-fetch's `output` was a paraphrase) |
+| `background_tasks` / `session_crons` | array | R1 | **Observed (Run 1)** |
 
 ### Output (R1)
 
@@ -343,12 +352,13 @@ or block:
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
-| (common input fields) | — | R1 | |
-| `trigger` | string | R1 | `"manual"` \| `"auto"` — what triggered compaction. **(verify in live run; compaction-specific fields not fully documented)** |
+| (common input fields) | — | R1 | **Observed: NO `permission_mode`, NO `turn_id` (Run 1)** |
+| `trigger` | string | R1 | **Confirmed (Run 1): `"manual"`** \| `"auto"` |
+| `custom_instructions` | string \| null | R1 | **Observed (Run 1): `null`**; user compaction instructions |
 
 ### Output (R1)
 
-Blocks via **exit 2** OR JSON `{ "continue": false, "stopReason": "…" }`.
+Blocks via **exit 2** OR JSON `{ "continue": false, "stopReason": "…" }`. (Run 1 let compaction proceed — block path not exercised.)
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
@@ -366,12 +376,13 @@ Blocks via **exit 2** OR JSON `{ "continue": false, "stopReason": "…" }`.
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
-| (common input fields) | — | R1 | |
-| `trigger` | string | R1 | `"manual"` \| `"auto"` **(verify in live run)** |
+| (common input fields) | — | R1 | **Observed: NO `permission_mode`/`turn_id` (Run 1)** |
+| `trigger` | string | R1 | **Confirmed (Run 1): `"manual"`** \| `"auto"` |
+| `compact_summary` | string | R1 | **Observed (Run 1): the full post-compaction summary text** (the `<analysis>…</analysis><summary>…</summary>` block) |
 
 ### Output (R1)
 
-> **No decision control** — PostCompact cannot block; used for side effects (e.g. logging). No `hookSpecificOutput` / `decision` support documented. (R1)
+> **No decision control** — PostCompact cannot block; used for side effects (e.g. logging). No `hookSpecificOutput` / `decision` support documented. (R1) **Confirmed Run 1: fired, completed successfully, no effect on the session.**
 
 ---
 
@@ -403,6 +414,74 @@ Two signalling paths; **choose ONE per hook, never both** (R1). JSON is processe
 
 ---
 
-## Appendix — Observed Wire Examples (live-hook run)
+## Appendix — Observed Wire Examples (Claude Code live-hook Run 1)
 
-*Pending — to be filled after the Claude Code live-hook run (`docs/hooks/claude/hooks.json` + `tester.js` → `~/.rosetta/hooks.log`). Captured INPUT payloads, ACCEPTED OUTPUT shapes, runtime env signature, and tool names observed go here, mirroring `codex.md`'s appendix. Until then this spec is **DRAFT**.*
+Real captures via `docs/hooks/tester.js` → `~/.rosetta/hooks.log`; test repo `/Users/isolomatov/Sources/5-min-demo/spring-boot-react-mysql`; model `claude-opus-4-8[1m]`; `permission_mode:"auto"`. Long values trimmed with `…`; planted test data only (no real secrets). Per-run narrative in `docs/hooks-verify-run-logs.md`.
+
+**Events that fired (Run 1):** `SessionStart` (×2 entries), `PreToolUse`, `PostToolUse`, `SubagentStop`, `Stop`, plus `PreCompact`/`PostCompact` (manual `/compact`). Tool interception is TOTAL: PreToolUse fired on both `Read` and `Bash`.
+
+### Captured INPUT payloads (snake_case; `tool_input`/`tool_response` are objects)
+
+```json
+// SessionStart — source + model; NO permission_mode
+{"session_id":"6bd73c2b-…","transcript_path":"…/6bd73c2b-….jsonl","cwd":"…/spring-boot-react-mysql","hook_event_name":"SessionStart","source":"startup","model":"claude-opus-4-8[1m]"}
+// PreToolUse — permission_mode + effort, tool_input object, tool_use_id (deny target = Read)
+{…,"permission_mode":"auto","effort":{"level":"high"},"hook_event_name":"PreToolUse","tool_name":"Read","tool_input":{"file_path":"…/docs/hooks/HOOK-DENY-PROBE.txt"},"tool_use_id":"toolu_…"}
+// PostToolUse — tool_response is an OBJECT for Bash; adds tool_use_id + duration_ms
+{…,"permission_mode":"auto","effort":{"level":"high"},"hook_event_name":"PostToolUse","tool_name":"Bash","tool_input":{"command":"echo rosetta-hook-probe","description":"…"},"tool_response":{"stdout":"rosetta-hook-probe","stderr":"","interrupted":false,"isImage":false,"noOutputExpected":false},"tool_use_id":"toolu_…","duration_ms":258}
+// Stop — stop_hook_active + last_assistant_message (NOT "output"); background_tasks/session_crons
+{…,"permission_mode":"auto","effort":{"level":"high"},"hook_event_name":"Stop","stop_hook_active":false,"last_assistant_message":"…","background_tasks":[],"session_crons":[]}
+// SubagentStop — agent_id/agent_type/agent_transcript_path/last_assistant_message
+{…,"permission_mode":"auto","agent_id":"a1cba4a1…","agent_type":"general-purpose","effort":{"level":"high"},"hook_event_name":"SubagentStop","stop_hook_active":false,"agent_transcript_path":"…/subagents/agent-….jsonl","last_assistant_message":"CCP4","background_tasks":[…],"session_crons":[]}
+```
+
+### Emitted OUTPUT that Claude Code ACCEPTED (exit 0)
+
+```json
+// SessionStart context — nested ONLY; reached the model
+{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"…"}}
+// SessionStart with extra fields — ACCEPTED; additionalContext honored, stray top-level + nested fields IGNORED (lenient)
+{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"…","strayNestedField":"…"},"strayTopLevelField":"…"}
+// PreToolUse deny — nested ONLY; blocked the Read, reason reached the model
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"…"}}
+// PreToolUse rewrite — nested allow + updatedInput; command ran rewritten
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","updatedInput":{"command":"echo PRETOOLUSE-HOOK-REWROTE-THIS"}}}
+// PostToolUse context — nested ONLY; reached the main model AND the subagent
+{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"…"}}
+// Stop block — top-level ONLY; blocked once, then allowed
+{"decision":"block","reason":"…"}
+```
+
+### Compaction inputs (manual `/compact`, Run 1)
+
+```json
+// PreCompact — trigger + custom_instructions; NO permission_mode / turn_id
+{"session_id":"6bd73c2b-…","transcript_path":"…","cwd":"…/spring-boot-react-mysql","hook_event_name":"PreCompact","trigger":"manual","custom_instructions":null}
+// PostCompact — trigger + compact_summary (full <analysis>/<summary> text, trimmed here)
+{"session_id":"6bd73c2b-…","transcript_path":"…","cwd":"…","hook_event_name":"PostCompact","trigger":"manual","compact_summary":"<analysis>…</analysis><summary>…</summary>"}
+```
+
+### Runtime env signature (Claude Code IDE, Run 1)
+
+Hook processes inherit the **full shell environment** (`PATH`, `HOME`, `JAVA_HOME`, `SSH_AUTH_SOCK`, `TERM`, `LANG`, `PWD`, …). On top of that, Claude Code injects this distinctive set (the detection signature):
+
+| Var | Value (Run 1) | Note |
+|---|---|---|
+| `AI_AGENT` | `claude-code_2-1-195_harness` | **carries the agent + version (2.1.195)** |
+| `CLAUDECODE` | `1` | present iff running under Claude Code |
+| `CLAUDE_CODE_ENTRYPOINT` | `cli` | entrypoint |
+| `CLAUDE_CODE_SESSION_ID` | `6bd73c2b-…` | matches input `session_id` |
+| `CLAUDE_CODE_CHILD_SESSION` | `1` | observed `=1` on every hook process this run (main + subagent) |
+| `CLAUDE_EFFORT` | `high` | mirrors input `effort.level` |
+| `CLAUDE_PROJECT_DIR` | repo root | also the `${CLAUDE_PROJECT_DIR}` placeholder |
+| `CLAUDE_ENV_FILE` | `…/.claude/session-env/<sid>/sessionstart-hook-N.sh` | **per-SessionStart-hook env script — a SessionStart hook can export env (one file per registered SessionStart hook, `-0`, `-1`, …)** |
+
+> `CLAUDE_CODE_EXECPATH` / `CLAUDE_CODE_DISABLE_AUTO_MEMORY` not observed this run — do not rely on them.
+
+### How Claude Code surfaces hook output in the UI (NOT proof of model ingestion)
+
+Compaction hooks show in the `/compact` activity line as `PreCompact […] completed successfully` / `PostCompact […] completed successfully`. Deny / Stop block reasons surface to the model. (UI display is not proof of model ingestion.)
+
+### Full log excerpt
+
+`docs/hooks/claude-logs.txt` — cleaned hook-invocation excerpt of this run (full env shown). ⚠️ **Do NOT read wholesale** — `grep` what you need (e.g. `grep -nE 'hook_event_name|RESULT:|=' docs/hooks/claude-logs.txt`). Cleaning/redaction methodology: see `docs/hooks-verify.md`.

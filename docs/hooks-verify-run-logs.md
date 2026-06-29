@@ -195,3 +195,64 @@ Triggered a manual compaction in the same session. Log confirms:
 Verbatim (PreCompact): `{"session_id":"019f0634-…","turn_id":"019f0660-…","transcript_path":"…/rollout-…jsonl","cwd":"…/spring-boot-react-mysql","hook_event_name":"PreCompact","model":"gpt-5.4","trigger":"manual"}`
 
 ⇒ Capability matrix in `docs/hooks/codex.md`: PreCompact/PostCompact upgraded 📄→✅.
+
+---
+
+## Claude Code Run 1 — Claude Code IDE (2026-06-29)
+
+- **Runtime/model:** Claude Code IDE, `claude-opus-4-8[1m]`, session `6bd73c2b-…`, `permission_mode:"auto"`.
+- **Test repo:** `/Users/isolomatov/Sources/5-min-demo/spring-boot-react-mysql`. Config: `.claude/settings.local.json` = `docs/hooks/claude/hooks.json`.
+- **⚠️ Log contamination:** the same `~/.rosetta/hooks.log` also captured 5 entries from a separate Cursor session (~14:58, `--mode cursor`, camelCase tags `preToolUse`/`stop`, rewrite payload `echo X`). A leftover Cursor hook config is active in that test repo. My run is the `15:00+` entries (`--mode claude`, PascalCase tags). **Lesson: park OTHER agents' configs (`.cursor/` etc.) before a run** — the Codex conflict-avoidance rule applies here too.
+
+**Results (verified against the log, not the model's word):**
+- **Events fired:** SessionStart (×2: clean + strict), PreToolUse (×7 invocations — fired on Read AND Bash → tool interception is TOTAL), PostToolUse (×4), SubagentStop (×1), Stop (×3). PreCompact/PostCompact NOT fired (no `/compact`).
+- **SessionStart `additionalContext` (nested) → model:** ✅ `CC-SS-CLEAN-7a1f` recited (CCS1).
+- **Strict-schema probe → LENIENT:** strict-probe output (stray top-level `strayTopLevelField` + stray nested `strayNestedField`) was ACCEPTED at exit 0 (textLen=203); `CC-SS-STRICT-2b8c` reached the model (CCS2) while `CC-STRICT-STRAY` did NOT. ⇒ Claude ignores unknown fields, honors valid parts — **opposite of Codex strict validation.**
+- **PreToolUse deny (nested, exit 0):** ✅ blocked `Read docs/hooks/HOOK-DENY-PROBE.txt`; reason quoted verbatim by the model.
+- **PreToolUse `updatedInput` rewrite:** ✅ `echo REWRITE_ME_PRETOOLUSE` ran as `echo PRETOOLUSE-HOOK-REWROTE-THIS` (model reported the rewritten output).
+- **PostToolUse `additionalContext` (nested):** ✅ `CC-PTU-NEST-5e6f` recited (CCP4); ALSO reached the SUBAGENT (its `last_assistant_message` was literally `"CCP4"`).
+- **Stop `decision:"block"` (top-level, exit 0) + block-once:** ✅ first Stop blocked (textLen=280), reason quoted; subsequent Stops suppressed (marker file).
+- **Input field resolutions:** PostToolUse output field = **`tool_response`** (object `{stdout,stderr,interrupted,isImage,noOutputExpected}`), NOT `tool_result`. Stop input = `stop_hook_active` + `last_assistant_message` (NOT `output`). SubagentStop adds `agent_id`/`agent_type`/`agent_transcript_path`/`last_assistant_message`. SessionStart has NO `permission_mode`. `effort:{level}` + `tool_use_id` present on tool events; PostToolUse adds `duration_ms`.
+
+⇒ `docs/hooks/claude.md`: status DRAFT→VERIFIED; capability matrix rows upgraded 📄→✅ for the exercised capabilities; strict-validation ❓→✅(LENIENT); verify-flags resolved; Appendix wire examples added.
+
+### Claude Code Run 1 — compaction addendum (manual `/compact`, 2026-06-29)
+
+- **PreCompact + PostCompact both fired** (`completed successfully` in the `/compact` UI line); neither blocked (block path not exercised).
+- **PreCompact input:** `{session_id, transcript_path, cwd, hook_event_name:"PreCompact", trigger:"manual", custom_instructions:null}`. NO `permission_mode`, NO `turn_id` (differs from Codex, which has `turn_id`).
+- **PostCompact input:** `{…, hook_event_name:"PostCompact", trigger:"manual", compact_summary:"<analysis>…</analysis><summary>…</summary>"}` — carries the FULL compaction summary text (undocumented field).
+- **Env signature (this run, launch-independent):** `CLAUDECODE=1`, `CLAUDE_CODE_ENTRYPOINT=cli`, `CLAUDE_CODE_SESSION_ID`, `CLAUDE_CODE_CHILD_SESSION=1` (subagent), `CLAUDE_PROJECT_DIR`, `CLAUDE_ENV_FILE=…/session-env/<sid>/sessionstart-hook-N.sh` (SessionStart hooks can export env), `CLAUDE_EFFORT=high`. NOTE: `CLAUDE_CODE_EXECPATH`/`CLAUDE_CODE_DISABLE_AUTO_MEMORY` appeared ONLY in the contaminating session, not this one.
+- **Artifacts added:** `docs/hooks/claude-logs.txt` (cleaned, de-contaminated, redacted excerpt — analogous to `codex-logs.txt`); env signature + UI-surfacing note + compaction wire examples folded into `docs/hooks/claude.md` Appendix; PreCompact/PostCompact rows 📄→✅ (firing + input shape).
+
+---
+
+## Cursor Run 1 — Cursor 3.9.16 (2026-06-29)
+
+- **Runtime/model:** Cursor `3.9.16`, Agent (`composer_mode:"agent"`), model `composer-2.5-fast` (compaction used `gpt-4.1-mini`), session/conversation `74676b03-c5c8-4868-ace0-0099aafab72e`.
+- **Test repo:** `/Users/isolomatov/Sources/5-min-demo/spring-boot-react-mysql`. Config: `.cursor/hooks.json` = `docs/hooks/cursor/hooks.json` (18 agent events → `tester.js`, `--mode cursor`). Pre-run hygiene done: log archived, stop-markers cleared, `.codex`/`.github`/`.claude/settings.local.json` parked. **Clean single-session log — no contamination** (cleaned → `docs/hooks/cursor-logs.txt`, 23 blocks, 0 secrets).
+- **`tester.js` change:** added `--mode cursor` branch to the deny/rewrite/stop processors (flat snake_case: `permission`+`user_message`+`agent_message` deny; `permission:"allow"`+`updated_input` rewrite; `followup_message` stop). Non-breaking to existing modes; smoke-tested before the run.
+
+**Results (verified against the log, not the model's word):**
+- **Events fired:** `beforeSubmitPrompt` (×3), `stop` (×3), `preToolUse` (×4: Shell + Read), `beforeShellExecution` (×2), `postToolUse` (×2), `postToolUseFailure` (×2), `afterShellExecution` (×2), `afterAgentThought` (×3), `afterAgentResponse` (×1), `preCompact` (×1). **Did NOT fire:** `sessionStart`, `sessionEnd`, `beforeReadFile`, `before/afterMCPExecution`, `afterFileEdit`, `subagentStart/Stop`.
+- **Output is FLAT snake_case, accepted at exit 0** (no `hookSpecificOutput` wrapper) — ✅ confirmed for deny, rewrite, `additional_context`, `followup_message`.
+- **Two-layer tool hooks both fire:** a single Shell `echo` fired BOTH generic `preToolUse` AND granular `beforeShellExecution`. ✅
+- **PreToolUse `permission:"deny"` blocks (exit 0 + JSON):** ✅ blocked `Read docs/hooks/HOOK-DENY-PROBE.txt` (tool `Read`, `tool_input.file_path`) AND `cat …HOOK-DENY-PROBE.txt` (tool `Shell`). Deny emit textLen=543 (both message fields). The `cat` was denied at `preToolUse` BEFORE `beforeShellExecution` could deny it (so beforeShellExecution deny path not exercised).
+- **(!) Deny reason channel — CONTRADICTS the doc framing.** Doc: `agent_message`→model, `user_message`→user. **Observed: the model received `user_message` (recalled `CURSOR-DENY-USER`), NOT `agent_message` (`CURSOR-DENY-AGENT` recalled ABSENT).** Mechanism in the log: the deny spawned a `postToolUseFailure` whose **`error_message` = the deny's `user_message`** verbatim — that is what reached the model. ⇒ Rosetta's existing `deny→user_message` mapping DOES reach the model (not the silent-fail my DRAFT feared). `agent_message` delivery unverified (single run; deny only via `preToolUse`). Cursor also appends its own *"Agent note: Do not suggest workarounds to the blocked tool."*
+- **PreToolUse `updated_input` rewrite:** ✅ `echo REWRITE_ME_PRETOOLUSE` ran as `echo PRETOOLUSE-HOOK-REWROTE-THIS` (model reported rewritten output; postToolUse showed the rewritten command). Emit textLen=86.
+- **PostToolUse `additional_context` → model:** ✅ `CURSOR-PTU-9f2a` recited (CPT2). Flat top-level `additional_context`, emit textLen=72.
+- **Stop `followup_message` (continuation):** ✅ first `stop` emitted textLen=245 → auto-submitted as a new turn; model replied `STOP-FOLLOWUP-RECEIVED CURSOR-STOP-1`. Block-once marker held (subsequent stops textLen=0). NOTE: first `stop` fired with `status:"error"`.
+- **`preCompact` fired on Cursor "summarize":** `trigger:"manual"`, `is_first_compaction:true`, + context stats (`context_usage_percent`/`context_tokens`/`context_window_size`/`message_count`/`messages_to_compact`). ✅ (bonus)
+- **`sessionStart` did NOT fire** → `CURSOR-SS-3c4d` correctly recalled ABSENT. Hooks were registered after the session started; `additional_context`/`env` injection remains 📄 (re-run with a FRESH conversation to capture).
+- **Input field resolutions:** flat snake_case; `session_id` == `conversation_id`; `generation_id` per turn; `model` varies by phase (`composer-2.5-fast` / `default` / `gpt-4.1-mini`); `cwd:""` observed; Shell `tool_input`={command,cwd,timeout}, Read `tool_input`={file_path}; `agent_message` ABSENT from `preToolUse` input; `postToolUse.tool_output` is a JSON STRING `{"output":…,"exitCode":N}`; `duration` float ms; `beforeShellExecution` is flat `command`/`cwd`/`sandbox` (no `tool_input` wrapper); `beforeSubmitPrompt` carries `prompt`+`attachments` (active rules) and `transcript_path:null`.
+- **Env signature (Cursor):** `CURSOR_EXTENSION_HOST_ROLE=agent-exec`, `CURSOR_LAYOUT=unifiedAgent`, `CURSOR_VERSION=3.9.16`, `CURSOR_PROJECT_DIR`/`CURSOR_TRANSCRIPT_PATH`/`CURSOR_USER_EMAIL`/`CURSOR_WORKSPACE_LABEL`/`CURSOR_RIPGREP_PATH`, VS-Code-base vars (`VSCODE_PID`, `VSCODE_IPC_HOOK`, `VSCODE_PROCESS_TITLE=extension-host (agent-exec) …`), `CLAUDE_PROJECT_DIR` alias. (Cursor = VS Code fork.)
+
+⇒ `docs/hooks/cursor.md`: status DRAFT→VERIFIED; Practical Conclusion 4 corrected to observed deny-channel behavior; capability matrix rows upgraded 📄→✅ for exercised capabilities; Observed notes + Appendix wire examples added. Artifacts: `docs/hooks/cursor-logs.txt`, `docs/hooks/cursor/hooks.json`, `tester.js` `--mode cursor`.
+
+### Cursor Run 2 — sessionStart probe (2026-06-29, fresh conversation `3cf8e158-…`)
+
+Targeted re-run to capture `sessionStart` (Run 1 missed it — hooks registered mid-session). Pre-run: archived Run 1 log, cleared stop-markers. Started a NEW Cursor Agent chat, then a minimal per-token recall probe.
+- **`sessionStart` FIRED** (`--tag sessionStart`); emitted flat `{"additional_context":"…CURSOR-SS-3c4d. Report CSS1."}` (exit 0, textLen 71).
+- **✅ `additional_context` reaches the model:** model answered YES + `CSS1` for `CURSOR-SS-3c4d`.
+- **Input shape:** `{conversation_id, generation_id:"" (empty at start), model:"default", model_id:"default", is_background_agent:false, composer_mode:"agent", session_id(=conversation_id), hook_event_name:"sessionStart", cursor_version, workspace_roots, user_email, transcript_path:null}`. **No `source` field** (differs from Claude/Codex SessionStart).
+- **Bonus:** `stop` `followup_message` fired again (fresh session → fresh once-marker); model auto-replied `STOP-FOLLOWUP-RECEIVED CURSOR-STOP-1` — re-confirms the continuation path. Marker reset after the run.
+⇒ `cursor.md`: `sessionStart` `additional_context` row 📄→✅; Status updated to Runs 1–2; `env` output remains 📄.

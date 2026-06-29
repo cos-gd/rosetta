@@ -4,7 +4,7 @@ Target agent: **Cursor** (Agent / Cmd-K chat + Tab inline completions; shared `h
 
 Exact input/output contract for Cursor lifecycle hooks. Facts only, sourced from Cursor's hooks reference.
 
-**Status: DRAFT (doc-grounded hypothesis, NOT yet verified).** Grounded in Cursor's hooks reference (R1). The `Observed` evidence and Capability-Matrix `✅` marks are **pending the live-hook run** — until then every contract claim here is a hypothesis to be tested, not confirmed truth. The hook protocol is model-independent — one verified run seals the contract; the model does not change it.
+**Status: VERIFIED (live-hook Runs 1–2, Cursor 3.9.16, 2026-06-29).** Grounded in Cursor's hooks reference (R1) AND empirically confirmed against `~/.rosetta/hooks.log` (`docs/hooks/cursor/hooks.json` + `tester.js`; cleaned excerpt `docs/hooks/cursor-logs.txt`). Run 2 (fresh conversation) added `sessionStart`. The hook protocol is **model-independent** — one run verifies the contract; the model does not change it. **NOT exercised (remain 📄, non-blocking):** `sessionStart` *`env`* output (only `additional_context` confirmed), `beforeReadFile` (did not fire — the Read deny went through `preToolUse`), `beforeShellExecution` *deny* (only passthrough seen — the `cat` was denied at `preToolUse` first), `beforeMCPExecution`/`afterMCPExecution`, `subagentStart`/`subagentStop`, `afterFileEdit`, `sessionEnd`, `permission:"ask"`, `updated_mcp_tool_output`, `failClosed`.
 
 ---
 
@@ -15,7 +15,8 @@ Findings NOT obvious from the per-event tables below — and where Cursor genuin
 1. **(!) Output is FLAT snake_case — NO `hookSpecificOutput` wrapper.** Unlike Claude / Codex / Copilot-VS-Code (nested `hookSpecificOutput.*`), Cursor reads fields at the TOP LEVEL: `permission`, `additional_context`, `user_message`, `agent_message`, `updated_input`, `continue`, `env`, `followup_message`. Emitting a `hookSpecificOutput` wrapper does NOT work on Cursor.
 2. **(!) Two layers of tool hooks — generic AND granular.** Cursor exposes BOTH a generic `preToolUse`/`postToolUse` pair (fires for every tool) AND granular per-tool-class hooks (`beforeShellExecution`/`afterShellExecution`, `beforeMCPExecution`/`afterMCPExecution`, `beforeReadFile`, `afterFileEdit`). A tool call can fire both the generic and the granular hook. Choose the layer deliberately — wiring a Bash guard on `beforeShellExecution` AND `preToolUse` double-fires it.
 3. **(!) Fail-OPEN by default.** A hook crash / timeout / invalid-JSON lets the action through (the opposite of Copilot's fail-closed `preToolUse`). To make a deny-hook block on failure, set `"failClosed": true` on that hook entry in `hooks.json`. A deny guard wired without `failClosed` silently degrades to allow on any error.
-4. **(!) Deny reason has TWO audiences — `user_message` (UI) vs `agent_message` (model).** `user_message` is shown to the USER in the client; `agent_message` is fed back to the AGENT/model for reasoning. Put a model-facing block reason in `user_message` and the model never sees it (silent). Use `agent_message` when the model must read the reason.
+4. **(!) Deny reason — OBSERVED behavior CONTRADICTS the doc's audience split (Run 1).** R1 documents `user_message` = "shown to the user", `agent_message` = "fed to the agent". Empirically, on a `preToolUse` deny carrying BOTH fields, **the model received the `user_message` text, NOT `agent_message`.** The mechanism: a denied tool produces a follow-up **`postToolUseFailure`** event whose **`error_message` = the deny's `user_message`** (verbatim, confirmed in the log) — that is the channel the model reads. The `agent_message` was emitted but was **not observed reaching the model** (its marker was recalled as absent). **Implication for Rosetta:** the adapter's existing mapping (deny reason → `user_message`) DOES reach the model — it is not the silent-failure that the doc framing implied. `agent_message`'s actual delivery path is **unverified** (single run; deny exercised only via `preToolUse`, not via `beforeShellExecution`/`beforeMCPExecution`).
+   - Cursor also **appends its own line** to a blocked tool's message: *"Agent note: Do not suggest workarounds to the blocked tool."* (not emitted by the hook).
 5. **(!) `permission: "ask"` is NOT universal.** Accepted (and enforced) on `beforeShellExecution` / `beforeMCPExecution`. On `preToolUse` it is *"accepted by the schema but not enforced today"* — only `allow`/`deny` act. `beforeReadFile` is `allow`/`deny` only.
 6. **Tool names are Cursor-specific.** Matchers/`tool_name` use `Shell`, `Read`, `Write`, `Task`, `MCP:<toolName>` (and Tab variants `TabRead`/`TabWrite`) — NOT Claude/Codex names (`Bash`, `apply_patch`). Wiring that assumes `Bash` will never match.
 
@@ -23,24 +24,31 @@ Findings NOT obvious from the per-event tables below — and where Cursor genuin
 
 ## Capability Matrix (Cursor)
 
-Verification status per hook capability. ✅ = confirmed by live-hook run; 📄 = documented (R1), not yet exercised. **All rows are 📄 until the live-hook run (step 3) — this spec is DRAFT.**
+Verification status per hook capability. ✅ = confirmed by live-hook run (Run 1); 📄 = documented (R1), not yet exercised.
 
 | Capability | Status |
 |---|---|
-| Flat snake_case output (no `hookSpecificOutput` wrapper) | 📄 |
-| `sessionStart` — inject `additional_context` | 📄 |
-| `sessionStart` — set session `env` vars | 📄 |
-| `preToolUse` — `permission:"deny"` + `user_message`/`agent_message` | 📄 |
-| `preToolUse` — `updated_input` rewrite | 📄 |
+| Flat snake_case output (no `hookSpecificOutput` wrapper), parsed at exit 0 | ✅ deny/rewrite/`additional_context`/`followup_message` all honored flat |
+| Two-layer tool hooks — generic `preToolUse` AND granular `beforeShellExecution` both fire for one Shell call | ✅ both fired per `echo` |
+| `preToolUse` — `permission:"deny"` blocks the tool (exit 0 + JSON) | ✅ blocked `Read` and Shell `cat` |
+| `preToolUse` — deny reason reaches model via `user_message` (as `postToolUseFailure.error_message`); `agent_message` NOT observed reaching model | ✅ user_message reached; agent_message absent |
+| `preToolUse` — `updated_input` rewrite (args replaced before exec) | ✅ `echo` rewritten before exec |
 | `preToolUse` — `permission:"ask"` (schema-accepted, NOT enforced) | 📄 |
-| `beforeShellExecution` — `permission` allow/deny/ask + messages | 📄 |
-| `beforeMCPExecution` — `permission` allow/deny/ask + messages | 📄 |
-| `beforeReadFile` — `permission` allow/deny | 📄 |
-| `postToolUse` — inject `additional_context` | 📄 |
+| `postToolUse` — inject `additional_context` (reaches model) | ✅ recalled (CURSOR-PTU-9f2a / CPT2) |
 | `postToolUse` — `updated_mcp_tool_output` (MCP only) | 📄 |
-| `subagentStop` — `followup_message` (status=completed) | 📄 |
-| `stop` — `followup_message` | 📄 |
-| Exit code 2 ≡ `permission:"deny"` | 📄 |
+| `postToolUseFailure` — fires on deny (`failure_type:"permission_denied"`, `error_message`) | ✅ fired for both denied tools |
+| `stop` — `followup_message` auto-submits as next turn (once-guarded) | ✅ model replied STOP-FOLLOWUP-RECEIVED |
+| `beforeShellExecution` — fires (input `command`/`cwd`/`sandbox`); deny path | ✅ fires / 📄 deny (cat denied at `preToolUse` first) |
+| `beforeSubmitPrompt` — fires (input `prompt`/`attachments`); `continue` block | ✅ fires / 📄 block |
+| `afterShellExecution` / `afterAgentResponse` / `afterAgentThought` — fire (fire-and-forget) | ✅ fired |
+| `preCompact` — fires (`trigger:"manual"` + context stats) | ✅ fired (Cursor "summarize") |
+| `sessionStart` — inject `additional_context` (reaches model) | ✅ recalled (CURSOR-SS-3c4d / CSS1), Run 2 fresh conversation |
+| `sessionStart` — set session `env` vars | 📄 not exercised |
+| `beforeReadFile` — `permission` allow/deny | 📄 did NOT fire (Read deny went via `preToolUse`) |
+| `beforeMCPExecution` / `afterMCPExecution` — `permission` + messages | 📄 |
+| `subagentStart` / `subagentStop` (`followup_message`) | 📄 |
+| `afterFileEdit` / `sessionEnd` | 📄 |
+| Exit code 2 ≡ `permission:"deny"` | 📄 (Run 1 used exit-0 + JSON) |
 | `failClosed:true` blocks on hook failure (else fail-open) | 📄 |
 
 ---
@@ -158,6 +166,8 @@ App lifecycle: `workspaceOpen`.
 
 Input is delivered as snake_case JSON on stdin. `tool_input` (where present) is an object.
 
+> **Observed (Run 1):** `session_id` is present on every event and **equals `conversation_id`**. `model` **varies by phase** — `"composer-2.5-fast"` (+ `model_id:"composer-2.5"`, `model_params:[{id:"fast",value:"true"}]`) on `beforeSubmitPrompt`/`stop`; `"default"` on tool events; `"gpt-4.1-mini"` on `preCompact`. `transcript_path` is a `…/agent-transcripts/<id>.jsonl` path (but `null` on `beforeSubmitPrompt`).
+
 ---
 
 ## sessionStart
@@ -166,10 +176,12 @@ Input is delivered as snake_case JSON on stdin. `tool_input` (where present) is 
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
-| (common input fields) | — | R1 | |
-| `session_id` | string | R1 | session id |
-| `is_background_agent` | boolean | R1 | background-agent session |
-| `composer_mode` | string | R1 | optional — `"agent"` \| `"ask"` \| `"edit"` |
+| (common input fields) | — | R1 | **Observed (Run 2): `generation_id:""` (empty at session start); `transcript_path:null`; `model`/`model_id` `"default"`.** |
+| `session_id` | string | R1 | session id. **Observed = `conversation_id` (Run 2).** |
+| `is_background_agent` | boolean | R1 | background-agent session. **Observed `false` (Run 2).** |
+| `composer_mode` | string | R1 | optional — `"agent"` \| `"ask"` \| `"edit"`. **Observed `"agent"` (Run 2).** |
+
+> **Observed (Run 2):** no `source` field (unlike Claude/Codex `SessionStart`). `sessionStart` fires only at conversation start — it did NOT fire in Run 1 because hooks were registered mid-session.
 
 ### Output (R1)
 
@@ -179,8 +191,8 @@ Input is delivered as snake_case JSON on stdin. `tool_input` (where present) is 
 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
-| `additional_context` | string | R1 | optional; injected into the conversation |
-| `env` | object | R1 | optional; session-scoped environment variables |
+| `additional_context` | string | R1 | optional; injected into the conversation. **✅ Observed (Run 2): reaches the model (recalled CURSOR-SS-3c4d / CSS1); emit exit 0, textLen 71.** |
+| `env` | object | R1 | optional; session-scoped environment variables. **Not exercised.** |
 
 ---
 
@@ -191,11 +203,12 @@ Input is delivered as snake_case JSON on stdin. `tool_input` (where present) is 
 | Field | Type | Ref | Notes |
 |---|---|---|---|
 | (common input fields) | — | R1 | |
-| `tool_name` | string | R1 | `Shell`, `Read`, `Write`, `Task`, `MCP:<toolName>` |
-| `tool_input` | object | R1 | tool-specific parameters |
-| `tool_use_id` | string | R1 | tool-call id |
-| `cwd` | string | R1 | working directory |
-| `agent_message` | string | R1 | agent's message preceding the tool call |
+| `tool_name` | string | R1 | `Shell`, `Read`, `Write`, `Task`, `MCP:<toolName>`. **Observed `Shell`, `Read` (Run 1).** |
+| `tool_input` | object | R1 | tool-specific parameters. **Observed: Shell → `{command, cwd, timeout}`; Read → `{file_path}` (Run 1).** |
+| `tool_use_id` | string | R1 | tool-call id. **Observed (Run 1).** |
+| `cwd` | string | R1 | working directory. **Observed empty `""` (Run 1).** |
+| `agent_message` | string | R1 | agent's message preceding the tool call. **Observed ABSENT from preToolUse input (Run 1).** |
+| `model` | string | R1 | **Observed `"default"` on preToolUse (Run 1); varies per phase — see Common note.** |
 
 ### Output (R1)
 
@@ -221,10 +234,10 @@ Input is delivered as snake_case JSON on stdin. `tool_input` (where present) is 
 | (common input fields) | — | R1 | |
 | `tool_name` | string | R1 | tool type |
 | `tool_input` | object | R1 | tool parameters |
-| `tool_output` | string | R1 | JSON-stringified tool result |
-| `tool_use_id` | string | R1 | tool-call id |
-| `cwd` | string | R1 | working directory |
-| `duration` | number | R1 | milliseconds |
+| `tool_output` | string | R1 | JSON-stringified tool result. **Observed (Run 1): Shell → `"{\"output\":\"…\\n\",\"exitCode\":0}"` (a JSON STRING wrapping `output` + `exitCode`).** |
+| `tool_use_id` | string | R1 | tool-call id. **Observed (Run 1).** |
+| `cwd` | string | R1 | working directory. **Observed `""` (Run 1).** |
+| `duration` | number | R1 | milliseconds. **Observed float (e.g. `728.221`) (Run 1).** |
 
 ### Output (R1)
 
@@ -491,6 +504,8 @@ Fire-and-forget. No output fields.
 | Event | Class | Input (key fields) | Output | Ref |
 |---|---|---|---|---|
 | `postToolUseFailure` | agent | `tool_name`, `tool_input`, `tool_use_id`, `cwd`, `error_message`, `failure_type` (`timeout`\|`error`\|`permission_denied`), `duration`, `is_interrupt` | none | R1 |
+
+> **(!) Observed (Run 1):** a `preToolUse` **deny** produces a follow-up `postToolUseFailure` with `failure_type:"permission_denied"`, `duration:0`, `is_interrupt:false`, and **`error_message` = the deny's `user_message`** verbatim. This is the channel by which the deny reason reached the model (see Practical Conclusion 4).
 | `afterAgentResponse` | agent | `text` | fire-and-forget | R1 |
 | `afterAgentThought` | agent | `text`, `duration_ms` (opt) | fire-and-forget | R1 |
 | `beforeTabFileRead` | Tab | `file_path`, `content` | `permission: allow\|deny` | R1 |
@@ -509,6 +524,54 @@ Fire-and-forget. No output fields.
 
 ---
 
-## Appendix — Observed Wire Examples
+## Appendix — Observed Wire Examples (Cursor live-hook Run 1)
 
-**Pending live-hook verification (step 3).** To be filled with real captures from `docs/hooks/tester.js` → `~/.rosetta/hooks.log` once Cursor is run with `docs/hooks/cursor/hooks.json`. Until then this spec is DRAFT and the `Observed`/`✅` evidence does not exist.
+Real captures via `docs/hooks/tester.js` → `~/.rosetta/hooks.log`; run repo `/Users/isolomatov/Sources/5-min-demo/spring-boot-react-mysql`; Cursor **3.9.16**; one session (`conversation_id` = `session_id` = `74676b03-…`). Single run — illustrative, not exhaustive. Long values trimmed with `…`; planted test markers only, no real secrets.
+
+**Cleaned log:** `docs/hooks/cursor-logs.txt` (23 invocation blocks, filtered by `session_id`, de-interleaved by pid; zero credential-shaped values). ⚠️ **Do NOT read whole** — `grep` (e.g. `grep -nE 'hook_event_name|RESULT:|PROCESSOR:' docs/hooks/cursor-logs.txt`).
+
+**Runtime env signature (Cursor):** `CURSOR_EXTENSION_HOST_ROLE=agent-exec`, `CURSOR_LAYOUT=unifiedAgent`, `CURSOR_VERSION=3.9.16`, `CURSOR_PROJECT_DIR`, `CURSOR_TRANSCRIPT_PATH`, `CURSOR_USER_EMAIL`, `CURSOR_WORKSPACE_LABEL`, `CURSOR_RIPGREP_PATH`, plus VS-Code-base vars (`VSCODE_PID`, `VSCODE_IPC_HOOK`, `VSCODE_PROCESS_TITLE=extension-host (agent-exec) …`) and the `CLAUDE_PROJECT_DIR` alias. (Cursor is a VS Code fork — both `CURSOR_*` and `VSCODE_*` are present.)
+
+**How Cursor surfaces hook output in the UI** (NOT proof of model ingestion): a denied tool shows the `user_message` in the client, and Cursor appends *"Agent note: Do not suggest workarounds to the blocked tool."* The `cat`/Shell deny prefixes `Rejected: `.
+
+**Events that fired (Run 1):** `beforeSubmitPrompt`, `stop`, `preToolUse`, `beforeShellExecution`, `postToolUse`, `postToolUseFailure`, `afterShellExecution`, `afterAgentThought`, `afterAgentResponse`, `preCompact`. **Run 2 (fresh conversation `3cf8e158-…`)** added `sessionStart`. **Did NOT fire (either run):** `sessionEnd`, `beforeReadFile`, `before/afterMCPExecution`, `afterFileEdit`, `subagentStart/Stop`.
+
+### Captured INPUT payloads (snake_case; flat)
+
+```json
+// sessionStart (Run 2, fresh conversation) — generation_id empty, transcript_path null, no `source`; output additional_context reached the model
+{"conversation_id":"3cf8e158-…","generation_id":"","model":"default","model_id":"default","is_background_agent":false,"composer_mode":"agent","session_id":"3cf8e158-…","hook_event_name":"sessionStart","cursor_version":"3.9.16","workspace_roots":["…/spring-boot-react-mysql"],"user_email":"…","transcript_path":null}
+// preToolUse — Shell tool (tool_input object: command/cwd/timeout)
+{"conversation_id":"74676b03-…","generation_id":"f7746f6e-…","model":"default","tool_name":"Shell","tool_input":{"command":"echo rosetta-hook-probe","cwd":"","timeout":30000},"tool_use_id":"09dca0a5-…","cwd":"","session_id":"74676b03-…","hook_event_name":"preToolUse","cursor_version":"3.9.16","workspace_roots":["…/spring-boot-react-mysql"],"user_email":"…","transcript_path":"…/agent-transcripts/74676b03-….jsonl"}
+// preToolUse — Read tool (tool_input.file_path)
+{…,"tool_name":"Read","tool_input":{"file_path":"…/docs/hooks/HOOK-DENY-PROBE.txt"},"tool_use_id":"tool_ce44…","hook_event_name":"preToolUse"}
+// postToolUse — tool_output is a JSON STRING; duration float
+{…,"tool_name":"Shell","tool_input":{"command":"echo rosetta-hook-probe",…},"tool_output":"{\"output\":\"rosetta-hook-probe\\n\",\"exitCode\":0}","duration":728.221,"tool_use_id":"09dca0a5-…","hook_event_name":"postToolUse"}
+// postToolUseFailure — from a deny; error_message = the deny's user_message
+{…,"tool_name":"Read","tool_input":{"file_path":"…HOOK-DENY-PROBE.txt"},"error_message":"HOOK TEST (Rosetta diagnostic): user-facing deny channel marker CURSOR-DENY-USER (shown in the Cursor UI).","failure_type":"permission_denied","duration":0,"tool_use_id":"tool_ce44…","is_interrupt":false,"hook_event_name":"postToolUseFailure"}
+// beforeShellExecution — flat command/cwd/sandbox (no tool_input wrapper)
+{…,"model":"default","command":"echo rosetta-hook-probe","cwd":"","sandbox":false,"hook_event_name":"beforeShellExecution"}
+// afterShellExecution — command/output/duration/sandbox
+{…,"command":"echo rosetta-hook-probe","output":"rosetta-hook-probe\n","duration":728.221,"sandbox":false,"hook_event_name":"afterShellExecution"}
+// beforeSubmitPrompt — prompt + attachments (active rules); model composer-2.5-fast; transcript_path null
+{…,"model":"composer-2.5-fast","model_id":"composer-2.5","model_params":[{"id":"fast","value":"true"}],"composer_mode":"agent","prompt":"…","attachments":[{"type":"rule","file_path":"graphify.mdc"},{"type":"rule","file_path":"CLAUDE.md"}],"hook_event_name":"beforeSubmitPrompt","transcript_path":null}
+// stop — status + loop_count (observed status:"error" on a failed turn)
+{…,"model":"composer-2.5-fast","status":"error","loop_count":0,"hook_event_name":"stop"}
+// preCompact — trigger + context stats (fired on Cursor "summarize")
+{…,"model":"gpt-4.1-mini","trigger":"manual","context_usage_percent":9.2085,"context_tokens":18417,"context_window_size":200000,"message_count":13,"messages_to_compact":11,"is_first_compaction":true,"hook_event_name":"preCompact"}
+```
+
+### Emitted OUTPUT that Cursor ACCEPTED (flat snake_case, exit 0)
+
+```json
+// sessionStart context (Run 2) — flat additional_context; reached the model (recalled CURSOR-SS-3c4d / CSS1)
+{"additional_context":"Diagnostic secret CURSOR-SS-3c4d. Report CSS1."}
+// preToolUse deny — flat; blocked the tool. user_message reached the model (as postToolUseFailure.error_message); agent_message did NOT.
+{"permission":"deny","user_message":"…CURSOR-DENY-USER…","agent_message":"…CURSOR-DENY-AGENT; Report DA1"}
+// preToolUse rewrite — flat allow + updated_input; command substituted before exec (output was PRETOOLUSE-HOOK-REWROTE-THIS)
+{"permission":"allow","updated_input":{"command":"echo PRETOOLUSE-HOOK-REWROTE-THIS"}}
+// postToolUse context — flat additional_context; reached the model (recalled CURSOR-PTU-9f2a / CPT2)
+{"additional_context":"Diagnostic secret CURSOR-PTU-9f2a. Report CPT2."}
+// stop continuation — flat followup_message; auto-submitted once (model replied STOP-FOLLOWUP-RECEIVED CURSOR-STOP-1)
+{"followup_message":"HOOK TEST … STOP-FOLLOWUP-RECEIVED CURSOR-STOP-1 …"}
+```

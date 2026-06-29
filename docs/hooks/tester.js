@@ -124,6 +124,15 @@ const PROCESSORS = {
       case 'codex': // STRICT: nested hookSpecificOutput ONLY (top-level keys fail the whole hook).
         output.text = JSON.stringify({ hookSpecificOutput: nested });
         break;
+      case 'cursor': // Cursor: FLAT snake_case, NO wrapper. permission:"deny" + two reason channels —
+        // user_message (USER/UI) and agent_message (AGENT/model). Distinct markers reveal which reaches
+        // the model. Same shape serves preToolUse / beforeReadFile / beforeShellExecution.
+        output.text = JSON.stringify({
+          permission: 'deny',
+          user_message: 'HOOK TEST (Rosetta diagnostic): user-facing deny channel marker CURSOR-DENY-USER (shown in the Cursor UI).',
+          agent_message: reason + ' [agent-channel marker CURSOR-DENY-AGENT; Report DA1]',
+        });
+        break;
       case 'copilot':
       default: // Copilot: emit BOTH top-level AND nested (each runtime reads the one it honors).
         output.text = JSON.stringify({ permissionDecision: 'deny', permissionDecisionReason: reason, hookSpecificOutput: nested });
@@ -141,6 +150,10 @@ const PROCESSORS = {
       case 'claude': // Claude Code: allow + nested hookSpecificOutput.updatedInput (canonical; no top-level modifiedArgs).
       case 'codex': // allow + rewrite via hookSpecificOutput.updatedInput ONLY (no top-level modifiedArgs).
         obj.hookSpecificOutput = Object.assign({ hookEventName: 'PreToolUse' }, obj.hookSpecificOutput, { permissionDecision: 'allow', updatedInput: { command: newCmd } });
+        break;
+      case 'cursor': // Cursor: FLAT permission:"allow" + updated_input (preToolUse only; no wrapper).
+        obj.permission = 'allow';
+        obj.updated_input = { command: newCmd };
         break;
       case 'copilot':
       default: // Copilot: modifiedArgs (top-level) + hookSpecificOutput.updatedInput.
@@ -171,11 +184,21 @@ const PROCESSORS = {
     } catch (_) {
       return; // marker already present → not the first stop → allow
     }
+    const obj = stagedJson(output);
+    if (modeOf(flags) === 'cursor') {
+      // Cursor `stop` has NO block mechanism; it auto-submits `followup_message` as the next user turn.
+      // Once-marker prevents an infinite auto-submit loop. Flat snake_case, no wrapper.
+      obj.followup_message =
+        'HOOK TEST (Rosetta diagnostic): one-time auto-submitted follow-up from a Cursor `stop` hook ' +
+        '(continuation test). Reply with exactly: STOP-FOLLOWUP-RECEIVED CURSOR-STOP-1 — then stop. ' +
+        'It will NOT trigger again this session.';
+      output.text = JSON.stringify(obj);
+      return;
+    }
     const reason =
       'HOOK TEST (Rosetta diagnostic): your turn-stop was blocked ONE TIME by a Stop hook to test ' +
       'prevention. Please tell the user verbatim that the Stop hook blocked once and quote this reason, ' +
       'then finish normally — it will NOT block again this session.';
-    const obj = stagedJson(output);
     obj.decision = 'block';
     obj.reason = reason;
     // Codex AND Claude Code: top-level {decision, reason} ONLY (Claude's Stop block is top-level;

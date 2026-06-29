@@ -20,8 +20,8 @@ Status: **DRAFT — doc-grounded hypothesis, NOT empirically verified.** Grounde
 
 The few facts that genuinely surprise a reader of the tables or carry silent-failure consequences. Everything else is in the tables.
 
-1. **(!) Output is the EXIT CODE ONLY — hook stdout is NOT parsed as structured data (R1).** Cascade does not deserialize stdout JSON. There is **no** `permissionDecision`, `additionalContext`, `continue`, `decision`, or `hookSpecificOutput` contract. Emitting such JSON has **zero effect** — it is silently discarded. To block, the process must **exit 2**.
-2. **(!) No context-injection mechanism exists (R1).** Hooks cannot add text to the model's context. `additionalContext`/advisory-message output goes nowhere. `show_output: true` only renders hook stdout/stderr in the Cascade **UI** for the user — it does **not** enter model context.
+1. **(!) Output = EXIT CODE + STDERR — stdout is NEVER parsed as JSON (R1).** Cascade does not deserialize stdout. There is **no** `permissionDecision`/`additionalContext`/`continue`/`decision`/`hookSpecificOutput` contract — emitting such JSON has **zero effect**. To block, the process must **exit 2**, and the **stderr** it writes is delivered to the agent: *"The Cascade agent will see the error message from stderr."* (R1)
+2. **(!) The ONLY hook→model text channel is stderr on a BLOCKING pre-hook (exit 2) (R1).** A deny reason reaches the model via stderr+exit-2 — the Windsurf analog of `permissionDecisionReason`. There is **no arbitrary context injection**: no SessionStart-style `additionalContext`, and **non-blocking hooks (exit 0) and all post-hooks pass NOTHING to the model**. `show_output: true` only renders hook stdout/stderr in the Cascade **UI** (user-facing/debugging; and it does NOT apply to `pre_user_prompt`, `post_cascade_response`, `post_cascade_response_with_transcript`) — it does not enter model context.
 3. **(!) Only PRE-hooks can block; POST-hooks cannot block or redact (R1).** Exit 2 from a `post_*` hook does **not** stop or alter the action — post-hooks are observational only.
 4. **(!) No session-level lifecycle events.** There is **no** `SessionStart`, `SessionEnd`, `Stop`, `AgentStop`, or `SubagentStop`. The closest documented analogs are `pre_user_prompt` (turn start) and `post_cascade_response` (turn end) — these are **not** session events; document and use them as their actual selves.
 5. **(!) No generic tool events — tool hooks are split by operation.** There is **no** generic `PreToolUse`/`PostToolUse`. Tool interception is per-operation: read (`*_read_code`), write (`*_write_code`), shell (`*_run_command`), MCP (`*_mcp_tool_use`). A guard that must cover "any tool" must register on every relevant event.
@@ -36,6 +36,25 @@ The few facts that genuinely surprise a reader of the tables or carry silent-fai
 | `AgentStop` / `SubagentStop` | **none documented** (closest: `post_cascade_response` / `post_cascade_response_with_transcript`, per-turn) |
 | `PreToolUse` | split: `pre_read_code`, `pre_write_code`, `pre_run_command`, `pre_mcp_tool_use` |
 | `PostToolUse` | split: `post_read_code`, `post_write_code`, `post_run_command`, `post_mcp_tool_use` |
+
+---
+
+## Capability Matrix (verification status)
+
+Legend: ✅ confirmed live · 📄 documented (R1), not yet run · ❌ documented-absent · ❓ unknown.
+
+| Capability | Documented (R1) | Status |
+|---|---|---|
+| `pre_*` hook blocks the action via **exit 2** | yes (pre-hooks only) | ❓ pending live run |
+| **deny reason reaches the agent via stderr** (on `pre_*` + exit 2) | yes — "agent will see the error message from stderr" | ❓ pending live run |
+| `post_*` hook can block / redact | no | 📄 documented-absent |
+| hook stdout JSON parsed (`permissionDecision`/`additionalContext`/`continue`/…) | no — exit code only | ❓ pending (confirm BUG 1) |
+| arbitrary / non-blocking context injection (SessionStart-style `additionalContext`) | no mechanism | 📄 documented-absent |
+| `show_output:true` surfaces stdout/stderr in Cascade UI (user-facing, not model) | yes | ❓ pending |
+| session lifecycle events (`SessionStart`/`Stop`/`SubagentStop`) | none | 📄 documented-absent |
+| generic `PreToolUse`/`PostToolUse` | none — split per operation | 📄 |
+| per-operation tool events (read/write/command/mcp) | yes (12 events) | ❓ which fire pending live run |
+| matcher / glob filtering in config | none — gate inside script | 📄 documented-absent |
 
 ---
 
@@ -141,18 +160,27 @@ Every hook receives JSON on **stdin**.
 | `post_cascade_response_with_transcript` | `transcript_path` (string — JSONL file path) |
 | `post_setup_worktree` | `worktree_path` (string), `root_workspace_path` (string) |
 
+### Environment provided to hook processes (R1)
+
+| Variable | Ref | Notes |
+|---|---|---|
+| `ROOT_WORKSPACE_PATH` | R1 | original workspace root. Used by `post_setup_worktree` (which executes inside the new worktree dir) — e.g. `bash $ROOT_WORKSPACE_PATH/hooks/setup_worktree.sh`. |
+
 ---
 
 ## Output Model (R1)
 
-**(!) There is no structured stdout contract.** Hooks communicate results **solely through the process exit code**. stdout/stderr are not deserialized; with `show_output: true` they are displayed to the user in the Cascade UI only.
+**(!) No structured stdout contract.** stdout is **never** deserialized as JSON — there is no `permissionDecision`/`additionalContext`/`continue`/`decision`/`reason`/`hookSpecificOutput`/`modifiedArgs`/`modifiedResult`; none documented, none honored. A hook communicates through **two channels only**: the **exit code**, and **stderr on a blocking pre-hook**.
 
-| Mechanism | Effect | Ref |
+| Channel | Behavior | Ref |
 |---|---|---|
-| process exit code | sole result channel (see Exit Codes) | R1 |
-| stdout / stderr | shown in Cascade UI iff `show_output: true`; **never parsed, never injected into model context** | R1 |
+| process exit code | primary result channel — `0` / `2` / other (see Exit Codes) | R1 |
+| **stderr** (on `pre_*` + exit 2) | **(!) delivered to the model: *"The Cascade agent will see the error message from stderr."*** This is the ONLY documented hook→model text channel (the Windsurf analog of a deny reason). | R1 |
+| stdout / stderr (UI) | shown in the Cascade UI iff `show_output: true` (user-facing/debugging). **Does NOT enter model context.** `show_output` does not apply to `pre_user_prompt`, `post_cascade_response`, `post_cascade_response_with_transcript`. | R1 |
 
-No `permissionDecision`, `additionalContext`, `continue`, `decision`, `reason`, `hookSpecificOutput`, `modifiedArgs`, or `modifiedResult` — none documented; none honored.
+**(!) No non-blocking agent channel.** Non-blocking hooks (exit 0) and ALL post-hooks pass nothing to the model — their stdout is UI-only. The agent-facing text channel is coupled to **blocking** (`pre_*` + exit 2 + stderr). There is no arbitrary/standalone context injection.
+
+**Documented block pattern (R1):** a `pre_*` hook writes the reason to stderr and exits 2 — e.g. (Python) `print("Command blocked: …", file=sys.stderr); sys.exit(2)`. On `pre_user_prompt` block, R1 notes the **user** sees the error in the Cascade UI (the prompt never reaches the agent).
 
 ---
 
@@ -170,6 +198,18 @@ No `permissionDecision`, `additionalContext`, `continue`, `decision`, `reason`, 
 
 - **Cloud dashboard:** admins set hooks in Team Settings (Enterprise plan + `TEAM_SETTINGS_UPDATE`); auto-distributed to members.
 - **System-level deployment:** via MDM (Jamf, Intune, Workspace ONE) or config management (Ansible, Puppet, Chef, SaltStack); end users cannot disable without root.
+
+---
+
+## Appendix — Observed Wire Examples
+
+**Pending the live-hook run (step 3).** To be filled from `~/.rosetta/hooks.log` via `docs/hooks/split-logs.js <session_id>`:
+- Captured INPUT payloads per fired event (verbatim stdin JSON).
+- Which events actually fire in Devin Desktop / JetBrains, and their real `tool_info` shapes.
+- Whether **exit 2** from a `pre_*` hook actually blocks the action (confirms the only output channel).
+- Whether emitted stdout JSON is confirmed ignored (BUG 1).
+- Runtime env signature (full inherited shell env + Windsurf/Codeium detection vars) + UI-surfacing note (`show_output`).
+- Link to the cleaned `docs/hooks/windsurf-logs.txt`.
 
 ---
 
