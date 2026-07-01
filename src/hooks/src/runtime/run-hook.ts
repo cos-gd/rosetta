@@ -1,5 +1,5 @@
 import path from 'path';
-import { readStdin, detectIDE, normalize, formatOutput, dedupKey } from '../adapter';
+import { readStdin, detectIDE, normalize, formatOutput, exitCodeFor, dedupKey } from '../adapter';
 import { acquireOnce } from './throttle';
 import { collectEnvironment, debugLogBranch, debugLogHook } from './debug-log';
 import { toRelative, walkUp } from './path-utils';
@@ -71,6 +71,19 @@ const toCanonical = (result: NonNullable<HookResult>, ctx: HookContext): Canonic
   if (result.kind === 'allow')
     return { hookSpecificOutput: { hookEventName: ctx.event ?? '', permissionDecision: 'allow' } };
   return {};
+};
+
+// `_exitCode` on the HookResult overrides everything else — emergency escape hatch, not for
+// normal use (see runtime/types.ts). Otherwise: deny -> the IDE adapter's exit code (0 unless the
+// adapter overrides it); everything else -> 0. A failure resolving the code itself -> 1000.
+export const resolveExitCode = (result: NonNullable<HookResult>, canonical: CanonicalOutput, ide: string): number => {
+  try {
+    if (result._exitCode != null) return result._exitCode;
+    if (canonical.hookSpecificOutput?.permissionDecision === 'deny') return exitCodeFor(canonical, ide);
+    return 0;
+  } catch {
+    return 1000;
+  }
 };
 
 const makeDedupKey = (
@@ -387,17 +400,19 @@ const executeHook = async (
       return { exitCode: 0, wroteOutput: false, status: 'completed', reason: 'null-result' };
     }
     if (result.kind === 'side-effect') {
+      const sideEffectExitCode = result._exitCode ?? 0;
       debugLogHook(def.name, 'completed', {
-        exitCode: 0,
+        exitCode: sideEffectExitCode,
         wroteOutput: false,
         reason: 'side-effect',
       });
-      return { exitCode: 0, wroteOutput: false, status: 'completed', reason: 'side-effect' };
+      return { exitCode: sideEffectExitCode, wroteOutput: false, status: 'completed', reason: 'side-effect' };
     }
 
     const canonicalOutput = toCanonical(result, ctx);
     const formattedOutput = formatOutput(canonicalOutput, ide);
     const outputText = JSON.stringify(formattedOutput);
+    const exitCode = resolveExitCode(result, canonicalOutput, ide);
     // TODO: json-cycle is only needed because this log entry carries both
     // canonicalOutputFull and finalOutputFull, which may be the same object
     // reference. Split these into two independent debugLogHook calls and remove
@@ -411,11 +426,11 @@ const executeHook = async (
     });
     stdout.write(outputText);
     debugLogHook(def.name, 'completed', {
-      exitCode: 0,
+      exitCode,
       wroteOutput: true,
       finalOutputBytes: Buffer.byteLength(outputText, 'utf8'),
     });
-    return { exitCode: 0, wroteOutput: true, status: 'completed' };
+    return { exitCode, wroteOutput: true, status: 'completed' };
   } catch (err) {
     const error = err as Error;
     debugLogHook(def.name, 'error', { error });

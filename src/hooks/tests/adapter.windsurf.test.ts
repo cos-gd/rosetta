@@ -5,7 +5,7 @@ import { test, describe, expect } from 'vitest';
 
 import fxWindsurf from './fixtures/windsurf-post-tool-use-write.json';
 
-import { detectIDE, normalize, formatOutput } from '../src/adapter';
+import { detectIDE, normalize, formatOutput, exitCodeFor } from '../src/adapter';
 
 function wsInput(agent_action_name: string, tool_info: Record<string, unknown> = {}): Record<string, unknown> {
   return {
@@ -161,9 +161,19 @@ describe('formatOutput — Windsurf', () => {
     expect(result.additionalContext).toBe('Test');
   });
 
-  test('deny decision → _exitCode 2', () => {
+  test('deny decision → no _exitCode in the JSON body (stdout is never parsed)', () => {
     const result = formatOutput({ hookSpecificOutput: { permissionDecision: 'deny' } }, 'windsurf');
-    expect(result._exitCode).toBe(2);
+    expect(result._exitCode).toBeUndefined();
+  });
+
+  test('deny decision → exitCodeFor returns 2 (the only mechanism Windsurf honors)', () => {
+    const code = exitCodeFor({ hookSpecificOutput: { permissionDecision: 'deny' } }, 'windsurf');
+    expect(code).toBe(2);
+  });
+
+  test('non-deny decision → exitCodeFor returns 0', () => {
+    const code = exitCodeFor({ hookSpecificOutput: { permissionDecision: 'allow' } }, 'windsurf');
+    expect(code).toBe(0);
   });
 
 });

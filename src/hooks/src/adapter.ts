@@ -90,6 +90,13 @@ export const formatOutput = (
   return formatted;
 };
 
+export const exitCodeFor = (canonicalOutput: CanonicalOutput, ide?: string): number => {
+  const adapter = ide ? ADAPTERS[ide as keyof typeof ADAPTERS] : undefined;
+  const code = adapter?.exitCode?.(canonicalOutput) ?? 0;
+  debugLogBranch('adapter', 'exit-code-for', { ide: ide ?? null, adapter: adapter?.name ?? null, code });
+  return code;
+};
+
 export const dedupKey = (rawInput: unknown, hookName: string): string | null => {
   const ide = detectIDE(rawInput);
   const key = ADAPTERS[ide].dedupKey?.(rawInput as Record<string, unknown>, hookName) ?? null;

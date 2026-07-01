@@ -13,6 +13,7 @@
 //        [--deny-on-match <substr>] [--rewrite-command <match>::<newCmd>] [--block-stop-once]
 //        [--mode <copilot|codex|claude|cursor|gemini|windsurf|devin|...>]
 //        [--copilot-rewrite-result <match>::<newText>]
+//        [--exit-code-on-match <substr>] [--cursor-ask-on-match <substr>] [--cursor-crash-on-match <substr>]
 // tester.js is UNIVERSAL. Commands whose OUTPUT SHAPE differs per IDE take a `--mode <ide>` PARAMETER
 // (default: copilot) and emit THAT IDE's EXACT shape: Copilot emits fields at BOTH top-level AND nested
 // hookSpecificOutput; Codex validates STRICTLY and accepts only the documented per-event shape (nested
@@ -193,6 +194,46 @@ const PROCESSORS = {
     const obj = stagedJson(output);
     obj.modifiedResult = { resultType: 'success', textResultForLlm: newText };
     output.text = JSON.stringify(obj);
+  },
+  // Pure exit-code block test: if matched, set ONLY the exit code (no stdout body at all) — isolates
+  // whether a non-zero/2 exit blocks the action WITHOUT any JSON, vs the JSON-deny path tested by
+  // --deny-on-match. No match => untouched.
+  '--exit-code-on-match': (input, value, output) => {
+    if (typeof value !== 'string' || !input) return;
+    if (!JSON.stringify(input).includes(value)) return;
+    output.exitCode = 2;
+  },
+  // CURSOR-ONLY. Combined JSON-deny + exit-2 test (what Action 2's real fix would actually produce):
+  // if matched, emit the SAME flat deny body as --deny-on-match's cursor case AND set exit code 2 —
+  // isolates whether pairing exit-2 with the JSON body still delivers user_message/agent_message,
+  // vs the bare exit-0+JSON path already confirmed in Runs 1+3. No match => untouched.
+  '--cursor-deny-and-exit2-on-match': (input, value, output) => {
+    if (typeof value !== 'string' || !input) return;
+    if (!JSON.stringify(input).includes(value)) return;
+    output.text = JSON.stringify({
+      permission: 'deny',
+      user_message: 'HOOK TEST (Rosetta diagnostic): user-facing deny channel marker CURSOR-EXIT2-USER (exit-2 + JSON combined test).',
+      agent_message: 'HOOK TEST (Rosetta diagnostic): agent-facing deny channel marker CURSOR-EXIT2-AGENT; Report DE1 (exit-2 + JSON combined test).',
+    });
+    output.exitCode = 2;
+  },
+  // CURSOR-ONLY. `ask` permission test (R1: accepted+enforced on beforeShellExecution/
+  // beforeMCPExecution, schema-accepted-but-NOT-enforced on preToolUse). Flat shape, no wrapper.
+  '--cursor-ask-on-match': (input, value, output) => {
+    if (typeof value !== 'string' || !input) return;
+    if (!JSON.stringify(input).includes(value)) return;
+    output.text = JSON.stringify({
+      permission: 'ask',
+      user_message: 'HOOK TEST (Rosetta diagnostic): this action requires explicit approval (permission:"ask") — marker CURSOR-ASK-1.',
+    });
+  },
+  // CURSOR-ONLY. failClosed test: if matched, CRASH (uncaught throw -> non-zero exit, no valid JSON) to
+  // simulate a hook failure. Pair one handler with `"failClosed": false`/omitted (expect fail-OPEN: the
+  // action proceeds) and one with `"failClosed": true` on the SAME event (expect fail-CLOSED: blocked).
+  '--cursor-crash-on-match': (input, value) => {
+    if (typeof value !== 'string' || !input) return;
+    if (!JSON.stringify(input).includes(value)) return;
+    throw new Error('HOOK TEST (Rosetta diagnostic): intentional crash to test failClosed behavior.');
   },
   // Stop block test — blocks the turn-stop EXACTLY ONCE per session, then allows. Uses an atomic
   // marker file (keyed by session id) so it can NEVER loop. Reset: delete the marker file. Shape per --mode.

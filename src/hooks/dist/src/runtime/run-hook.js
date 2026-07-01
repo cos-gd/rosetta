@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.runHook = exports.runAsCli = void 0;
+exports.runHook = exports.resolveExitCode = exports.runAsCli = void 0;
 const path_1 = __importDefault(require("path"));
 const adapter_1 = require("../adapter");
 const throttle_1 = require("./throttle");
@@ -67,6 +67,22 @@ const toCanonical = (result, ctx) => {
         return { hookSpecificOutput: { hookEventName: ctx.event ?? '', permissionDecision: 'allow' } };
     return {};
 };
+// `_exitCode` on the HookResult overrides everything else — emergency escape hatch, not for
+// normal use (see runtime/types.ts). Otherwise: deny -> the IDE adapter's exit code (0 unless the
+// adapter overrides it); everything else -> 0. A failure resolving the code itself -> 1000.
+const resolveExitCode = (result, canonical, ide) => {
+    try {
+        if (result._exitCode != null)
+            return result._exitCode;
+        if (canonical.hookSpecificOutput?.permissionDecision === 'deny')
+            return (0, adapter_1.exitCodeFor)(canonical, ide);
+        return 0;
+    }
+    catch {
+        return 1000;
+    }
+};
+exports.resolveExitCode = resolveExitCode;
 const makeDedupKey = (dedupBy, ctx, name) => {
     const key = [
         name,
@@ -354,16 +370,18 @@ const executeHook = async (def, opts = {}) => {
             return { exitCode: 0, wroteOutput: false, status: 'completed', reason: 'null-result' };
         }
         if (result.kind === 'side-effect') {
+            const sideEffectExitCode = result._exitCode ?? 0;
             (0, debug_log_1.debugLogHook)(def.name, 'completed', {
-                exitCode: 0,
+                exitCode: sideEffectExitCode,
                 wroteOutput: false,
                 reason: 'side-effect',
             });
-            return { exitCode: 0, wroteOutput: false, status: 'completed', reason: 'side-effect' };
+            return { exitCode: sideEffectExitCode, wroteOutput: false, status: 'completed', reason: 'side-effect' };
         }
         const canonicalOutput = toCanonical(result, ctx);
         const formattedOutput = (0, adapter_1.formatOutput)(canonicalOutput, ide);
         const outputText = JSON.stringify(formattedOutput);
+        const exitCode = (0, exports.resolveExitCode)(result, canonicalOutput, ide);
         // TODO: json-cycle is only needed because this log entry carries both
         // canonicalOutputFull and finalOutputFull, which may be the same object
         // reference. Split these into two independent debugLogHook calls and remove
@@ -377,11 +395,11 @@ const executeHook = async (def, opts = {}) => {
         });
         stdout.write(outputText);
         (0, debug_log_1.debugLogHook)(def.name, 'completed', {
-            exitCode: 0,
+            exitCode,
             wroteOutput: true,
             finalOutputBytes: Buffer.byteLength(outputText, 'utf8'),
         });
-        return { exitCode: 0, wroteOutput: true, status: 'completed' };
+        return { exitCode, wroteOutput: true, status: 'completed' };
     }
     catch (err) {
         const error = err;

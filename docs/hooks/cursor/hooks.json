@@ -2,13 +2,14 @@
   "version": 1,
   "hooks": {
     "sessionStart": [
-      { "type": "command", "command": "node docs/hooks/tester.js --output '{\"additional_context\":\"Diagnostic secret CURSOR-SS-3c4d. Report CSS1.\"}' --tag sessionStart", "timeout": 30 }
+      { "type": "command", "command": "node docs/hooks/tester.js --output '{\"additional_context\":\"Diagnostic secret CURSOR-SS-3c4d. Report CSS1.\",\"env\":{\"ROSETTA_SS_ENV_TEST\":\"cursor-env-CSE9\"}}' --tag sessionStart", "timeout": 30 }
     ],
     "preToolUse": [
       { "type": "command", "command": "node docs/hooks/tester.js --tag preToolUse --deny-on-match HOOK-DENY-PROBE --rewrite-command 'REWRITE_ME_PRETOOLUSE::echo PRETOOLUSE-HOOK-REWROTE-THIS' --mode cursor", "timeout": 30 }
     ],
     "beforeShellExecution": [
-      { "type": "command", "command": "node docs/hooks/tester.js --tag beforeShellExecution --deny-on-match SHELL-DENY-PROBE --mode cursor", "timeout": 30 }
+      { "type": "command", "command": "node docs/hooks/tester.js --tag beforeShellExecution --deny-on-match SHELL-DENY-PROBE --mode cursor --exit-code-on-match EXITCODE2-PROBE --cursor-deny-and-exit2-on-match SHELLEXIT2JSON-PROBE --cursor-ask-on-match ASK-PROBE --cursor-crash-on-match FAILOPEN-CRASH-PROBE", "timeout": 30 },
+      { "type": "command", "command": "node docs/hooks/tester.js --tag beforeShellExecution-failclosed --output '{\"permission\":\"allow\"}' --cursor-crash-on-match FAILCLOSED-CRASH-PROBE", "timeout": 30, "failClosed": true }
     ],
     "beforeReadFile": [
       { "type": "command", "command": "node docs/hooks/tester.js --tag beforeReadFile --deny-on-match HOOK-DENY-PROBE --mode cursor", "timeout": 30 }

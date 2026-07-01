@@ -15,7 +15,7 @@
 //   - readStdin, normalize, formatOutput — used by hook entrypoints (prod)
 //   - detectIDE — exposed for tests; prod callers should prefer normalize()
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.readStdin = exports.dedupKey = exports.formatOutput = exports.normalize = exports.detectIDE = void 0;
+exports.readStdin = exports.dedupKey = exports.exitCodeFor = exports.formatOutput = exports.normalize = exports.detectIDE = void 0;
 const claude_code_1 = require("./adapters/claude-code");
 const codex_1 = require("./adapters/codex");
 const cursor_1 = require("./adapters/cursor");
@@ -83,6 +83,13 @@ const formatOutput = (canonicalOutput, ide) => {
     return formatted;
 };
 exports.formatOutput = formatOutput;
+const exitCodeFor = (canonicalOutput, ide) => {
+    const adapter = ide ? ADAPTERS[ide] : undefined;
+    const code = adapter?.exitCode?.(canonicalOutput) ?? 0;
+    (0, debug_log_1.debugLogBranch)('adapter', 'exit-code-for', { ide: ide ?? null, adapter: adapter?.name ?? null, code });
+    return code;
+};
+exports.exitCodeFor = exitCodeFor;
 const dedupKey = (rawInput, hookName) => {
     const ide = (0, exports.detectIDE)(rawInput);
     const key = ADAPTERS[ide].dedupKey?.(rawInput, hookName) ?? null;

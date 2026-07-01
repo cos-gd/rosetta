@@ -46,4 +46,8 @@ const formatOutput = (canonical) => {
         out.permission = out.permission ?? 'deny';
     return out;
 };
+// No exitCode() override: Cursor's exit-0 + permission:"deny" JSON deny is confirmed working and
+// field-selective (docs/hooks/cursor.md Run 1+3). Pairing exit-2 with the JSON body was tested
+// (Run 4) and Cursor does NOT parse it — it dumps the raw text verbatim, a worse delivery than the
+// exit-0 path, for no functional gain. Default exitCode (0) is correct; do not add a deny->2 override.
 exports.cursor = { name: 'cursor', detect, normalize, formatOutput };

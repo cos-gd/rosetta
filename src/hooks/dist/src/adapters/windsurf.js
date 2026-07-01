@@ -62,8 +62,8 @@ const formatOutput = (canonical) => {
     else if (permissionDecision === 'deny' && permissionDecisionReason) {
         out.additionalContext = permissionDecisionReason;
     }
-    if (permissionDecision === 'deny')
-        out._exitCode = 2;
     return out;
 };
-exports.windsurf = { name: 'windsurf', detect, normalize, formatOutput };
+// Windsurf never parses stdout (docs/hooks/windsurf.md, verified) — blocking is exit-code-only.
+const exitCode = (canonical) => canonical?.hookSpecificOutput?.permissionDecision === 'deny' ? 2 : 0;
+exports.windsurf = { name: 'windsurf', detect, normalize, formatOutput, exitCode };
