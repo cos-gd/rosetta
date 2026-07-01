@@ -112,6 +112,7 @@ for f in \
 done
 printf "  %-55s %s\n" "[package.json] src/rosettify/package.json" "$(get_json_version "$ROOT/src/rosettify/package.json")"
 printf "  %-55s %s\n" "[package.json] src/rosettify-plugins/package.json" "$(get_json_version "$ROOT/src/rosettify-plugins/package.json")"
+printf "  %-55s %s\n" "[package.json] src/rosettify-prompts/package.json" "$(get_json_version "$ROOT/src/rosettify-prompts/package.json")"
 for f in \
     "$ROOT/plugins/core-claude/.claude-plugin/plugin.json" \
     "$ROOT/plugins/core-cursor/.cursor-plugin/plugin.json" \
@@ -190,6 +191,10 @@ bump_file_json "$ROOT/src/rosettify/package.json" "y"
 echo ""
 echo "--- src/rosettify-plugins/package.json ---"
 bump_file_json "$ROOT/src/rosettify-plugins/package.json" "y"
+
+echo ""
+echo "--- src/rosettify-prompts/package.json ---"
+bump_file_json "$ROOT/src/rosettify-prompts/package.json" "y"
 
 echo ""
 echo "--- plugin.json files ---"
