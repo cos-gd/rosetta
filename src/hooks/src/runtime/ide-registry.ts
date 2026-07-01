@@ -12,6 +12,8 @@ export const EVENTS = {
   PreCompact:      { 'claude-code': 'PreCompact',   'codex': 'PreCompact',    'cursor': 'preCompact',         'windsurf': null,               'copilot': 'preCompact' },
   PostCompact:     { 'claude-code': 'PostCompact',  'codex': 'PostCompact',   'cursor': null,                 'windsurf': null,               'copilot': null },
   PrePromptSubmit: { 'claude-code': 'UserPromptSubmit', 'codex': 'UserPromptSubmit', 'cursor': 'beforeSubmitPrompt', 'windsurf': 'PrePromptSubmit', 'copilot': 'userPromptSubmitted' },
+  // Blockable turn-stop (prevents the agent from stopping). No hook logic uses this yet.
+  Stop:            { 'claude-code': 'Stop',         'codex': 'Stop',          'cursor': 'stop',               'windsurf': null,               'copilot': 'Stop' },
 } as const satisfies Record<string, IdeMap<string>>;
 
 export type SemanticEvent = keyof typeof EVENTS;

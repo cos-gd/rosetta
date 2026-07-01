@@ -6,6 +6,9 @@ const EVENTS: Partial<Record<SemanticEvent, string>> = {
   SessionEnd:      'sessionEnd',
   PreCompact:      'preCompact',
   PrePromptSubmit: 'userPromptSubmitted',
+  // Registration guidance: register PascalCase "Stop" only — VS Code fires only PascalCase,
+  // and Copilot CLI's PascalCase fire works fine too (avoids the camelCase "agentStop" double-fire).
+  Stop:            'Stop',
 };
 
 const TOOL_KINDS: Partial<Record<SemanticKind, readonly string[]>> = {

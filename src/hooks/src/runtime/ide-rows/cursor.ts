@@ -9,6 +9,7 @@ const EVENTS: Partial<Record<SemanticEvent, string>> = {
   SessionEnd:      'sessionEnd',
   PreCompact:      'preCompact',
   PrePromptSubmit: 'beforeSubmitPrompt',
+  Stop:            'stop',
 };
 
 const TOOL_KINDS: Partial<Record<SemanticKind, readonly string[]>> = {
