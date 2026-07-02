@@ -7,7 +7,7 @@ disable-model-invocation: false
 user-invocable: true
 argument-hint: feature-name plan-name
 allowed-tools: Bash(npx:*)
-model: claude-sonnet-5
+model: Claude Sonnet 5
 tags:
   - plan-manager
   - plan-manager-create
