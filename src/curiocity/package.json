@@ -4,8 +4,17 @@
   "description": "Evals/testing harness that drives interactive coding-agent CLIs over a real PTY.",
   "type": "module",
   "license": "Apache-2.0",
+  "homepage": "https://griddynamics.github.io/rosetta/",
+  "author": "Rosetta Team <rosetta-support@griddynamics.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/griddynamics/rosetta.git"
+  },
   "bin": {
     "curiocity": "dist/cli.js"
+  },
+  "bugs": {
+    "url": "https://github.com/griddynamics/rosetta/issues"
   },
   "engines": {
     "node": ">=20"
