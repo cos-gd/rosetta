@@ -1,6 +1,6 @@
 {
   "name": "curiocity",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Evals/testing harness that drives interactive coding-agent CLIs over a real PTY.",
   "type": "module",
   "license": "Apache-2.0",
@@ -8,7 +8,8 @@
   "author": "Rosetta Team <rosetta-support@griddynamics.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/griddynamics/rosetta.git"
+    "url": "git+https://github.com/griddynamics/rosetta.git",
+    "directory": "src/curiocity"
   },
   "bin": {
     "curiocity": "dist/cli.js"
