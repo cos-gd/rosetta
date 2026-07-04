@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { resolveCurionEntry } from '../../src/orchestrator/child';
-import { resolveEnvFilePath } from '../../src/llm/keys';
 
 /**
  * Regression guard for the build-layout path bug (m8): the built harness forks
@@ -28,15 +27,5 @@ describe('resolveCurionEntry — Curion child entry across source vs built-dist 
   it('built dist (shared chunk, also dist-root): still resolves into dist/curion', () => {
     const { path } = resolveCurionEntry('file:///pkg/dist/chunk-ABCD.js');
     expect(path).toBe('/pkg/dist/curion/main.js');
-  });
-});
-
-describe('resolveEnvFilePath — default .env at the package root across layouts', () => {
-  it('source: <pkg>/src/llm/keys.ts → <pkg>/.env', () => {
-    expect(resolveEnvFilePath('file:///pkg/src/llm/keys.ts')).toBe('/pkg/.env');
-  });
-
-  it('built dist: <pkg>/dist/cli.js → <pkg>/.env', () => {
-    expect(resolveEnvFilePath('file:///pkg/dist/cli.js')).toBe('/pkg/.env');
   });
 });

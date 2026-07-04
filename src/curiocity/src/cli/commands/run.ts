@@ -256,7 +256,7 @@ export async function runRun(opts: RunOptions): Promise<number> {
   }
 
   // Resolve LLM keys ONCE at startup (§4/§12): CURIOCITY_<PROVIDER>_KEY → provider
-  // standard var → src/curiocity/.env. Held in memory, shipped over IPC, never logged.
+  // standard var → cwd .env. Held in memory, shipped over IPC, never logged.
   const keys = resolveKeys();
 
   const out = process.stdout;

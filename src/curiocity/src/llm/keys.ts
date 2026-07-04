@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { providers } from './providers';
 
 /**
@@ -9,27 +9,17 @@ import { providers } from './providers';
  *
  *   CURIOCITY_<PROVIDER>_KEY   →   provider-standard var (e.g. ANTHROPIC_API_KEY)
  *
- * each looked up first in `process.env`, then in the `src/curiocity/.env` file.
+ * each looked up first in `process.env`, then in a `.env` file in the current
+ * working directory — i.e. wherever the CLI was invoked from.
  *
  * IMPORTANT: this module deliberately reads `.env`, but NEVER logs a value and
  * never returns anything but the provider→key map. Callers must keep it out of logs
  * (a masking helper is in `shared/mask.ts`).
  */
 
-/** Resolve the default `.env` path (`<pkg>/.env`) from a module URL — correct in both modes:
- *  - source/tests: `<pkg>/src/llm/keys.ts` → `../../.env` = `<pkg>/.env`.
- *  - built dist: the bundle collapses the tree — this code lives in a dist-root file
- *    (`<pkg>/dist/cli.js` or a shared chunk), so `../.env` = `<pkg>/.env`.
- *  Exported for unit tests so both layouts are pinned. The `.env` fallback matters only
- *  for local dev; a published package ships `dist/` only, so users pass keys via env vars. */
-export function resolveEnvFilePath(moduleUrl: string): string {
-  const isTs = moduleUrl.endsWith('.ts');
-  return fileURLToPath(new URL(isTs ? '../../.env' : '../.env', moduleUrl));
-}
-
-/** Default `.env` location: the curiocity package root (`<pkg>/.env`). */
+/** Default `.env` location: `.env` in the invoking process's cwd. */
 export function defaultEnvFilePath(): string {
-  return resolveEnvFilePath(import.meta.url);
+  return join(process.cwd(), '.env');
 }
 
 /**

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { getProvider, parseModelRef, providers } from '../../src/llm/providers';
-import { parseDotEnv, resolveKeys } from '../../src/llm/keys';
+import { defaultEnvFilePath, parseDotEnv, resolveKeys } from '../../src/llm/keys';
 import { ConfigError } from '../../src/shared/errors';
 
 describe('provider map (§5.6)', () => {
@@ -55,6 +55,10 @@ describe('provider map (§5.6)', () => {
 });
 
 describe('key resolution (§12)', () => {
+  it('defaults the .env lookup to cwd, not the installed package root', () => {
+    expect(defaultEnvFilePath()).toBe(join(process.cwd(), '.env'));
+  });
+
   it('parses a .env file (comments, quotes, export prefix)', () => {
     const parsed = parseDotEnv(
       ['# comment', 'export ANTHROPIC_API_KEY="sk-file-anthropic"', "OPENAI_API_KEY='sk-file-openai'", 'BLANK='].join(

@@ -101,7 +101,7 @@ Declared as `evaluators` entries in `config.json`; `use` names a built-in. `gate
 - **`command`** — run a build/test/lint string via shell; assert the exit code.
 - **`trajectory-check`** — assert `tool_call` events matched a pattern (the "did our plugin actually run" gate). `toolPattern` is one regex or a per-agent map.
 - **`llm-judge`** — judge model scores 0–100 from `evaluation.md` + distilled trajectory + produced artifacts (`artifacts` globs, size-capped) + QnA log.
-- **`external`** — run any program that reads a JSON object (file **paths**, not blobs) on stdin and prints `{"values":[{"name","value 0-100"}]}`. Optional `scoreMetric`/`passThreshold` turn a metric into a pass/score; otherwise the metrics are informational. Non-zero exit / bad JSON / out-of-range / timeout fails the evaluator.
+- **`external`** — run any program that reads a JSON object (file **paths**, not blobs) on stdin and prints `{"values":[{"name":string,"value":number}]}` on stdout, e.g. `{"values":[{"name":"coverage","value":87}]}` (each `value` in 0-100). Optional `scoreMetric`/`passThreshold` turn a metric into a pass/score; otherwise the metrics are informational. Non-zero exit / bad JSON / out-of-range / timeout fails the evaluator.
 
 Example (from [`demo/cases/healthcheck/config.json`](./demo/cases/healthcheck/config.json)):
 
@@ -156,7 +156,7 @@ The **agent's own model/effort** is a separate dimension from the harness roles:
 - Token counts are always reported. Dollar amounts come only from the config `pricing` map; unpriced models report tokens-only with a warning.
 - An optional `budgetUsd` over-budget warns once and keeps going.
 
-**Keys.** Resolved once at startup, held in memory, shipped to workers over IPC, masked in logs, never written to disk. Per provider, precedence is `CURIOCITY_<PROVIDER>_KEY` then the provider-standard var (e.g. `ANTHROPIC_API_KEY`), checked first in the environment, then in `src/curiocity/.env`. A provider with no key is fine unless a role actually needs it.
+**Keys.** Resolved once at startup, held in memory, shipped to workers over IPC, masked in logs, never written to disk. Per provider, precedence is `CURIOCITY_<PROVIDER>_KEY` then the provider-standard var (e.g. `ANTHROPIC_API_KEY`), checked first in the environment, then in a `.env` file in the current working directory. A provider with no key is fine unless a role actually needs it.
 
 ## Stats
 
