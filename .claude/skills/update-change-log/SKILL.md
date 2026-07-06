@@ -106,6 +106,7 @@ Use weekly template:
 ### 5. Suggest Slack Message
 - We have a slack support channel and news channel where we publish what we did last week
 - Suggest a message that highlights improvements we made and use deep link to that github CHANGELOG week following template `https://github.com/griddynamics/rosetta/blob/main/CHANGELOG.md#<deep-week-ling>`
+- GitHub slugs an en dash `–` to a double hyphen, not single (spaces aren't collapsed). Example: `Week Mon 29.06 – Sun 05.07` → `https://github.com/griddynamics/rosetta/blob/main/CHANGELOG.md#week-mon-2906--sun-0507`.
 - Message should be possible to just copy-paste: plain text, use general Slack icons, no surrounding blockquote (`>`) or code-fence wrapper
 
 ## Voice & Tone

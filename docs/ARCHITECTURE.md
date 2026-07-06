@@ -177,18 +177,18 @@ Everything MCP works with is VFS (virtual file system) resource paths. The CLI s
 
 ### MCP Tools
 
-Eight tools and one resource exposed to agents:
+Three tools and one resource are currently exposed to agents. Five write-data tools are implemented but disabled (`@mcp.tool` registration commented out in `server.py`; the feature is retired but the code is kept in case it's needed again):
 
 | Tool | Purpose |
 |---|---|
 | `get_context_instructions` | Bootstrap: load all rules and guardrails bundled (prep step 1 to 3)  |
 | `query_instructions` | Fetch instruction docs by tags (primary) or keyword search (fallback) |
 | `list_instructions` | Browse the VFS hierarchy (flat listing of immediate children) |
-| `query_project_context` *(opt-in)* | Search project-specific docs in a target repo dataset |
-| `store_project_context` *(opt-in)* | Create or update a document in a project dataset |
-| `discover_projects` *(opt-in)* | List readable project datasets |
-| `plan_manager` *(opt-in)* | Manage execution plans with phases, steps, dependencies, status. Has a `help` command for plan creators (subagents don't need it). Stores plan in REDIS. |
-| `submit_feedback` *(opt-in)* | Auto-submit structured feedback on agent sessions |
+| `query_project_context` *(disabled)* | Search project-specific docs in a target repo dataset |
+| `store_project_context` *(disabled)* | Create or update a document in a project dataset |
+| `discover_projects` *(disabled)* | List readable project datasets |
+| `plan_manager` *(disabled)* | Manage execution plans with phases, steps, dependencies, status. Has a `help` command for plan creators (subagents don't need it). Stores plan in REDIS. |
+| `submit_feedback` *(disabled)* | Auto-submit structured feedback on agent sessions |
 
 **Resource:** `rosetta://{path}` reads bundled instruction documents by VFS resource path.
 
@@ -283,7 +283,7 @@ One `get_context_instructions` call returns all bootstrap rules bundled (core po
 6. Agent executes the workflow
    ├── Follows phases (Prepare → Research → Plan → Act → Validate)
    ├── Uses ACQUIRE/USE SKILL/INVOKE SUBAGENT to load instructions progressively
-   ├── Delegates to subagents, uses plan_manager for tracking
+   ├── Delegates to subagents, tracks progress via built-in todo tasks (r3 adds the operation-manager skill, backed by `rosettify`, for larger multi-phase work)
    └── Applies guardrails and HITL gates throughout
 ```
 
@@ -474,7 +474,7 @@ Instructions Repo ──► CLI (publish) ──► RAGFlow ──► Rosetta MC
 2. **Index.** RAGFlow parses, chunks, embeds, indexes for full-text and semantic search
 3. **Bootstrap.** Agent calls `get_context_instructions` via MCP (prep step 1), reads workspace files directly from the target repo (step 2), classifies request via MCP (step 3)
 4. **Load.** Agent uses ACQUIRE/SEARCH/LIST aliases. MCP queries by tags, bundles matching VFS paths into XML with context headers. Progressive disclosure: only what the workflow needs
-5. **Execute.** Workflow phases (Prepare → Research → Plan → Act → Validate), subagent delegation, plan_manager tracking, guardrails and HITL gates.
+5. **Execute.** Workflow phases (Prepare → Research → Plan → Act → Validate), subagent delegation, built-in todo tracking (or the r3 operation-manager skill for larger work), guardrails and HITL gates.
 
 ---
 
