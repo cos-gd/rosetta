@@ -51,7 +51,7 @@ For detailed setup instructions, see the Cursor documentation:
 **ALTERNATIVE**: Plugins installed in Claude Code are automatically available in Cursor.
 
 > [!WARNING]
-> Cursor automatically detects and uses Claude Code plugins. To avoid duplicate tools, commands, and context, do not install the same plugin separately in both Claude Code and Cursor.
+> Cursor automatically detects and uses Claude Code plugins. To avoid duplicate tools, commands, and context, do not install the same plugin separately in both Claude Code and Cursor. If you don't want Cursor to pick up Claude Code plugins at all, go to **Cursor Settings → Rules, Skills, Subagents** and turn off **Include third-party Plugins, Skills, and other configs**.
 
 #### Standalone
 
