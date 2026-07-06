@@ -128,7 +128,7 @@ The headline ones are `docs/CONTEXT.md` and `docs/ARCHITECTURE.md`. The full set
 
 **Where do I report bugs or request features?**
 
-Open an [issue](https://github.com/griddynamics/rosetta/issues).
+Open an [issue](https://github.com/griddynamics/rosetta/issues). Whenever a run fails or you see something you'd like improved, the `post-mortem` skill (`/post-mortem`) root-causes it and drafts a sanitized issue for you — submitted only with your explicit approval, with no private code or data included.
 
 **Where do I propose changes to Rosetta itself?**
 
