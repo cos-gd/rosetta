@@ -25,7 +25,8 @@
     "dist",
     "README.md",
     "env.template",
-    "evals.json"
+    "evals.json",
+    "evals.smoke.json"
   ],
   "engines": {
     "node": ">=20.0.0"

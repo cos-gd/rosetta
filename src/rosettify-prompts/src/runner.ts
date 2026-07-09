@@ -1,6 +1,8 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type {
   BenchConfig,
+  EvalAssertionConfig,
+  EvalResultItem,
   RunResult,
   SuiteConfig,
   TextMetrics,
@@ -66,6 +68,107 @@ async function estimateThinkingTokens(
   }
 }
 
+function extractText(response: Anthropic.Message): string {
+  return response.content
+    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .map((b) => b.text)
+    .join('\n');
+}
+
+function extractJsonObject(text: string): unknown {
+  const trimmed = text.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const start = trimmed.indexOf('{');
+    const end = trimmed.lastIndexOf('}');
+    if (start < 0 || end <= start) throw new Error('eval judge did not return a JSON object');
+    return JSON.parse(trimmed.slice(start, end + 1));
+  }
+}
+
+export function validateEvalResultItem(raw: unknown): EvalResultItem {
+  const item = raw as Partial<EvalResultItem> | undefined;
+  if (!item || typeof item !== 'object') {
+    throw new Error('eval judge result must be an object');
+  }
+  if (typeof item.text !== 'string' || item.text.length === 0) {
+    throw new Error('eval judge result.text must be a non-empty string');
+  }
+  if (item.passed !== 'pass' && item.passed !== 'partial' && item.passed !== 'fail') {
+    throw new Error('eval judge result.passed must be "pass", "partial", or "fail"');
+  }
+  if (typeof item.reasons !== 'string') {
+    throw new Error('eval judge result.reasons must be a string');
+  }
+  if (typeof item.suggestions !== 'string') {
+    throw new Error('eval judge result.suggestions must be a string');
+  }
+  if (typeof item.confidence !== 'number' || !Number.isFinite(item.confidence)) {
+    throw new Error('eval judge result.confidence must be a number');
+  }
+  if (item.confidence < 0 || item.confidence > 100) {
+    throw new Error('eval judge result.confidence must be between 0 and 100');
+  }
+  return {
+    text: item.text,
+    passed: item.passed,
+    reasons: item.reasons,
+    suggestions: item.suggestions,
+    confidence: item.confidence,
+  };
+}
+
+function buildEvalPrompt(assertion: EvalAssertionConfig, judgePrompt: string | undefined, turns: TurnResult[]): string {
+  const final = turns[turns.length - 1]?.assistantText ?? '';
+  return [
+    'Evaluate an LLM prompt benchmark response against one assertion.',
+    'Return ONLY a JSON object with this exact shape:',
+    '{"text":"<assertion id or short assertion text>","passed":"pass|partial|fail","reasons":"<why>","suggestions":"<specific fix or empty>","confidence":0}',
+    'confidence is your self-reported confidence from 0 to 100.',
+    judgePrompt ? `Additional judge instruction:\n${judgePrompt}` : '',
+    `Assertion id: ${assertion.id}`,
+    `Assertion text:\n${assertion.text}`,
+    assertion.rubric ? `Assertion rubric:\n${assertion.rubric}` : '',
+    `Assistant final response:\n${final}`,
+    `Full conversation turns:\n${JSON.stringify(
+      turns.map((t) => ({ user: t.userMessage, assistant: t.assistantText })),
+    )}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+async function runEvalAssertions(
+  client: Anthropic,
+  model: string,
+  suite: SuiteConfig,
+  turns: TurnResult[],
+): Promise<{ evalResult?: EvalResultItem[]; evalError?: string }> {
+  if (!suite.eval) return {};
+  const results: EvalResultItem[] = [];
+  for (const assertion of suite.eval.assertions) {
+    try {
+      const response = await withRetry(() =>
+        client.messages.create({
+          model,
+          max_tokens: 2048,
+          messages: [{ role: 'user', content: buildEvalPrompt(assertion, suite.eval?.judgePrompt, turns) }],
+        }),
+      );
+      results.push(validateEvalResultItem(extractJsonObject(extractText(response))));
+    } catch (err) {
+      return {
+        ...(results.length > 0 ? { evalResult: results } : {}),
+        evalError: `Eval assertion "${assertion.id}" failed: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      };
+    }
+  }
+  return { evalResult: results };
+}
+
 async function runVariantOnce(
   client: Anthropic,
   config: BenchConfig,
@@ -115,10 +218,7 @@ async function runVariantOnce(
       const thinkingBlock = response.content.find(
         (b): b is Anthropic.ThinkingBlock => b.type === 'thinking',
       );
-      const textBlocks = response.content.filter(
-        (b): b is Anthropic.TextBlock => b.type === 'text',
-      );
-      const assistantText = textBlocks.map((b) => b.text).join('\n');
+      const assistantText = extractText(response);
       const thinkingText = thinkingBlock?.thinking ?? null;
 
       history.push({ role: 'assistant', content: response.content });
@@ -153,6 +253,7 @@ async function runVariantOnce(
       });
     }
 
+    const { evalResult, evalError } = await runEvalAssertions(client, model, suite, turns);
     const costUsd = computeCostUsd(totalInput, totalOutput, model, config.pricingOverrides);
     const totalLatencyMs = turns.reduce((acc, t) => acc + t.latencyMs, 0);
 
@@ -162,6 +263,8 @@ async function runVariantOnce(
       repetition,
       model,
       turns,
+      ...(evalResult ? { evalResult } : {}),
+      ...(evalError ? { evalError } : {}),
       totals: {
         inputTokens: totalInput,
         outputTokens: totalOutput,

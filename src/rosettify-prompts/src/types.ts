@@ -24,6 +24,18 @@ export interface VariantConfig {
   turns: string[];
 }
 
+export interface EvalAssertionConfig {
+  id: string;
+  text: string;
+  rubric?: string;
+}
+
+export interface EvalConfig {
+  /** Optional extra evaluator instruction applied to every assertion in this suite. */
+  judgePrompt?: string;
+  assertions: EvalAssertionConfig[];
+}
+
 export interface SuiteConfig {
   id: string;
   description?: string;
@@ -32,6 +44,7 @@ export interface SuiteConfig {
   maxOutputTokens?: number;
   thinking?: ThinkingConfig;
   repetitions?: number;
+  eval?: EvalConfig;
   variants: VariantConfig[];
 }
 
@@ -90,12 +103,24 @@ export interface RunTotals {
   latencyMs: number;
 }
 
+export type EvalPassed = 'pass' | 'partial' | 'fail';
+
+export interface EvalResultItem {
+  text: string;
+  passed: EvalPassed;
+  reasons: string;
+  suggestions: string;
+  confidence: number;
+}
+
 export interface RunResult {
   suiteId: string;
   variantId: string;
   repetition: number;
   model: string;
   turns: TurnResult[];
+  evalResult?: EvalResultItem[];
+  evalError?: string;
   totals: RunTotals;
   error?: string;
 }
@@ -115,6 +140,11 @@ export interface VariantSummary {
   label?: string;
   successes: number;
   failures: number;
+  evalPasses: number;
+  evalPartials: number;
+  evalFailures: number;
+  evalErrors: number;
+  evalConfidence: FieldStats | null;
   inputTokens: FieldStats | null;
   outputTokens: FieldStats | null;
   thinkingTokens: FieldStats | null;
