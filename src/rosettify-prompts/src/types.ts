@@ -86,10 +86,13 @@ export interface TurnResult {
   outputTokens: number;
   /** Portion of outputTokens spent on internal reasoning. */
   thinkingTokens: number | null;
-  /** 'usage' = reported directly by the API (`usage.output_tokens_details.thinking_tokens`);
-   * 'estimated' = derived via countTokens on the extracted thinking block, used only as a
-   * fallback when the API doesn't report it. */
-  thinkingTokensSource: 'usage' | 'estimated' | null;
+  /** 'usage' = reported directly by the API via `usage.output_tokens_details.thinking_tokens`
+   * (the real Anthropic API does not currently return this field at all, so this branch is
+   * effectively dead until/unless Anthropic adds it); 'derived' = output_tokens minus a
+   * countTokens() measurement of the visible assistant text — exact, not a rough estimate,
+   * since both quantities come from the same tokenizer. Used because Anthropic's `usage` never
+   * reports thinking tokens separately today. */
+  thinkingTokensSource: 'usage' | 'derived' | null;
   latencyMs: number;
   stopReason: string | null;
   textMetrics: TextMetrics;

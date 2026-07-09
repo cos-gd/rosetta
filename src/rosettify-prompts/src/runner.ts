@@ -48,21 +48,28 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 4): Promise<T> {
   }
 }
 
-/** Fallback used only when the API response doesn't include
- * `usage.output_tokens_details.thinking_tokens` (older API versions/models). */
-async function estimateThinkingTokens(
+/** Fallback used because the real Anthropic API never reports thinking tokens separately in
+ * `usage` (see optimize.ts's deriveReasoningTokens for the same technique). output_tokens is the
+ * exact billed total for the turn; subtracting a countTokens() measurement of the visible
+ * assistant text (same tokenizer) leaves the exact thinking-token count as the remainder. This is
+ * more accurate than counting the summarized `thinking` block text, which Anthropic's own docs
+ * say does not match the billed thinking-token count. Works regardless of `thinking.display`. */
+async function deriveThinkingTokens(
   client: Anthropic,
   model: string,
-  thinkingText: string,
+  assistantText: string,
+  outputTokens: number,
 ): Promise<number | null> {
+  if (typeof client.messages.countTokens !== 'function') return null;
   try {
     const result = await withRetry(() =>
       client.messages.countTokens({
         model,
-        messages: [{ role: 'user', content: thinkingText }],
+        messages: [{ role: 'user', content: assistantText }],
       }),
     );
-    return result.input_tokens;
+    const derived = outputTokens - result.input_tokens;
+    return derived >= 0 ? derived : null;
   } catch {
     return null;
   }
@@ -226,9 +233,9 @@ async function runVariantOnce(
       let thinkingTokens = response.usage.output_tokens_details?.thinking_tokens ?? null;
       let thinkingTokensSource: TurnResult['thinkingTokensSource'] =
         thinkingTokens !== null ? 'usage' : null;
-      if (thinkingTokens === null && thinkingText) {
-        thinkingTokens = await estimateThinkingTokens(client, model, thinkingText);
-        thinkingTokensSource = thinkingTokens !== null ? 'estimated' : null;
+      if (thinkingTokens === null && thinking.enabled && assistantText) {
+        thinkingTokens = await deriveThinkingTokens(client, model, assistantText, response.usage.output_tokens);
+        thinkingTokensSource = thinkingTokens !== null ? 'derived' : null;
       }
 
       totalInput += response.usage.input_tokens;

@@ -2,6 +2,7 @@ import { config as loadDotenv } from 'dotenv';
 import Anthropic from '@anthropic-ai/sdk';
 import path from 'node:path';
 import type { OptimizeClient, OptimizeContent, OptimizeResponse } from './optimize.js';
+import type { ThinkingEffort } from './types.js';
 
 export interface StreamingAnthropicClient {
   messages: {
@@ -9,9 +10,15 @@ export interface StreamingAnthropicClient {
       model: string;
       max_tokens: number;
       betas?: string[];
+      output_config?: { effort?: ThinkingEffort };
       system?: OptimizeContent;
       messages: Array<{ role: 'user' | 'assistant'; content: OptimizeContent }>;
     }): { finalMessage(): Promise<OptimizeResponse> };
+    /** Used only to derive reasoning-token counts; see optimize.ts's deriveReasoningTokens. */
+    countTokens?(params: {
+      model: string;
+      messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+    }): Promise<{ input_tokens: number }>;
   };
   beta?: {
     messages: {
@@ -19,6 +26,7 @@ export interface StreamingAnthropicClient {
         model: string;
         max_tokens: number;
         betas?: string[];
+        output_config?: { effort?: ThinkingEffort };
         system?: OptimizeContent;
         messages: Array<{ role: 'user' | 'assistant'; content: OptimizeContent }>;
       }): { finalMessage(): Promise<OptimizeResponse> };
@@ -40,6 +48,7 @@ export function createOptimizeClient(client: StreamingAnthropicClient): Optimize
         }
         return client.messages.stream(params).finalMessage();
       },
+      countTokens: client.messages.countTokens?.bind(client.messages),
     },
   };
 }

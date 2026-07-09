@@ -1,6 +1,7 @@
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { computeCostUsd } from './pricing.js';
+import type { ThinkingEffort } from './types.js';
 import {
   COMMON_CONTEXT,
   FINAL_FILES_JSON,
@@ -34,9 +35,16 @@ export interface OptimizeClient {
       model: string;
       max_tokens: number;
       betas?: string[];
+      output_config?: { effort?: ThinkingEffort };
       system?: OptimizeContent;
       messages: Array<{ role: 'user' | 'assistant'; content: OptimizeContent }>;
     }): Promise<OptimizeResponse>;
+    /** Used only to derive reasoning-token counts (see extractUsageStats/complete) when the
+     * response doesn't report them directly, which is the case for the real Anthropic API. */
+    countTokens?(params: {
+      model: string;
+      messages: Array<{ role: 'user' | 'assistant'; content: string }>;
+    }): Promise<{ input_tokens: number }>;
   };
 }
 
@@ -67,6 +75,8 @@ export interface OptimizeOptions {
   additional?: string[];
   traceFullPrompts?: boolean;
   dryRun?: boolean;
+  /** Adaptive-thinking depth passed as output_config.effort. Omit for the API default (high). */
+  effort?: ThinkingEffort;
 }
 
 export interface OptimizeFileTrace {
@@ -118,6 +128,11 @@ export interface OptimizeUsageStats {
   cachedInputTokens: number | null;
   /** Normalized internal-reasoning tokens from any provider-specific location. */
   reasoningTokens: number | null;
+  /** 'usage' = reported directly by the API; 'derived' = output_tokens minus a
+   * countTokens() measurement of the visible response text (see complete()), used because the
+   * real Anthropic API does not currently report thinking tokens separately in `usage`.
+   * Omitted on aggregated (summed-across-calls) usage objects. */
+  reasoningTokensSource?: 'usage' | 'derived' | null;
   standardCostUsd: number | null;
   rawUsage?: unknown;
 }
@@ -160,6 +175,7 @@ export interface OptimizeTrace {
   model: string;
   maxOutputTokens: number;
   anthropicBetas: string[];
+  effort?: ThinkingEffort;
   phaseLimit: number;
   totalAvailablePhases: number;
   targetFiles: OptimizeFileTrace[];
@@ -490,6 +506,7 @@ function extractUsageStats(response: OptimizeResponse, model: string): OptimizeU
     cacheReadInputTokens,
     cachedInputTokens,
     reasoningTokens,
+    reasoningTokensSource: reasoningTokens !== null ? 'usage' : null,
     standardCostUsd: inputTokens !== null && outputTokens !== null
       ? computeCostUsd(inputTokens, outputTokens, model)
       : null,
@@ -531,11 +548,34 @@ function requestStats(options: {
   };
 }
 
+async function deriveReasoningTokens(
+  client: OptimizeClient,
+  model: string,
+  usage: OptimizeUsageStats,
+  visibleText: string,
+): Promise<void> {
+  if (usage.reasoningTokens !== null || usage.outputTokens === null || !client.messages.countTokens) return;
+  try {
+    const counted = await client.messages.countTokens({
+      model,
+      messages: [{ role: 'user', content: visibleText }],
+    });
+    const derived = usage.outputTokens - counted.input_tokens;
+    if (derived >= 0) {
+      usage.reasoningTokens = derived;
+      usage.reasoningTokensSource = 'derived';
+    }
+  } catch {
+    // best-effort only; leave reasoningTokens null on failure
+  }
+}
+
 async function complete(
   client: OptimizeClient,
   model: string,
   maxOutputTokens: number,
   anthropicBetas: string[],
+  effort: ThinkingEffort | undefined,
   system: OptimizeContent,
   messages: Array<{ role: 'user' | 'assistant'; content: OptimizeContent }>,
   appendedMessages: Array<{ role: 'user' | 'assistant'; content: OptimizeContent }>,
@@ -547,6 +587,7 @@ async function complete(
     model,
     max_tokens: maxOutputTokens,
     ...(anthropicBetas.length > 0 ? { betas: anthropicBetas } : {}),
+    ...(effort ? { output_config: { effort } } : {}),
     system,
     messages,
   };
@@ -555,6 +596,8 @@ async function complete(
   assertNotTruncated(response, label);
   const text = extractText(response);
   if (!text) throw new Error(`${label} response was empty`);
+  const usage = extractUsageStats(response, model);
+  await deriveReasoningTokens(client, model, usage, text);
   const callStats: OptimizeCallStats = {
       label,
       durationMs,
@@ -563,7 +606,7 @@ async function complete(
       response: {
         chars: text.length,
         words: wordCount(text),
-        usage: extractUsageStats(response, model),
+        usage,
       },
   };
   if (rawTracePath) {
@@ -633,6 +676,12 @@ function formatNullable(value: number | null | undefined, digits = 0): string {
   return digits > 0 ? value.toFixed(digits) : String(value);
 }
 
+function formatReasoningTokens(usage: OptimizeUsageStats): string {
+  const value = formatNullable(usage.reasoningTokens);
+  if (!value) return '';
+  return usage.reasoningTokensSource === 'derived' ? `${value} (derived)` : value;
+}
+
 function phaseCallStats(phase: OptimizePhaseTrace): OptimizeCallStats[] {
   return phase.prompts.flatMap((prompt) => prompt.callStats ? [prompt.callStats] : []);
 }
@@ -669,7 +718,7 @@ export function renderOptimizeReport(trace: OptimizeTrace): string {
   const promptRows = trace.phases
     .flatMap((phase) => phase.prompts.map((prompt) => {
       const call = prompt.callStats;
-      return `| ${phase.label} | ${prompt.step} | ${prompt.promptStats.words} | ${call ? call.request.messages.count : ''} | ${call ? call.request.appendedMessages.count : ''} | ${call ? call.request.appendedMessages.words : ''} | ${prompt.durationMs} | ${call ? formatNullable(call.response.usage.inputTokens) : ''} | ${call ? formatNullable(call.response.usage.outputTokens) : ''} | ${call ? formatNullable(call.response.usage.cacheCreationInputTokens) : ''} | ${call ? formatNullable(call.response.usage.cacheReadInputTokens) : ''} | ${call ? formatNullable(call.response.usage.reasoningTokens) : ''} | ${call ? formatNullable(call.response.usage.standardCostUsd, 6) : ''} | ${call?.stopReason ?? ''} |`;
+      return `| ${phase.label} | ${prompt.step} | ${prompt.promptStats.words} | ${call ? call.request.messages.count : ''} | ${call ? call.request.appendedMessages.count : ''} | ${call ? call.request.appendedMessages.words : ''} | ${prompt.durationMs} | ${call ? formatNullable(call.response.usage.inputTokens) : ''} | ${call ? formatNullable(call.response.usage.outputTokens) : ''} | ${call ? formatNullable(call.response.usage.cacheCreationInputTokens) : ''} | ${call ? formatNullable(call.response.usage.cacheReadInputTokens) : ''} | ${call ? formatReasoningTokens(call.response.usage) : ''} | ${call ? formatNullable(call.response.usage.standardCostUsd, 6) : ''} | ${call?.stopReason ?? ''} |`;
     }))
     .join('\n');
   const totals = totalUsage(allCallStats(trace));
@@ -689,6 +738,7 @@ export function renderOptimizeReport(trace: OptimizeTrace): string {
     '',
     `- Model: \`${trace.model}\``,
     `- Max output tokens: ${trace.maxOutputTokens}`,
+    `- Effort: ${trace.effort ?? '(default: high)'}`,
     `- Anthropic betas: ${trace.anthropicBetas.length > 0 ? trace.anthropicBetas.map((beta) => `\`${beta}\``).join(', ') : '(none)'}`,
     `- Phases run: ${trace.phases.length}/${trace.totalAvailablePhases} + final audit`,
     `- Final size: ${trace.finalLength.words} words, ${trace.finalLength.chars} chars`,
@@ -711,7 +761,7 @@ export function renderOptimizeReport(trace: OptimizeTrace): string {
     '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
     promptRows,
     ...(trace.finalAudit ? [
-      `| Final audit | final-global-preservation-audit | ${trace.finalAudit.promptStats.words} | ${trace.finalAudit.callStats.request.messages.count} | ${trace.finalAudit.callStats.request.appendedMessages.count} | ${trace.finalAudit.callStats.request.appendedMessages.words} | ${trace.finalAudit.durationMs} | ${formatNullable(trace.finalAudit.callStats.response.usage.inputTokens)} | ${formatNullable(trace.finalAudit.callStats.response.usage.outputTokens)} | ${formatNullable(trace.finalAudit.callStats.response.usage.cacheCreationInputTokens)} | ${formatNullable(trace.finalAudit.callStats.response.usage.cacheReadInputTokens)} | ${formatNullable(trace.finalAudit.callStats.response.usage.reasoningTokens)} | ${formatNullable(trace.finalAudit.callStats.response.usage.standardCostUsd, 6)} | ${trace.finalAudit.callStats.stopReason ?? ''} |`,
+      `| Final audit | final-global-preservation-audit | ${trace.finalAudit.promptStats.words} | ${trace.finalAudit.callStats.request.messages.count} | ${trace.finalAudit.callStats.request.appendedMessages.count} | ${trace.finalAudit.callStats.request.appendedMessages.words} | ${trace.finalAudit.durationMs} | ${formatNullable(trace.finalAudit.callStats.response.usage.inputTokens)} | ${formatNullable(trace.finalAudit.callStats.response.usage.outputTokens)} | ${formatNullable(trace.finalAudit.callStats.response.usage.cacheCreationInputTokens)} | ${formatNullable(trace.finalAudit.callStats.response.usage.cacheReadInputTokens)} | ${formatReasoningTokens(trace.finalAudit.callStats.response.usage)} | ${formatNullable(trace.finalAudit.callStats.response.usage.standardCostUsd, 6)} | ${trace.finalAudit.callStats.stopReason ?? ''} |`,
     ] : []),
     '',
   ].join('\n');
@@ -773,6 +823,7 @@ export async function runPromptOptimization(
       model: options.model,
       maxOutputTokens: options.maxOutputTokens,
       anthropicBetas,
+      ...(options.effort ? { effort: options.effort } : {}),
       phaseLimit,
       totalAvailablePhases: OPTIMIZE_PHASES.length,
       targetFiles,
@@ -815,6 +866,7 @@ export async function runPromptOptimization(
         options.model,
         options.maxOutputTokens,
         anthropicBetas,
+        options.effort,
         system,
         messages,
         appendedMessages,
@@ -844,6 +896,7 @@ export async function runPromptOptimization(
       options.model,
       options.maxOutputTokens,
       anthropicBetas,
+      options.effort,
       system,
       messages,
       reviewAppendedMessages,
@@ -901,6 +954,7 @@ export async function runPromptOptimization(
     options.model,
     options.maxOutputTokens,
     anthropicBetas,
+    options.effort,
     system,
     finalMessages,
     finalMessages,
@@ -924,6 +978,7 @@ export async function runPromptOptimization(
     model: options.model,
     maxOutputTokens: options.maxOutputTokens,
     anthropicBetas,
+    ...(options.effort ? { effort: options.effort } : {}),
     phaseLimit,
     totalAvailablePhases: OPTIMIZE_PHASES.length,
     targetFiles,

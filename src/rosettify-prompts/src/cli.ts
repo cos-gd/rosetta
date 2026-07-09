@@ -6,6 +6,7 @@ import { createAnthropicClient, createOptimizeClient } from './anthropic-client.
 import { runBenchSuite } from './runner.js';
 import { buildReport, writeReportFiles } from './report.js';
 import { OPTIMIZE_PHASES, runPromptOptimization } from './optimize.js';
+import type { ThinkingEffort } from './types.js';
 
 const program = new Command();
 
@@ -29,6 +30,15 @@ function collectPath(value: string, previous: string[] = []): string[] {
 
 function collectValue(value: string, previous: string[] = []): string[] {
   return [...previous, value];
+}
+
+const THINKING_EFFORTS: ThinkingEffort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
+
+function parseEffort(value: string): ThinkingEffort {
+  if (!(THINKING_EFFORTS as string[]).includes(value)) {
+    throw new Error(`--effort must be one of: ${THINKING_EFFORTS.join(', ')}`);
+  }
+  return value as ThinkingEffort;
 }
 
 function fmtStat(value: number | null | undefined, digits = 0): string {
@@ -98,6 +108,7 @@ program
   .requiredOption('--out <dir>', 'output directory for optimized target files, trace.json, and report.md')
   .requiredOption('--model <id>', 'model id to use for optimization')
   .option('--max-output-tokens <n>', 'maximum output tokens per optimizer call', parsePositiveInteger, 32000)
+  .option('--effort <level>', 'adaptive-thinking effort: low|medium|high|xhigh|max (default: API default, high)', parseEffort)
   .option('--phase-limit <n>', 'run only the first N phases, then final audit', parsePositiveInteger)
   .option('--anthropic-beta <name>', 'Anthropic beta header for optimize calls; may be repeated', collectValue, [])
   .option('--no-default-anthropic-beta', 'do not include optimize default Anthropic beta headers')
@@ -112,6 +123,7 @@ program
       out: string;
       model: string;
       maxOutputTokens: number;
+      effort?: ThinkingEffort;
       phaseLimit?: number;
       anthropicBeta: string[];
       defaultAnthropicBeta: boolean;
@@ -135,6 +147,7 @@ program
             outDir: opts.out,
             model: opts.model,
             maxOutputTokens: opts.maxOutputTokens,
+            effort: opts.effort,
             phaseLimit,
             anthropicBetas,
             supportingPaths: opts.supporting,
@@ -155,6 +168,7 @@ program
         console.log(`Out: ${path.resolve(opts.out)}`);
         console.log(`Model: ${opts.model}`);
         console.log(`Max output tokens: ${opts.maxOutputTokens}`);
+        console.log(`Effort: ${opts.effort ?? '(default: high)'}`);
         console.log(`Phase limit: ${phaseLimit}`);
         console.log(`Anthropic betas: ${anthropicBetas.length > 0 ? anthropicBetas.join(', ') : '(none)'}`);
         console.log(`Raw trace: ${opts.traceRaw ? path.join(path.resolve(opts.out), 'raw-calls.jsonl') : '(disabled)'}`);
@@ -176,6 +190,7 @@ program
           outDir: opts.out,
           model: opts.model,
           maxOutputTokens: opts.maxOutputTokens,
+          effort: opts.effort,
           phaseLimit,
           anthropicBetas,
           supportingPaths: opts.supporting,

@@ -187,3 +187,91 @@ describe('runBenchSuite eval failure semantics', () => {
     expect(createCalls).toBe(3);
   });
 });
+
+describe('thinking token derivation', () => {
+  it('derives thinkingTokens from output_tokens minus countTokens(assistantText) when usage omits it', async () => {
+    const config: BenchConfig = {
+      model: 'claude-sonnet-5',
+      maxOutputTokens: 128,
+      thinking: {
+        enabled: true,
+        mode: 'adaptive',
+        budgetTokens: 1024,
+        effort: 'low',
+        display: 'omitted',
+      },
+      repetitions: 1,
+      concurrency: 1,
+      suites: [
+        {
+          id: 'suite-a',
+          variants: [{ id: 'variant-a', turns: ['hello'] }],
+        },
+      ],
+    };
+    const client = {
+      messages: {
+        async create() {
+          return {
+            content: [{ type: 'text', text: 'assistant final' }],
+            usage: { input_tokens: 11, output_tokens: 50 },
+            stop_reason: 'end_turn',
+          };
+        },
+        async countTokens() {
+          return { input_tokens: 30 };
+        },
+      },
+    } as unknown as Anthropic;
+
+    const [run] = await runBenchSuite(client, config);
+
+    expect(run.error).toBeUndefined();
+    expect(run.turns[0].thinkingTokens).toBe(20);
+    expect(run.turns[0].thinkingTokensSource).toBe('derived');
+    expect(run.totals.thinkingTokens).toBe(20);
+  });
+
+  it('leaves thinkingTokens null when the derivation would go negative or countTokens is unavailable', async () => {
+    const config: BenchConfig = {
+      model: 'claude-sonnet-5',
+      maxOutputTokens: 128,
+      thinking: {
+        enabled: true,
+        mode: 'adaptive',
+        budgetTokens: 1024,
+        effort: 'low',
+        display: 'omitted',
+      },
+      repetitions: 1,
+      concurrency: 1,
+      suites: [
+        {
+          id: 'suite-a',
+          variants: [{ id: 'variant-a', turns: ['hello'] }],
+        },
+      ],
+    };
+    const client = {
+      messages: {
+        async create() {
+          return {
+            content: [{ type: 'text', text: 'hi' }],
+            usage: { input_tokens: 11, output_tokens: 3 },
+            stop_reason: 'end_turn',
+          };
+        },
+        async countTokens() {
+          return { input_tokens: 8 };
+        },
+      },
+    } as unknown as Anthropic;
+
+    const [run] = await runBenchSuite(client, config);
+
+    expect(run.error).toBeUndefined();
+    expect(run.turns[0].thinkingTokens).toBeNull();
+    expect(run.turns[0].thinkingTokensSource).toBeNull();
+    expect(run.totals.thinkingTokens).toBeNull();
+  });
+});
