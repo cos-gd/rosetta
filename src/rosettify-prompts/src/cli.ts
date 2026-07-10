@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { loadConfig } from './config.js';
 import { createAnthropicClient, createOptimizeClient, type StreamingAnthropicClient } from './anthropic-client.js';
 import { runBenchSuite } from './runner.js';
 import { buildReport, writeReportFiles } from './report.js';
 import { OPTIMIZE_STEPS, runPromptOptimization } from './optimize.js';
-import type { ThinkingEffort } from './types.js';
+import type { JudgeMode, SupportingFile, ThinkingEffort } from './types.js';
 
 const program = new Command();
 
@@ -41,6 +42,24 @@ function parseEffort(value: string): ThinkingEffort {
   return value as ThinkingEffort;
 }
 
+function parseJudgeMode(value: string): JudgeMode {
+  if (value !== 'combined' && value !== 'individual') {
+    throw new Error('--judge-mode must be "combined" or "individual"');
+  }
+  return value;
+}
+
+function readSupportingFiles(paths: string[]): SupportingFile[] {
+  return paths.map((supportingPath) => {
+    const absolute = path.resolve(supportingPath);
+    try {
+      return { path: absolute, content: readFileSync(absolute, 'utf-8') };
+    } catch (err) {
+      throw new Error(`Could not read --supporting file "${supportingPath}": ${(err as Error).message}`);
+    }
+  });
+}
+
 function fmtStat(value: number | null | undefined, digits = 0): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 'n/a';
   return digits > 0 ? value.toFixed(digits) : String(value);
@@ -52,10 +71,27 @@ program
   .option('-e, --evals <path>', 'path to evals.json', DEFAULT_EVALS_PATH)
   .option('-o, --out <dir>', 'output directory for the report (default: results/<timestamp>)')
   .option('--concurrency <n>', 'override concurrency from config', parsePositiveInteger)
+  .option('--additional <text>', 'extra context appended to every variant system prompt; may be repeated', collectValue, [])
+  .option('--supporting <file>', 'supporting file injected (context-only) into every variant system prompt; may be repeated', collectPath, [])
+  .option('--judge-mode <mode>', 'eval judge mode: combined|individual (overrides config/suite; default combined)', parseJudgeMode)
   .option('--dry-run', 'validate config and print the planned jobs without calling the API', false)
-  .action(async (opts: { evals: string; out?: string; concurrency?: number; dryRun: boolean }) => {
+  .action(async (opts: {
+    evals: string;
+    out?: string;
+    concurrency?: number;
+    additional: string[];
+    supporting: string[];
+    judgeMode?: JudgeMode;
+    dryRun: boolean;
+  }) => {
     const config = loadConfig(opts.evals);
     if (opts.concurrency !== undefined) config.concurrency = opts.concurrency;
+
+    // Merge run-wide CLI context over config: additional text appends, supporting files append
+    // (CLI paths resolved relative to cwd), and --judge-mode is a hard global override.
+    config.additional = [...(config.additional ?? []), ...opts.additional];
+    config.supportingFiles = [...(config.supportingFiles ?? []), ...readSupportingFiles(opts.supporting)];
+    if (opts.judgeMode) config.judgeModeOverride = opts.judgeMode;
 
     const totalJobs = config.suites.reduce(
       (acc, s) => acc + s.variants.length * (s.repetitions ?? config.repetitions),
@@ -64,6 +100,13 @@ program
 
     if (opts.dryRun) {
       console.log(`Config OK: ${config.suites.length} suite(s), ${totalJobs} job(s) planned.`);
+      console.log(
+        `Judge mode: ${config.judgeModeOverride ?? config.judgeMode ?? 'combined'}${config.judgeModeOverride ? ' (CLI override)' : ' (suites may override per eval.mode)'}`,
+      );
+      console.log(`Additional context blocks: ${config.additional.length}`);
+      console.log(
+        `Supporting files: ${config.supportingFiles.length > 0 ? config.supportingFiles.map((f) => f.path).join(', ') : '(none)'}`,
+      );
       for (const suite of config.suites) {
         const reps = suite.repetitions ?? config.repetitions;
         console.log(`- ${suite.id}: ${suite.variants.map((v) => v.id).join(', ')} x${reps} reps`);
