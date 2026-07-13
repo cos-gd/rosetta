@@ -151,10 +151,15 @@ describe('optimize prompts', () => {
     expect(STEP_REFERENCE_SECTIONS['inventory-intent'].objectives).toHaveLength(2);
     expect(STEP_REFERENCE_SECTIONS['inventory-intent'].objectives[0]).toContain('Identify every behavior');
     expect(STEP_REFERENCE_SECTIONS['actors-contracts'].hardening).toContain('Maintains Workflow/Phase/Subagent/Skill/Rule boundaries');
+    expect(STEP_REFERENCE_SECTIONS['actors-contracts'].hardening).toContain('Actively hunt for cross-skill refs');
+    expect(STEP_REFERENCE_SECTIONS['inventory-intent'].hardening).toContain('Use common and domain terms & abbreviations');
     expect(STEP_REFERENCE_SECTIONS['execution-delegation'].patterns).toContain('<subagents-orchestration>');
     expect(STEP_REFERENCE_SECTIONS['review-failure'].patterns).toContain('Review IS statically reviewing some result for some intent');
     expect(STEP_REFERENCE_SECTIONS['review-failure'].aiIssues).toContain('F1');
+    expect(STEP_REFERENCE_SECTIONS.compression.hardening).toContain('Small rules, extensive coverage, clear concerns');
     expect(STEP_REFERENCE_SECTIONS.compression.hardening).toContain('Rephrase, restructure, compress for much more compact prompt without loosing value');
+    expect(STEP_REFERENCE_SECTIONS.compression.hardening).toContain('one-two word nudges');
+    expect(STEP_REFERENCE_SECTIONS.compression.hardening).toContain('remove meta-explanation');
     expect(STEP_REFERENCE_SECTIONS.compression.aiIssues).toContain('Keep the concrete anchor');
     expect(STEP_REFERENCE_SECTIONS['consistency-minimality'].hardening).toContain('# Five-Axis Audit');
     expect(STEP_REFERENCE_SECTIONS['consistency-minimality'].hardening).toContain('# Surface Area Reduction');

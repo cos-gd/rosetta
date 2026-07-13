@@ -136,6 +136,7 @@ const SUBSTEP_REFERENCE_SECTIONS: Record<OptimizeSubStepId, { objective: string;
     hardening: `- Actively involves user
 - Has User Involvement and HITL ONLY via \`hitl\` skill (to support full automation)
 - Asks questions until crystal clear without nitpicking
+- Use common and domain terms & abbreviations
 - Defines target audience
 - Challenge user reasonably
 - Avoid fabricated requirements`,
@@ -155,7 +156,7 @@ const SUBSTEP_REFERENCE_SECTIONS: Record<OptimizeSubStepId, { objective: string;
     objective: 'Separate who acts: future agent, user, skill, subagent, workflow, rule, template, tool, reviewer, or external system.',
     hardening: `- Maintains Workflow/Phase/Subagent/Skill/Rule boundaries
 - Skills can't call skills, Phase can't call phases, Subagents can't call subagents, Workflows can, and Rules can.
-- No lateral/sibling awareness, no reverse awareness, no cross-skill deep linking (exception: frontmatters, and keywords)
+- No lateral/sibling awareness, no reverse awareness, no cross-skill deep linking (exception: frontmatters, and keywords). Actively hunt for cross-skill refs: grep \`<other-skill>/(assets|references)/...\`, sibling skills' file names, \`SKILL FILE\` outside the owning skill — each MUST be reworded to intent ("USE SKILL \`<name>\` to <do X>"; topic keywords, no file names)
 - Clear separation of concerns, actors, events, models, actions`,
     patterns: `<layering-cognitive-space>
 
@@ -359,13 +360,13 @@ const SUBSTEP_REFERENCE_SECTIONS: Record<OptimizeSubStepId, { objective: string;
   },
   compactness: {
     objective: 'Compact surgically while preserving wording that carries behavior, weight, or hooks.',
-    hardening: `- Small prompts
+    hardening: `- Small rules, extensive coverage, clear concerns
 - Target each rule line below 8 words, short phrases preferred
 - If longer, split into progressive layers
 - Prefer imperative/infinitive form
 - Prompt size target: <300 ideal, 300-500 acceptable
 - If 500+, split by layers/phases using progressive disclosure
-- Rephrase, restructure, compress for much more compact prompt without loosing value, including but not limited to removing useless words, duplication, abbreviation, using unicode characters and icons, phrases instead of full sentences (except user facing), never soften prompts`,
+- Rephrase, restructure, compress for much more compact prompt without loosing value, including but not limited to removing useless words, duplication, abbreviation, using unicode characters and icons, phrases instead of full sentences (except user facing), never soften prompts, replace obvious facts AI already knows into one-two word nudges (topics, terms, abbreviations, etc), intrinsics (X is Y, A != B, C > D, F not G, etc), and steppers (A->B->C, etc.), remove meta-explanation (X is needed because Y, A no longer does B, etc), etc.`,
     aiIssues: `- Keep the concrete anchor — numbers, process, samples. They are the AI's grasp on reality; strip them and it hallucinates (F3).
 - F2 — Passive consumption over active construction.
 - Overloaded past about 5 items.`,
