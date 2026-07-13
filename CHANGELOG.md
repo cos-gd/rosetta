@@ -95,7 +95,7 @@ R3 advances Rosetta from governed assistance to deterministic, self-guarding exe
 
 - **Roughly 57% smaller bootstrap.** Bootstrap rules were refactored — JSON schemas pulled into skills and templates, duplicated orchestration rules merged, and HITL questioning moved entirely into the on demand `hitl` skill. The per session `bootstrap-*.md` payload dropped from 31,711 to 13,510 bytes, a 57.4% reduction (the MCP mode `bootstrap.md` entry is excluded — still being optimized).
 - **Strengthened, self-initializing prep.** Preparation enforcement was tightened and workflow selection was folded into the orchestrator contract, so orchestrators and subagents self-initialize — load context, select the workflow, and commit to phases before acting.
-- **New bootstrap skills.** `load-context-instructions` and `load-workflow` make context loading and workflow selection explicit, reliable steps rather than implicit expectations.
+- **Explicit context loading.** `load-project-context` makes context loading and workflow selection explicit, reliable steps rather than implicit expectations.
 
 #### Release Model and Upcoming Work
 
@@ -113,6 +113,54 @@ R3 advances Rosetta from governed assistance to deterministic, self-guarding exe
 ## Weekly Change Log
 
 *Release scope: **R2** is the live, served release. **R3** is the next release, still in development and not yet served. Other tags are release-agnostic: **Tooling** (plugin generator, rosettify), **Server** (MCP server, Helm), **Hooks**, **CI**, **Docs**.*
+
+### Week Mon 06.07 – Sun 12.07
+
+A refactor-and-tooling week. R3's always-on bootstrap shrank again and the core skill library was reorganized (#121): six bootstrap rule files collapsed into one always-on file plus a single mode file, several skills merged under clearer names, and ~35 skills gained short README routing files. rosettify-prompts' `optimize` command — flagged "not built yet" last week — shipped as a single-session pipeline of 7 intent-combined steps, alongside Bifrost gateway support and adaptive thinking effort. Curiocity gained perplexity and confidence scoring. Hooks got a strict Codex output schema and Windsurf fixes, and the README was rewritten for sharper positioning.
+
+**Highlights**
+
+- R3 bootstrap reduced again and core skills refactored: 6 bootstrap rule files → 1 always-on + 1 mode file, skills merged and renamed, ~35 skills gained README routing files (#121)
+- rosettify-prompts `optimize` command shipped: single-session, 7-step prompt/skill rewrite pipeline (was benchmarking-only last week)
+- Bifrost gateway support across rosettify-prompts and Curiocity
+- Curiocity evaluation gained perplexity and confidence-level scoring
+- New post-mortem skill and a tree-of-thoughts reasoning loop (R2 + R3)
+- README rewritten: sharper positioning, architecture diagram, concrete quickstart (#123)
+
+#### R3 bootstrap reduction and core skill refactor (#121)
+
+- **Change.** `[R3]` Continued the bootstrap-shrinking work from a defense-system angle: safety rules stay always-on, rigor rules load on demand behind a user invitation. Six always-on bootstrap rule files (`bootstrap.md`, `bootstrap-core-policy`, `bootstrap-execution-policy`, `bootstrap-guardrails`, `bootstrap-rosetta-files`, `todo-tasks-fallback`) collapsed into one `bootstrap-alwayson.md` plus exactly one mode file per session (`local-`/`plugin-`/new `mcp-files-mode.md`). Skills were merged and renamed: `operation-manager` + `orchestrator-contract` → `orchestration` (with the determinism engine as an EXECUTION_CONTROLLER asset), `plan-manager` → `planning`, `subagent-contract` → `subagent-directives`, and `load-context-instructions` + `load-context` + `load-workflow` → `load-project-context`. ~35 skills gained a short `README.md` routing file for progressive disclosure (thin SKILL, load-on-demand assets). A validated token-compression pass trimmed the running-context files further. Removed content is archived verbatim in `docs/stories/`. (Yevheniia Lementova, Igor Solomatov)
+- **Why it helps.** Lean requests now carry near-zero always-on process context; rigor loads only when the work needs it. Clearer skill names and per-skill READMEs make the library easier for the agent to route through, and the mode-file split gives MCP its own alias mapping without bloating plugin context.
+
+#### rosettify-prompts: optimize command and Bifrost support
+
+- **Change.** `[Tooling]` Shipped the `optimize` command: a single-session pipeline that walks a prompt/skill file through 7 intent-combined steps (inventory & intent; actors, boundaries & contracts; execution & delegation; review, validation & failure-hardening; patterns & simulation; compression; consistency & minimality), proposing changes rather than rewriting whole files and emitting `trace.json` + `report.md`. Supports `--dry-run`, per-call output-token caps, and supporting/additional context injection. Added Bifrost gateway support, adaptive thinking-effort derivation (reasoning tokens scaled from output tokens), bench context injection, and a combined judge mode. (Igor Solomatov)
+- **Why it helps.** Last week rosettify-prompts could only benchmark prompt variants and rank them by cost and stability; the planned optimizer was explicitly not built. It now closes that loop — an author runs a file through the pipeline and gets traceable, reviewable change proposals instead of hand-editing on gut feel.
+
+#### Curiocity: confidence scoring and Bifrost
+
+- **Change.** `[Tooling]` Curiocity's evaluation gained perplexity and confidence-level signals in the LLM-judge and external evaluators, richer markdown reporting, and Bifrost gateway support. Fixed the `node-pty` install script to run under npm 12. (Igor Solomatov)
+- **Why it helps.** Confidence and perplexity make an automated pass/fail verdict auditable rather than a bare boolean, and the npm 12 fix unblocks fresh installs.
+
+#### New skills: post-mortem, tree-of-thoughts reasoning, QA canon
+
+- **Change.** `[R2 + R3]` Added a `post-mortem` skill and updated `self-learning` to feed it (R2 + R3). Reworked `reasoning` into an explicit tree-of-thoughts loop (R2 + R3). Promoted `qa-knowledge`, `qa-structure`, and `data-collection` to canonical R3 skills with vendor-binding references and templates (#128, Svetozar Lashin). (post-mortem and reasoning: Igor Solomatov)
+- **Why it helps.** Post-mortems turn failures into reusable knowledge; tree-of-thoughts gives the agent a structured deliberation loop; the QA skills make the automated-QA workflow a first-class, documented path.
+
+#### Hook correctness fixes
+
+- **Change.** `[Hooks]` Enforced a strict per-event output schema for Codex so each hook event returns exactly the shape Codex expects (Igor Solomatov). Fixed three Windsurf e2e tests (#127, Svetozar Lashin). Removed the agent-facing `dangerous-actions` SKILL.md (8 copies) — the gate runs in the hook runtime, so the loadable skill was dead weight. (Igor Solomatov)
+- **Why it helps.** Codex silently drops malformed hook output; a strict schema keeps deny/advise decisions from vanishing. Deleting the orphaned skill removes a misleading duplicate of logic that actually lives in the hook.
+
+#### Host-model false-positive reduction
+
+- **Change.** `[R2]` Reworded `bootstrap-core-policy` so host models (notably Sonnet 5) stop flagging Rosetta's own system prompt as a prompt-injection attempt or complaining about it — softened imperative phrasing and reframed prompt priorities around AI-failure-mode prevention. (Igor Solomatov)
+- **Why it helps.** When the host model treats Rosetta's bootstrap as adversarial, it degrades or refuses. Neutral framing keeps the guardrails intact without tripping the model's own defenses. (These files were later removed from R3 by #121; the fix keeps R2 correct.)
+
+#### Documentation and operations
+
+- **Change.** `[Docs]` Rewrote the README: sharper positioning, a Without/With comparison, a Mermaid architecture diagram, and a concrete "add rate limiting" quickstart example (#123, Eugene Steinberg). `[CI]` `publish-instructions.yml` gained release-version tagging. Routine version bumps, doc/website sync, and new-skill doc references across the repo. (Igor Solomatov)
+- **Why it helps.** The README is the front door; the new version shows rather than tells. Release tagging makes published instruction datasets traceable.
 
 ### Week Mon 29.06 – Sun 05.07
 
