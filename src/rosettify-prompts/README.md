@@ -232,3 +232,7 @@ checking API connectivity end to end without burning much budget:
 ```bash
 npm run bench -- --evals evals.smoke.json --out results/smoke
 ```
+
+## TODO
+
+- Ability to ask questions during optimization
