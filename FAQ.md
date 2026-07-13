@@ -68,7 +68,7 @@ For small/trivial tasks AI treats them as just small change and never executes t
 
 **Why does the first message in a session take longer?**
 
-Rosetta runs prep steps once per session: it loads context, classifies the request, picks a workflow, and reads relevant project files (`CONTEXT.md`, `ARCHITECTURE.md`, etc.). Subsequent messages reuse this context and are fast.
+Rosetta runs prep steps once per session: it loads context and reads relevant project files (`CONTEXT.md`, `ARCHITECTURE.md`, etc.). Subsequent messages reuse this context and are fast.
 
 **Which model should I use, and why did Rosetta burn through my token budget?**
 
@@ -89,7 +89,7 @@ Yes. Rosetta runs in every mode. Permission modes and Auto mode only change what
 
 **Can I skip the prep steps for a trivial one-line change?**
 
-No. Prep steps are a blocking gate and run once per session. They are lightweight (load context, classify request, pick workflow) and are designed so even trivial tasks get the right routing. The savings from skipping are tiny; the cost of skipping and getting the wrong answer is high.
+No. Prep steps are a blocking gate and run once per session. They are lightweight (load context, read project files) and are designed so even trivial tasks start from the right context. The savings from skipping are tiny; the cost of skipping and getting the wrong answer is high.
 
 **How do I opt out of HITL (human-in-the-loop) for a single task?**
 
@@ -102,7 +102,7 @@ Most likely an expired MCP OAuth token. See [TROUBLESHOOTING.md](TROUBLESHOOTING
 **When should I start a new chat session versus continue in the same one?**
 
 - **Same session** for follow-ups on the work just done — the agent fixed something the wrong way, missed an edge case, or you want to refine the same change.
-- **New session** when you move to a different feature, a new dependency, or an unrelated change. Each top-level request should start fresh so prep steps reclassify it and context stays lean.
+- **New session** when you move to a different feature, a new dependency, or an unrelated change. Each top-level request should start fresh so context stays lean.
 
 Reusing one long session for many unrelated tasks bloats context and degrades results. (A common mistake is running every task in a chat that started with "what can you do?" — start a new session for the real task.)
 
@@ -141,7 +141,7 @@ The headline ones are `docs/CONTEXT.md` and `docs/ARCHITECTURE.md`. The full set
 
 **Where do I report bugs or request features?**
 
-Open an [issue](https://github.com/griddynamics/rosetta/issues).
+Open an [issue](https://github.com/griddynamics/rosetta/issues). Whenever a run fails or you see something you'd like improved, the `post-mortem` skill (`/post-mortem`) root-causes it and drafts a sanitized issue for you — submitted only with your explicit approval, with no private code or data included.
 
 **Where do I propose changes to Rosetta itself?**
 
