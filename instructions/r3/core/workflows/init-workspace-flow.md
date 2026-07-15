@@ -44,7 +44,7 @@ Validation: State file tracks every phase with file inventory; verification conf
 
 <context phase="1" role="Workspace mode detector">
 
-1. Detect mode: install, upgrade, or plugin. Set state.mode, state.plugin_active, state.composite, state.existing_files. Creates/reads gain.json. Actualizes IDEs to be used by user. GAIN.json questions keep for questions phase.
+1. Detect mode: install, upgrade, or plugin. Set state.mode, state.plugin_active, state.composite, state.existing_files. Creates/reads gain.json. GAIN.json questions keep for questions phase.
 2. APPLY PHASE `init-workspace-flow-context.md`
 3. Update state
 

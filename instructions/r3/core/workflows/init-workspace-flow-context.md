@@ -62,6 +62,7 @@ Initialization must behave differently for fresh, existing, or plugin workspaces
 5. IDE supported:
    - Plugins: Claude Code, Codex, Copilot (VSCode, IDEA, CLI), Cursor
    - MCP: Additionally Gemini CLI, Antigravity CLI, CLINE, OpenCode, etc. Only requirement - Full MCP Support with Authentication
+6. Ask in this phase multi-select question about IDE user wants to use.
 
 </gain_json_generation>
 

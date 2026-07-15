@@ -42,7 +42,7 @@ Suggests user to install LSPs xor Code graphs only.
 - **LSP**: locally running lightweight Language Server Protocol servers for different programming languages
 - Exclusive selection: Graphify XOR GitNexus XOR LSPs. Multiple LSPs allowed. Default is perfect with LSPs.
 - Each IDE/coding agent requires different setup, there are SPECIFIC commands/params.
-- IMPORTANT: our integration requires tools/LSPs to be on the PATH or available by just using tool name without paths.
+- CRITICAL: our integration requires tools/LSPs to be on the PATH or available by just using tool name without paths.
 - IMPORTANT: user must do initialization for any extra, like "graphify .", etc.
 
 </learn_codegraph>
@@ -71,7 +71,7 @@ Suggests user to install LSPs xor Code graphs only.
 4. Explain you will NOT install yourself, but if installed IT IS supported by Rosetta
 5. Explain that they need to add "MUST USE SKILL CODEMAP AND <X> FOR CODE NAVIGATION" to docs/CONTEXT.md at the end so that AI knows to use it (note skill already handles)
 6. Upon selection - do NOT install, read, search, understand paying attention to IDE/coding agent and languages
-7. Only then provide very brief, concise, specific, and short instructions for user to install plus exact deep links
+7. Only then provide very brief, concise, specific, and short instructions for user to install plus exact deep links, make this guidance to visually standout from overall log of all activities
 8. You can guide user too AFTER entire workflow is completed, but do NOT install yourself, you can modify CONTEXT.md too
 
 </suggest_codegraph>
