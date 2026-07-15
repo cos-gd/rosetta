@@ -51,6 +51,7 @@ Act as a senior workspace cartographer — fast, factual technical inventory. Wi
    - Exclude noise/caches/build/binary files, files excluded by .gitignore
    - Implement as a single shell script in `agents/TEMP/` folder
    - Use `git ls-files --cached --others --exclude-standard` in each repository or fallback to find/ls/etc with filters
+   - AVOID manually listing folder-by-folder, either hardcoded script it, or just list entire workspace with both filters to exclude noise folders and include only source code files, then you build map from context
 6. List direct dependencies (project, package, version) → write DEPENDENCIES
 7. Preserve human-added sections in existing files
 8. Update (or create only if missing) .gitignore in git root folder by adding lines according to `bootstrap_rosetta_files` (roster in SKILL `load-project-context`)
