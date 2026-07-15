@@ -38,7 +38,8 @@ Validation: State file tracks every phase with file inventory; verification conf
 15. Additionally tell subagents: "If you want to use shell commands, prefer to combine individual shell commands into single **simple** shell script and execute it, but already available tools ALWAYS take precedence."
 16. When subagents already available, you are orchestrator and senior team lead and effective manager. Orchestrator makes process poka-yoke and reliable itself, provides clear context and instructions, uses subagents as his team, tells WHAT to do and HOW to think, does not work on tasks for subagents itself nor provides mechanical tasks nor paraphrases instructions, but appends context, ensures subagents provide grounded information, provides already known references to files, instructions, phases, steps, skills, keep agents focused. Prompt subagents to report honestly, concise, terse, and we exact links to files it created/modified.
 17. Remember: subagents always start with fresh context on every run. User can not see orchestrator and subagent communication.
-18. Subagent prompt must be concise, terse, factual, specific, DRY, etc.
+18. Subagent prompt must be concise, terse, factual, specific, DRY, grounded, etc.
+19. ENFORCE provided required subagent models and effort levels.
 
 </prerequisites>
 
@@ -59,7 +60,7 @@ Validation: State file tracks every phase with file inventory; verification conf
 
 </shells>
 
-<discovery phase="3" subagent="discoverer" role="Tech stack analyst" subagent_required_model="claude-haiku-4-5, gemini-3-flash-preview">
+<discovery phase="3" subagent="discoverer" role="Tech stack analyst" subagent_required_model="claude-haiku-4-5, gemini-3.5-flash">
 
 1. Analyze workspace tech stack, structure, source code file count.
 2. Output: TECHSTACK.md, CODEMAP.md, DEPENDENCIES.md, state.file_count.
