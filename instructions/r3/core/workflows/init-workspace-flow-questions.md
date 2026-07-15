@@ -19,7 +19,7 @@ Validation: Every accumulated gap has a resolution; each answer traces to at lea
 
 - Phase 8 of 9 in init-workspace-flow
 - Input: all docs from Phases 1–7, accumulated gaps from state
-- Output: answers integrated into docs, affected files updated via subagents
+- Output: answers integrated into docs, affected files updated directly
 
 </workflow_context>
 

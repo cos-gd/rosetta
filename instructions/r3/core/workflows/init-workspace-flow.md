@@ -42,9 +42,9 @@ Validation: State file tracks every phase with file inventory; verification conf
 
 </prerequisites>
 
-<context phase="1" subagent="engineer" role="Workspace mode detector" subagent_required_model="claude-haiku-4-5, gemini-3-flash-preview">
+<context phase="1" role="Workspace mode detector">
 
-1. Detect mode: install, upgrade, or plugin. Set state.mode, state.plugin_active, state.composite, state.existing_files. Creates/reads gain.json.
+1. Detect mode: install, upgrade, or plugin. Set state.mode, state.plugin_active, state.composite, state.existing_files. Creates/reads gain.json. Actualizes IDEs to be used by user. GAIN.json questions keep for questions phase.
 2. APPLY PHASE `init-workspace-flow-context.md`
 3. Update state
 
