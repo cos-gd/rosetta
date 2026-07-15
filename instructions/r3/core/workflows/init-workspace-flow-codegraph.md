@@ -42,7 +42,8 @@ Suggests user to install LSPs xor Code graphs only.
 - **LSP**: locally running lightweight Language Server Protocol servers for different programming languages
 - Exclusive selection: Graphify XOR GitNexus XOR LSPs. Multiple LSPs allowed. Default is perfect with LSPs.
 - Each IDE/coding agent requires different setup, there are SPECIFIC commands/params.
-- CRITICAL: our integration requires tools/LSPs to be on the PATH or available by just using tool name without paths.
+- IMPORTANT: our integration requires tools/LSPs to be on the PATH or available by just using tool name without paths.
+- IMPORTANT: user must do initialization for any extra, like "graphify .", etc.
 
 </learn_codegraph>
 
