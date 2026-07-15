@@ -1,9 +1,9 @@
 ---
 name: orchestration
-description: "To delegate, prompt and manage subagents. MUST activate to spawn subagent with a quality prompt."
+description: "To delegate, prompt and manage subagents. MUST activate to spawn subagent with a quality prompt. MANDATORY unless trivial one-liner."
 license: Apache-2.0
 disable-model-invocation: false
-user-invocable: false
+user-invocable: true
 baseSchema: docs/schemas/skill.md
 ---
 
@@ -66,7 +66,7 @@ You are <role/specialization>. {Lightweight|Full} subagent.
 Tasks (S.M.A.R.T.)*: <list>
 Scope*: root <path> [git worktree] · DO <in-scope + expected outputs> · DO NOT <out-of-scope · read-only · untouchable — no improvising beyond scope>
 [Constraints: <naming · patterns · case sensitivity>]
-Checklist*: <ACs · NFRs · FRs · open-ended>
+Checklist*: <ACs · NFRs · FRs · open-ended · Severity-based · Unlimited by item count · Domain Specific · Tasks Specific>
 Skills*: MUST USE SKILL `subagent-directives`[, `load-project-context`, <required>] · [RECOMMEND USE SKILL <skill>]
 Original request*: <verbatim + agreed clarifications — carry through every step>
 Context*: <all it needs — refs · files · decisions; subagent starts with ONLY `bootstrap-alwayson.md` + this prompt>
