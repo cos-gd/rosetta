@@ -25,6 +25,7 @@ IF LSP tools are already in current context:
 - The Language Server Protocol (LSP)
 - Use already available tools / capabilities in context
 - Combine with semantic search / code index tools already available in context 
+- Prefer LSP over Grep/Read for code navigation
 </lsp>
 
 <graphify>

@@ -36,16 +36,16 @@ Validation: State file tracks every phase with file inventory; verification conf
 13. If user says to initialize rules, subagents, agents, workflows, commands it ONLY means to execute "shells" phase 2.
 14. Upgrade from R2 to R3 is exactly the same process as define here, but you already have some files available, which you can reuse.
 15. Additionally tell subagents: "If you want to use shell commands, prefer to combine individual shell commands into single **simple** shell script and execute it, but already available tools ALWAYS take precedence."
-16. When subagents already available, you are orchestrator and senior team lead and effective manager. Orchestrator makes process poka-yoke and reliable itself, `trusts but verify`, `if anything could go wrong - it will go wrong`, provides clear context and instructions, subagents can cheat, consults with architect, makes reviewer to review and verify with fresh eyes, and uses subagents as his team. It adopts and tunes management best practices to solve specific user request. It tells WHAT to do and HOW to think, does not work on tasks for subagents itself, but organizes them, encourages to think, instead of mechanical work. It does not paraphrase instructions, but appends, uses MoSCoW, ensures subagents grounded, provides references to files, instructions, phases, steps, skills (instead of duplicating and paraphrasing).
+16. When subagents already available, you are orchestrator and senior team lead and effective manager. Orchestrator makes process poka-yoke and reliable itself, provides clear context and instructions, uses subagents as his team, tells WHAT to do and HOW to think, does not work on tasks for subagents itself nor provides mechanical tasks nor paraphrases instructions, but appends context, ensures subagents provide grounded information, provides already known references to files, instructions, phases, steps, skills, keep agents focused. Prompt subagents to report honestly, concise, terse, and we exact links to files it created/modified.
 17. Remember: subagents always start with fresh context on every run. User can not see orchestrator and subagent communication.
-18. Subagent prompt must be concise, dense, factual, specific, DRY, etc.
+18. Subagent prompt must be concise, terse, factual, specific, DRY, etc.
 
 </prerequisites>
 
 <context phase="1" subagent="engineer" role="Workspace mode detector" subagent_required_model="claude-haiku-4-5, gemini-3-flash-preview">
 
 1. Detect mode: install, upgrade, or plugin. Set state.mode, state.plugin_active, state.composite, state.existing_files. Creates/reads gain.json.
-2. APPLY PHASE init-workspace-flow-context.md
+2. APPLY PHASE `init-workspace-flow-context.md`
 3. Update state
 
 </context>
@@ -53,8 +53,8 @@ Validation: State file tracks every phase with file inventory; verification conf
 <shells phase="2" default="true" subagent="engineer" conditional role="Shell file generator" subagent_required_model="claude-sonnet-5, gpt-5.4-medium">
 
 1. Generate shell files for skills, agents, workflows. Skip if state.plugin_active.
-2. Output: shell configs, bootstrap rule, load-project-context skill shell.
-3. APPLY PHASE init-workspace-flow-shells.md
+2. Input: IDEs, Output: shell configs, bootstrap rule, load-project-context skill shell.
+3. APPLY PHASE `init-workspace-flow-shells.md`
 4. Update state
 
 </shells>
@@ -63,7 +63,7 @@ Validation: State file tracks every phase with file inventory; verification conf
 
 1. Analyze workspace tech stack, structure, file count.
 2. Output: TECHSTACK.md, CODEMAP.md, DEPENDENCIES.md, state.file_count.
-3. APPLY PHASE init-workspace-flow-discovery.md
+3. APPLY PHASE `init-workspace-flow-discovery.md`
 4. Update state
 
 </discovery>
@@ -76,20 +76,17 @@ DISABLED
 
 1. Extract coding and architectural patterns into reusable templates.
 2. Output: PATTERNS folder (one .md per pattern, INDEX.md, CHANGES.md).
-3. APPLY PHASE init-workspace-flow-patterns.md
+3. APPLY PHASE `init-workspace-flow-patterns.md`
 4. Update state. Log gaps for Phase 8.
 
 </patterns>
 
 <code-graph phase="6" subagent="engineer" type="HITL" role="Code-graph setup gate" subagent_required_model="claude-sonnet-5, gpt-5.4-medium, gemini-3.1-pro-preview">
 
-1. From the current context only, check whether code-graph capability is already covered — registered LSPs, or semantic-search / indexing MCP tools — and tell the user what is already available. Do not search for or install anything to find out.
-2. Warn the user: Third-party tool will have access to IP. Review license and policy with your manager.
-3. Ask the user to choose a code-graph backend, presenting the options in this order with cost and license:
-   - **Default — `CODEMAP.md`**: built-in, no install, no third party, no cost.
-   - **Graphify** (`https://github.com/safishamsi/graphify`): MIT-licensed, free.
-   - **GitNexus** (`https://github.com/abhigyanpatwari/GitNexus`): free for non-commercial or personal use, PAID for commercial or business use — see [GitNexus Enterprise Licensing](https://github.com/abhigyanpatwari/GitNexus?tab=readme-ov-file#enterprise).
-4. On Graphify or GitNexus: USE SKILL `codemap` to install and set up the chosen backend; log the chosen backend in state. On Default: log as skipped.
+1. Suggest user to install LSPs xor code graphs if relevant
+2. Output: user selection, updates to CONTEXT.md
+3. APPLY PHASE `init-workspace-flow-codegraph.md`
+4. Update state. Log gaps for Phase 6.
 
 </code-graph>
 
@@ -97,7 +94,7 @@ DISABLED
 
 1. Create project documentation from workspace analysis.
 2. Output: CONTEXT.md, ARCHITECTURE.md, IMPLEMENTATION.md, ASSUMPTIONS.md, AGENT MEMORY.md.
-3. APPLY PHASE init-workspace-flow-documentation.md
+3. APPLY PHASE `init-workspace-flow-documentation.md`
 4. Update state. Log gaps for Phase 8.
 
 </documentation>
@@ -105,7 +102,7 @@ DISABLED
 <questions phase="8" type="HITL" role="Reflective gap-filler">
 
 1. Review all docs, identify gaps, ask user reflective questions, update affected files via subagents.
-2. APPLY PHASE init-workspace-flow-questions.md
+2. APPLY PHASE `init-workspace-flow-questions.md`
 3. Update state
 4. Required: USE SKILL `questioning`
 
@@ -114,25 +111,54 @@ DISABLED
 <verification phase="9" subagent="reviewer" role="Completeness validator" subagent_required_model="claude-sonnet-5, gpt-5.4-medium">
 
 1. Verify all files exist, run validation checklist, suggest next steps.
-2. APPLY PHASE init-workspace-flow-verification.md
+2. APPLY PHASE `init-workspace-flow-verification.md`
 3. Mark state as COMPLETE.
-4. Notify user: delete `init-rosetta-shells-flow.md`.
-5. Demand user as MUST to start new chat session (highly visible message, red icon, bold, ASCII art, it must standout).
 
 </verification>
 
 </workflow_phases>
 
-<references>
+<next_steps>
+1. DEMAND user as MUST to start new chat session (highly visible message, red icon, bold, ASCII art, it must standout).
+2. DEMAND user to study (USAGE GUIDE)[https://griddynamics.github.io/rosetta/docs/usage-guide/]
+3. DEMAND user to review examples for the next steps for user and EMPHASIS on "/slash-commands":
+   
+   ```md
+   # Coding Workflow
 
-Phase files: `init-workspace-flow-context.md`, `init-workspace-flow-shells.md`, `init-workspace-flow-discovery.md`, `init-workspace-flow-rules.md`, `init-workspace-flow-patterns.md`, `init-workspace-flow-documentation.md`, `init-workspace-flow-questions.md`, `init-workspace-flow-verification.md`
+   **WHAT**: Majority of tasks are actually coding tasks, including unit tests. Just ask exactly what is required.
 
-</references>
+   "/coding-flow Implement left navigation sidebar on the home page, ..."
+
+   "/coding-flow Identify and implement fix, ..."
+
+   "/coding-flow Improve unit tests coverage to 85% for ..."
+
+   # Business and Technical Requirements
+
+   **WHY**: Requirements - is the source of truth for code and tests. Going requirements first is the most effective. In brownfield start with extracting.
+
+   "/requirements-authoring-flow extract detailed business and technical requirements from community of ... using subagents. Additionally, ... . Once done spawn subagent to validate and repeat an entire loop until there are no issues detected."
+
+   "/requirements-authoring-flow extract high-level business and technical requirements at end-point level for controllers according to glob ... using subagents. Additionally, ... . Once done spawn subagent to validate and repeat an entire loop until there are no issues detected."
+
+   # Modernization
+
+   **FIRST**: Document modernization goals in CONTEXT.md, document target services technical aspects in ARCHITECTURE.md, document where source code should be created, keep refsrc populated with reference code source (old code, new code, reusable libraries, configuration and documentation files, and similar).
+
+   **NOTE**: All phases are must. All phases to be implemented one-by-one with proper review. Phase 3: Pre-Modernization Test Coverage is a must (and must include both unit and integration/e2e tests).
+
+   "/modernization-flow Perform modernization phase 1 to reuse library refsrc/... using subagents." 
+
+   "/modernization-flow Perform modernization phase 2 to analyze service module ... using subagents. Target microservice name is ... ."
+
+   "/modernization-flow Perform modernization phase 8 for target service to analyze service module ... using subagents. Must USE FLOW `coding-flow.md` to actually implement and as the main flow. Once done spawn subagent to validate and repeat an entire loop until there are no issues detected."
+   ```
+</next_steps>
 
 <pitfalls>
 
-- Phase 4 (rules) is optional — disabled by default.
-- Phase 8 must update files via subagents, not just collect answers.
+- Phase 8 must update files, not just collect answers.
 - Shells and rules take effect only after new chat session.
 
 </pitfalls>
