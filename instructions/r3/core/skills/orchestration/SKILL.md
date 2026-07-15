@@ -50,10 +50,11 @@ Quality:
 7. Adapt plan as things surface — reorder, re-analyze, loop. Keep steps explicit, actionable.
 8. Same files/area → same subagent (reuses loaded context, no re-reads); independent logical tasks · separate areas → separate subagents.
 9. Escalate: subagent → orchestrator → user, carrying full context.
+10. Keep subagent and follow up with "Honestly what was done and what could be done better?"
 
 Plan mode:
 
-10. Execute all read/analyze/query work yourself now; the presented system plan file carries everything else — record `MUST USE SKILL <name>` entries (workflow, skills), incorporate plan + specs, define the implementation workflow — mini-loops, phases, steps, subagent + model per step — in MoSCoW, same directive language you were given.
+11. Execute all read/analyze/query work yourself now; the presented system plan file carries everything else — record `MUST USE SKILL <name>` entries (workflow, skills), incorporate plan + specs, define the implementation workflow — mini-loops, phases, steps, subagent + model per step — in MoSCoW, same directive language you were given.
 
 </process>
 
