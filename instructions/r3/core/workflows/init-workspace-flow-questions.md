@@ -20,6 +20,7 @@ Validation: Every accumulated gap has a resolution; each answer traces to at lea
 - Phase 8 of 9 in init-workspace-flow
 - Input: all docs from Phases 1–7, accumulated gaps from state
 - Output: answers integrated into docs, affected files updated directly
+- These are intentional questions to the USER, auto mode / no approvals / etc ARE NOT APPLICABLE
 
 </workflow_context>
 
@@ -32,16 +33,17 @@ Validation: Every accumulated gap has a resolution; each answer traces to at lea
 5. Update affected files
 6. Ask critical/high/major impact questions
 7. Prioritize by impact: scope > security/privacy > UX > technical
-8. Ask few independent questions at a time
-9. Adjust and interview user relentlessly about every aspect of his task until you reach a full shared understanding
-10. User is allowed to skip and leave items unresolved
-11. Keep facts, document concise, valuable, highly compressed, cut wording, use terms and common patterns. 
+8. Ask few independent questions at a time, if question can be searched, checked in code, do that first
+9. Adjust and interview user **relentlessly** about every aspect of the workspace until you reach a full shared understanding
+10. User is allowed to skip and leave items unresolved, but this must be highly discouraged
+11. Keep facts, document concise, valuable, highly compressed, cut wording, use terms and common patterns
 12. Update state — clear resolved gaps, note unresolved
 
 </phase_steps>
 
 <pitfalls>
 
+- Auto mode classifier defers user questions
 - Do not re-ask questions answered as in-phase blockers — check state
 - Unanswered questions: log as deferred gap, do not guess
 
