@@ -15,7 +15,8 @@ Produces foundational technical documentation (TECHSTACK, CODEMAP, DEPENDENCIES)
 <workflow_context>
 - Phase 3 of 9 in init-workspace-flow
 - Input: filesystem, state.mode, state.composite
-- Output: TECHSTACK, CODEMAP, DEPENDENCIES on disk
+- Output: TECHSTACK, CODEMAP, DEPENDENCIES on disk, source code file count
+- Count only source code files
 - Prerequisite: Phase 1 complete (mode known), Phase 2 complete or skipped
 </workflow_context>
 

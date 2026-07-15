@@ -27,7 +27,7 @@ Validation: State file tracks every phase with file inventory; verification conf
 6. No rush, Take your time, Be thorough, ACCURACY > SPEED
 7. Dual-mode: every phase reads `state.mode` → check-exists → identify-gaps → create/update → preserve-human-content → report-changes.
 8. Composite workspace: documentation phases to create top-level index referencing sub-repository docs.
-9. IF state.file_count >= 50 (set by Phase 3): pass "USE SKILL `large-workspace-handling`" to Phase 5, 7, 8 subagents.
+9. IF state.file_count >= 100 (set by Phase 3): pass "USE SKILL `large-workspace-handling`" to Phase 5, 7, 8 subagents.
 10. Create `agents/init-workspace-flow-state.md`.
 11. Conditional phases:
   - If you have already in context "RUNNING AS A PLUGIN": MUST NOT EXECUTE "shells" phase 2
@@ -61,7 +61,7 @@ Validation: State file tracks every phase with file inventory; verification conf
 
 <discovery phase="3" subagent="discoverer" role="Tech stack analyst" subagent_required_model="claude-haiku-4-5, gemini-3-flash-preview">
 
-1. Analyze workspace tech stack, structure, file count.
+1. Analyze workspace tech stack, structure, source code file count.
 2. Output: TECHSTACK.md, CODEMAP.md, DEPENDENCIES.md, state.file_count.
 3. APPLY PHASE `init-workspace-flow-discovery.md`
 4. Update state
