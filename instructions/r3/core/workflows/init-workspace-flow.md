@@ -60,7 +60,7 @@ Validation: State file tracks every phase with file inventory; verification conf
 
 </shells>
 
-<discovery phase="3" subagent="discoverer" role="Tech stack analyst" subagent_required_model="claude-haiku-4-5, gemini-3.5-flash">
+<discovery phase="3" subagent="discoverer" role="Tech stack analyst" subagent_required_model="claude-haiku-4-5, gpt-5.4-mini-medium, gemini-3.5-flash">
 
 1. Analyze workspace tech stack, structure, source code file count.
 2. Output: TECHSTACK.md, CODEMAP.md, DEPENDENCIES.md, state.file_count.
