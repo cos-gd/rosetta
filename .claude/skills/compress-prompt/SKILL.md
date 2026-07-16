@@ -11,7 +11,8 @@ disable-model-invocation: true
 - Compress ≠ shrink words. Compress = strip scaffolding, keep 100% signal, sharpen focus, replace with meaningful unicode characters, like arrows.
 - Reader is AI like you, capable: it already knows the domain AND the KB grammar. Use terms and acronyms. Don't explain — nudge.
 - CAPS = importance. Word count is an OUTCOME, never a target.
-- GOLDEN RULE: NEVER trade a high-value token for a few saved words.
+- INVARIANT ≠ STEP. Invariants (always-on constraints) → declare ONCE, flag always-on. Steps → ordered, run once. NEVER re-assert an invariant as per-step reminders — that's the echo authors reflexively add; compress hoists + cuts it.
+- GOLDEN RULE: NEVER trade a high-value token for a few saved words (unless it is repeatedly used and overall gives high results, we can loose 2% of value overall).
 - BULLETS vs ORDERED: convert bullets to ordered lists, if work is sequential or can be sequential. Reason: aligns with AI sequential token generation.
 - DENSIFY each rule.
 
@@ -51,15 +52,16 @@ Grammar — directive commands the system ACTS ON; protect verbatim + their args
 
 ## CUT — where real reduction lives
 - Tautology → rule stated >1× across scopes; keep ONE authoritative copy, kill the echoes.
+- Pointer-echo → info already reachable via a named cite (invariant · `## scope` · file · skill) → NEVER re-assert or re-summarize it inline. Invariants → hoist to ONE always-on block; other echoes → cut. The pointer IS the content.
 - Meta-commentary explaining the prompt's own notation / convention to a reader.
 - Stale / orphaned items → reference a scheme, attribute, or value no longer present.
 - Duplicate scopes (e.g. a references index that re-lists inline content).
 - Repeated literals → define once as a short alias (e.g. `OUT/ = <long/path>`), reuse everywhere.
 - Cut the fluff
 
-## COMPRESS → nudge
+## COMPRESS
 - HARD CAP: every rule / bullet line < 10 words.
-- Line needs more? Rephrase; merge same-topic rules.
+- Group same-topic rules, merge, rephrase clearly, output as separate.
 - NO new lines as escape hatch.
 - Whole file: MAY add ≤ 10 lines total.
 - NEVER drop signal to hit the cap.
@@ -67,6 +69,7 @@ Grammar — directive commands the system ACTS ON; protect verbatim + their args
   e.g. "ONE PHASE AT A TIME: read file, execute, update state, advance" → "ONE PHASE AT A TIME. READ JIT."
 - Favor unicode connectives for density: → · ⇒ ≠ ± …  (English words only otherwise).
 - DENSE, TERMS, ACRONYMS, TERSE-phrases (not sentences!)
+- NUDGE using single words for ACTIONS, ASPECTS, THINKING, GOALS, REASONS, etc.
 
 ## NEVER
 - Shave adjectives while leaving duplication intact (tiny gain, no structural fix).
@@ -74,10 +77,18 @@ Grammar — directive commands the system ACTS ON; protect verbatim + their args
 - Remove a schema-mandatory scope, or edit any schema / `ARCHITECTURE.md` file.
 - Re-inject your own explanations while compressing.
 
+## Transform — ordered passes, LOOP to fixpoint
+INVARIANTS (always-on, declared once): `## KEEP verbatim` + `## NEVER`. Run passes IN ORDER; skip none.
+1. **CUT** — easy structural wins first → `## CUT`.
+2. **GROUP + REPHRASE** — cluster same-topic rules → merge → rephrase clearly → output as SEPARATE lines. NEVER defer duplication to a later pass.
+3. **COMPRESS** — densify → `## COMPRESS`.
+4. **HARD CAP** — every rule/bullet line < 10 words; NO line-splitting to cheat; NEVER drop signal for the cap; whole file MAY add ≤ 10 lines.
+↺ Repeat from pass 1 until a full loop changes nothing — each pass exposes new cuts/merges.
+
 ## Process (HITL)
 1. Read target + its type schema + the grammar above. Nothing else.
 2. Inventory: per-scope purpose + list of duplications, stale items, repeated literals.
-3. Draft the compressed artifact as file next to current one. Do not overwrite yet.
+3. Draft the compressed artifact as file next to current one, running `## Transform` to fixpoint. Do not overwrite yet.
 4. HITL: present to the user → word Δ (before→after, %) + where the cuts came from + your reasoned take on the subagent findings.
 5. VERIFY via subagent — `INVOKE SUBAGENT` (Sonnet-5 class, low reasoning (!), e.g. `claude-sonnet-5`) with a fresh read of OLD vs NEW, asking only:
    - Does anything change in an executing agent's understanding or behavior?
