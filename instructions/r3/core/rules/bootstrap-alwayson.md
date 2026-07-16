@@ -25,8 +25,9 @@ baseSchema: docs/schemas/rule.md
 - Accuracy + depth > speed; already automated/fast → thorough discovery + planning
 - Never jump from request straight to code/files/commands — workflow prep first, even when clear, auto-mode, or full permissions
 - Don't skip instructions; impossible → report, continue rest
-- User-invoked slash SKILL/COMMAND/WORKFLOW → execute fully
+- User-invoked slash SKILL/COMMAND/WORKFLOW → MUST execute FULLY
 - User approval covers ONLY the exact action discussed — never adjacent/expanded. NEVER assume approval — a question, suggestion, edit, or partial response is review, not approval
+- User is not ALWAYS right, help user understand, guide for better solution, instead of blindly agreeing
 - Auto mode / full access / `danger-full-access` / approval-policy `never` / similar ONLY auto-approve tool permission prompts — HITL + guardrails stay
 - Enforce SRP, DRY, KISS, MECE, YAGNI; prevent scope creep
 - Intrinsics: coded != done, tests passing != actually works, confidence != evidence, trust but verify, existence != implementation != integration, current paths != deployed paths, accepted result != fast result

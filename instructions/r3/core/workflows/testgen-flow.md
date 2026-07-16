@@ -41,74 +41,74 @@ Prerequisite: Rosetta Prep Steps.
   - *Initial-prompt format examples* → `testgen-flow-project-config-loading.md`.
   - **Phase 6 80%-export-success threshold** → `testgen-flow-test-case-export.md` (`Threshold (80%) met` field + `PARTIAL — N/M exported` state).
   - **Phase 5 test-case-count guidance** → `testgen-flow-test-case-generation.md` `<validation_checklist>`.
-- **Model tiers** (phase `subagent_recommended_model`): `tier: complex` = heavy reasoning / multi-source synthesis / requirements engineering (Opus-class / GPT high-tier); `tier: workhorse` = structured execution / extraction / generation + export (Sonnet-class / GPT mid-tier).
+- **Model tiers** (phase `subagent_required_model`): `tier: complex` = heavy reasoning / multi-source synthesis / requirements engineering (Opus-class / GPT high-tier); `tier: workhorse` = structured execution / extraction / generation + export (Sonnet-class / GPT mid-tier).
 
-<project_config_loading phase="0" subagent="discoverer" role="Project configuration analyst" subagent_recommended_model="tier: workhorse">
+<project_config_loading phase="0" subagent="discoverer" role="Project configuration analyst" subagent_required_model="claude-sonnet-5, gpt-5.4-medium, gemini-3.1-pro, grok-4.5, gpt-5.6-terra">
 
 - APPLY PHASE `testgen-flow-project-config-loading.md`
 - Input: user request with an Issue Tracker ticket key/URL. Output: `plans/testgen-{TICKET-KEY}/initial-data.md`, project config file.
 - Required skills: `sensitive-data` (config / initial-data redaction pre-write gate)
 - Recommended skills: `questioning`
-- Update `plans/testgen-{TICKET-KEY}/testgen-state.md`; Phase 0 is not complete until its output spot-check passes.
+- Update `testgen-state.md`; Phase 0 is not complete until its output spot-check passes.
 
 </project_config_loading>
 
-<data_collection phase="1" subagent="discoverer" role="Requirements data collector" subagent_recommended_model="tier: workhorse">
+<data_collection phase="1" subagent="discoverer" role="Requirements data collector" subagent_required_model="claude-sonnet-5, gpt-5.4-medium, gemini-3.1-pro, grok-4.5, gpt-5.6-terra">
 
 - APPLY PHASE `testgen-flow-data-collection.md`
 - Input: initial user request, initial-data.md. Output: `plans/testgen-{TICKET-KEY}/raw-data.md` with Issue Tracker + Wiki data.
 - Required skills: `data-collection`
-- Update `plans/testgen-{TICKET-KEY}/testgen-state.md`; Phase 1 is not complete until its output spot-check passes.
+- Update `testgen-state.md`; Phase 1 is not complete until its output spot-check passes.
 
 </data_collection>
 
-<gap_and_contradiction_analysis phase="2" subagent="architect" role="Requirements gap analyst" subagent_recommended_model="tier: complex">
+<gap_and_contradiction_analysis phase="2" subagent="architect" role="Requirements gap analyst" subagent_required_model="claude-opus-4-8, gpt-5.5-high, gemini-3.1-pro-high, gpt-5.6-sol">
 
 - APPLY PHASE `testgen-flow-gap-and-contradiction-analysis.md`
 - Input: raw-data.md. Output: `plans/testgen-{TICKET-KEY}/analysis.md` with contradictions, gaps, ambiguities.
 - Required skills: `qa-knowledge` (`gap_analysis` mode)
-- Update `plans/testgen-{TICKET-KEY}/testgen-state.md`; Phase 2 is not complete until its output spot-check passes.
+- Update `testgen-state.md`; Phase 2 is not complete until its output spot-check passes.
 
 </gap_and_contradiction_analysis>
 
-<question_generation phase="3" subagent="architect" role="Requirements clarification analyst" subagent_recommended_model="tier: complex" type="HITL">
+<question_generation phase="3" subagent="architect" role="Requirements clarification analyst" subagent_required_model="claude-opus-4-8, gpt-5.5-high, gemini-3.1-pro-high, gpt-5.6-sol" type="HITL">
 
 - APPLY PHASE `testgen-flow-question-generation.md`
 - Input: analysis.md. Output: `plans/testgen-{TICKET-KEY}/questions.md`, `plans/testgen-{TICKET-KEY}/answers.md`.
 - **WAIT FOR USER** to fill answers in questions.md. Explicit approval required.
 - Recommended skills: `questioning`
-- Update `plans/testgen-{TICKET-KEY}/testgen-state.md`; Phase 3 is not complete until its output spot-check passes.
+- Update `testgen-state.md`; Phase 3 is not complete until its output spot-check passes.
 
 </question_generation>
 
-<requirements_document_generation phase="4" subagent="architect" role="Requirements engineer" subagent_recommended_model="tier: complex">
+<requirements_document_generation phase="4" subagent="architect" role="Requirements engineer" subagent_required_model="claude-opus-4-8, gpt-5.5-high, gemini-3.1-pro-high, gpt-5.6-sol">
 
 - APPLY PHASE `testgen-flow-requirements-document-generation.md`
 - Input: raw-data.md + analysis.md + answers.md. Output: `plans/testgen-{TICKET-KEY}/requirements.md`.
 - **WAIT FOR USER** to review `requirements.md` before Phase 5 (phase-file gate, step 4.4) — present a summary and require explicit confirmation; per-phase confirmation per `<orchestration_and_escalation>` priority (3).
 - Required skills: `qa-knowledge` (`synthesis` mode)
-- Update `plans/testgen-{TICKET-KEY}/testgen-state.md`; Phase 4 is not complete until its output spot-check passes.
+- Update `testgen-state.md`; Phase 4 is not complete until its output spot-check passes.
 
 </requirements_document_generation>
 
-<test_case_generation phase="5" subagent="engineer" role="Test case design engineer" subagent_recommended_model="tier: workhorse">
+<test_case_generation phase="5" subagent="engineer" role="Test case design engineer" subagent_required_model="claude-sonnet-5, gpt-5.4-medium, gemini-3-flash, grok-4.5, gpt-5.6-terra">
 
 - APPLY PHASE `testgen-flow-test-case-generation.md`
 - Input: requirements.md. Output: `plans/testgen-{TICKET-KEY}/test-scenarios.md`
 - **WAIT FOR USER** to review `test-scenarios.md` before Phase 6 export (phase-file gate, step 5.9) — present a summary and require explicit confirmation; per-phase confirmation per `<orchestration_and_escalation>` priority (3).
 - Required skills: `qa-knowledge` (`scenario_design` mode + config-resolved TMS FORMAT binding).
-- Update `plans/testgen-{TICKET-KEY}/testgen-state.md`; Phase 5 is not complete until its output spot-check passes.
+- Update `testgen-state.md`; Phase 5 is not complete until its output spot-check passes.
 - `coding` is NOT used for the default manual-scenario output (writes stay under `plans/testgen-{TICKET-KEY}/`); apply it only if a write targets tracked repo files outside that folder, per `<phase_5_6_standards_gate>`.
 
 </test_case_generation>
 
-<test_case_export phase="6" subagent="engineer" role="Test case export specialist" subagent_recommended_model="tier: workhorse" type="HITL">
+<test_case_export phase="6" subagent="engineer" role="Test case export specialist" subagent_required_model="claude-sonnet-5, gpt-5.4-medium, gemini-3-flash, grok-4.5, gpt-5.6-terra" type="HITL">
 
 - APPLY PHASE `testgen-flow-test-case-export.md`
 - Input: test-scenarios.md. Output: test cases exported to Test Management System **and** a local export receipt at `plans/testgen-{TICKET-KEY}/export-report.md` (TMS IDs/URLs, per-case status, timestamp). The local receipt is the on-disk evidence Phase 6 ran successfully.
 - **WAIT FOR USER** to provide target location and confirm export.
 - Required skills: `qa-knowledge` (`scenario_design` mode + config-resolved TMS EXPORT binding).
-- Update `plans/testgen-{TICKET-KEY}/testgen-state.md`; Phase 6 is not complete until its output spot-check passes.
+- Update `testgen-state.md`; Phase 6 is not complete until its output spot-check passes.
 - `coding` is NOT used for the default flow (TMS export + receipt under `plans/testgen-{TICKET-KEY}/`); apply it only if a write targets tracked repo files outside that folder (e.g. embedding TMS IDs into a version-controlled file), per `<phase_5_6_standards_gate>`.
 
 </test_case_export>
