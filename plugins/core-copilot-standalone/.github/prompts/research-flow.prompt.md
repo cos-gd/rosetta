@@ -2,7 +2,6 @@
 name: research-flow
 description: "Workflow for deep project research with grounded references, parallel exploration, etc."
 tags: ["workflow"]
-user-invocable: true
 baseSchema: docs/schemas/workflow.md
 ---
 
@@ -14,16 +13,13 @@ Orchestrates deep research via meta-prompting: craft an optimized research promp
 
 <workflow_phases>
 
-<prerequisites phase="0", applies="ALL">
+- All Rosetta prep steps MUST be FULLY completed, load-context skill loaded and fully executed
+- If `/goal` is set repeat phases 3-4 until goal is met.
 
-1. All Rosetta prep steps MUST be FULLY completed, SKILL `load-project-context` loaded and fully executed.
-2. MUST use todo tasks for reliability
-3. Orchestrator trusts the system and skills; coordinates sequence, artifacts, state, and approvals only.
-4. Execute phases sequentially.
-5. Agent state tracker file `research-flow-state.md` is stored in FEATURE TEMP folder.
-6. If `/goal` is set repeat phases 3-4 until goal is met.
+Orchestrator trusts the system and skills; coordinates sequence, artifacts, state, and approvals only.
+Execute phases sequentially.
 
-</prerequisites>
+Agent state tracker file `research-flow-state.md` is stored in FEATURE TEMP folder.
 
 <context_load phase="1" subagent="researcher" role="Context gatherer for research scope" subagent_required_model="claude-sonnet-5, gpt-5.4-medium, gemini-3.1-pro">
 
