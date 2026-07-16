@@ -48,6 +48,20 @@ describe('manual-qa-check', () => {
     ]);
   });
 
+  it('Bug-2 regression: a success signal present only as ESCAPED JSON still verifies', async () => {
+    // Real CC transcripts store text as JSON strings, so a body like {"status":"UP"} is
+    // written escaped: {\"status\":\"UP\"}. A natural narrow successPattern "status":"UP"
+    // (exactly what the case configs override to) must still match — the check tests an
+    // unescaped view of the transcript, not just the raw bytes. Before the fix this
+    // scored verified=0 ("attempted") on a run that genuinely verified the endpoint.
+    const res = await manualQaCheck.evaluate(
+      ctx({ rawTranscriptPath: join(FIXTURES_DIR, 'passed-transcript.jsonl') }),
+      { successPattern: '"status"\\s*:\\s*"UP"' },
+    );
+    expect(res.pass).toBe(true);
+    expect(res.metrics).toContainEqual({ name: 'manual_qa_verified', value: 1 });
+  });
+
   it('level "attempted": ran the service and hit the endpoint, but no verified success response', async () => {
     const res = await manualQaCheck.evaluate(
       ctx({ rawTranscriptPath: join(FIXTURES_DIR, 'attempted-transcript.jsonl') }),
@@ -78,6 +92,23 @@ describe('manual-qa-check', () => {
       { name: 'manual_qa_hit_endpoint', value: 0 },
       { name: 'manual_qa_verified', value: 0 },
     ]);
+  });
+
+  it('false-positive guard: success string only in written SOURCE (live response was 503/DOWN) is NOT verified', async () => {
+    // The agent ran the service and curled the endpoint, but the LIVE response was 503/DOWN.
+    // {"status":"UP"} appears only in the controller source it wrote — that must NOT count as
+    // an observed live success. Level is "attempted", not "passed". (Before scoping `verified`
+    // to the client-tool response window, matching the source string flipped this to "passed".)
+    const res = await manualQaCheck.evaluate(
+      ctx({ rawTranscriptPath: join(FIXTURES_DIR, 'false-positive-transcript.jsonl') }),
+      { successPattern: '"status"\\s*:\\s*"UP"' },
+    );
+    expect(res.details).toBe(
+      'manual QA: attempted (ran service + hit /api/health, but no verified success response)',
+    );
+    expect(res.metrics).toContainEqual({ name: 'manual_qa_ran_service', value: 1 });
+    expect(res.metrics).toContainEqual({ name: 'manual_qa_hit_endpoint', value: 1 });
+    expect(res.metrics).toContainEqual({ name: 'manual_qa_verified', value: 0 });
   });
 
   it('fails without throwing when rawTranscriptPath is absent', async () => {

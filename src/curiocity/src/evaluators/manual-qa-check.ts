@@ -17,7 +17,12 @@ import type { EvalContext, EvalResult, Evaluator } from './types';
  *    a reference to the target endpoint (`urlPattern`, default `/api/health`) or a
  *    loopback host (`localhost` / `127.0.0.1`).
  * 3. **verified**: the `successPattern` regex (default: an HTTP 2xx status line, a bare
- *    `200`, or a `"status":"UP"` JSON field) matches somewhere in the transcript.
+ *    `200`, or a `"status":"UP"` JSON field) matches within the RESPONSE REGION of a live
+ *    client-tool call (a window right after a `CLIENT_TOOL_SIGNATURES` hit) — NOT merely
+ *    anywhere in the transcript. Matching anywhere would false-positive on the endpoint's
+ *    own source (the controller literally returns `{"status":"UP"}`) or the task prompt
+ *    echoing the contract, and could score a run whose LIVE response was actually wrong as
+ *    "passed". Scoping it to the observed response makes `verified` mean what it says.
  *
  * Level: `passed` (ran + hit + verified) > `attempted` (ran + hit, unverified) > `none`.
  */
@@ -104,13 +109,39 @@ export const manualQaCheck: Evaluator = {
       lowerRaw.includes('127.0.0.1');
     const hitEndpoint = hitClientTool && referencesEndpoint;
 
-    let verified = false;
-    try {
-      verified = new RegExp(p.successPattern).test(raw);
-    } catch {
-      // A malformed successPattern param must not crash the trial — treat as unverified.
-      verified = false;
-    }
+    // The raw transcript is JSONL: assistant text with JSON bodies is backslash-escaped
+    // (e.g. `{\"status\":\"UP\"}`), so a natural successPattern like `"status":"UP"` would
+    // never match. Test an unescaped view (\" → ", \n → newline, \t → tab) too, so a success
+    // signal embedded in a JSON payload is seen regardless of transcript escaping.
+    const unescaped = raw.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+
+    // A live success response was OBSERVED only if the successPattern appears in the output
+    // region FOLLOWING a client-tool call (window of RESPONSE_WINDOW chars after each
+    // client-tool hit) — not anywhere in the transcript. This prevents the endpoint's own
+    // source / the prompt from counting as a live response, and stops a run whose actual
+    // response was wrong from being scored "passed" just because the success string appears
+    // elsewhere. `p.successPattern` has no /g, so re.test() is safe to reuse across slices.
+    const RESPONSE_WINDOW = 2000;
+    const verifiedNear = (text: string): boolean => {
+      let re: RegExp;
+      try {
+        re = new RegExp(p.successPattern);
+      } catch {
+        // A malformed successPattern param must not crash the trial — treat as unverified.
+        return false;
+      }
+      for (const client of CLIENT_TOOL_SIGNATURES) {
+        const flags = client.flags.includes('g') ? client.flags : `${client.flags}g`;
+        const cre = new RegExp(client.source, flags);
+        let m: RegExpExecArray | null;
+        while ((m = cre.exec(text)) !== null) {
+          if (re.test(text.slice(m.index, m.index + RESPONSE_WINDOW))) return true;
+          if (m.index === cre.lastIndex) cre.lastIndex += 1; // guard against zero-width match
+        }
+      }
+      return false;
+    };
+    const verified = verifiedNear(raw) || verifiedNear(unescaped);
 
     const level: 'passed' | 'attempted' | 'none' =
       ranService && hitEndpoint && verified ? 'passed' : ranService && hitEndpoint ? 'attempted' : 'none';
