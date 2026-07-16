@@ -71,6 +71,19 @@ describe('command (§11)', () => {
     const res = await command.evaluate(ctx({}), { run: 'exit 2', expectExitCode: 2 });
     expect(res.pass).toBe(true);
   });
+  it('on failure, details includes a tail of the command output for diagnosis', async () => {
+    const res = await command.evaluate(ctx({}), { run: 'echo DIAG_MARKER_STDOUT; echo DIAG_MARKER_STDERR 1>&2; exit 3' });
+    expect(res.pass).toBe(false);
+    expect(res.details).toContain('DIAG_MARKER_STDOUT');
+    expect(res.details).toContain('DIAG_MARKER_STDERR');
+    expect(res.details).toContain('--- output (last 1500 chars) ---');
+  });
+  it('on pass, details does not append any output tail', async () => {
+    const res = await command.evaluate(ctx({}), { run: 'echo hello world' });
+    expect(res.pass).toBe(true);
+    expect(res.details).toBe('`echo hello world` exited 0 (expected 0)');
+    expect(res.details).not.toContain('--- output');
+  });
 });
 
 describe('trajectory-check (§11)', () => {
