@@ -63,7 +63,7 @@ export const DEBOUNCE_MS = 5000;
 // Exact nudge text when no graphify/gitnexus backend is installed and a new
 // file was created. Kept as a constant so tests assert the wire string.
 export const CODEMAP_NUDGE_MESSAGE =
-  'Check to update CODEMAP since files has been created!';
+  '[Rosetta Advisory] check to update CODEMAP since files has been created!';
 
 export const CODEMAP_NUDGE_NAMESPACE = 'hook:codemap-nudge';
 

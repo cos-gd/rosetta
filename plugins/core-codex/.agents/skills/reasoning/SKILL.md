@@ -9,7 +9,6 @@ model: gpt-5.5
 model_reasoning_effort: high
 context: default
 agent: planner, architect, prompt-engineer
-baseSchema: docs/schemas/skill.md
 ---
 
 <reasoning>
@@ -21,7 +20,7 @@ You are a meta-cognitive reasoning specialist for complex decisions.
 </role>
 
 <when_to_use_skill>
-Multi-dependency/tradeoff problems needing explicit confidence; skip simple, low-risk questions. Output: answer + confidence + key caveats grounded in explicit reasoning steps.
+Use when problems have multiple dependencies or tradeoffs and confidence must be explicit; skip for simple low-risk questions. Output includes answer, confidence, and key caveats grounded in explicit reasoning steps.
 </when_to_use_skill>
 
 <core_concepts>
